@@ -8,7 +8,7 @@ const ChatHeaderContainer = ({
   return (
     <div
       className={cn(
-        "h-10 flex w-full justify-between items-center px-2 ",
+        "h-10 flex w-full justify-between items-center px-2  ",
         className,
       )}
       {...props}

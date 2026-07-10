@@ -38,6 +38,7 @@ const useChatToolsPanelStoreBase = create<ChatToolsPanelStore>(
             size.asPercentage === 0 || size.asPercentage === 100
               ? restoreToolsPercentage
               : `${size.asPercentage}%`,
+          toolsShow: size.asPercentage > 0,
         })),
       onChatResize: (size) =>
         set(({ restoreChatPercentage, zenMode }) => {

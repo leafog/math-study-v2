@@ -71,7 +71,7 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
         <MessageScrollerProvider>
           <div className="w-full">
             <div className="mx-auto size-full overflow-hidden flex flex-col">
-              <div className="flex-1 h-full overflow-hidden p-0 bg-red-50">
+              <div className="flex-1 h-full overflow-hidden p-0 ">
                 <MessageScroller>
                   <MessageScrollerViewport className="flex flex-row  p-2">
                     <MessageScrollerContent className="m-4 w-full mx-auto max-w-3xl">

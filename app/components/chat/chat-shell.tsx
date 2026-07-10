@@ -19,6 +19,7 @@ const ChatShell = () => {
   const restoreToolsPercentage =
     useChatToolsPanelStore.use.restoreToolsPercentage();
   useEffect(() => {
+    console.log("hehe");
     withRefs({ toolsPanelRef, chatPanelRef }, ({ toolsPanel, chatPanel }) => {
       if (toolsShow) {
         if (zenMode) {

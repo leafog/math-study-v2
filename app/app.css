@@ -167,3 +167,11 @@ body {
     border-radius: 3px;
   }
 }
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
