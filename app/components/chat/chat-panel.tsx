@@ -22,35 +22,34 @@ import {
   PromptInputTools,
 } from "../../../components/ai-elements/prompt-input";
 import ChatHeaderContainer from "./chat-header-container";
-import ToolsTrigger from "./tools-trigger";
-import { Menu } from "lucide-react";
-import { Button } from "../ui/button";
+
+import ToolsToggleBtn from "./tools-toggle-btn";
+import ChatMenuBtn from "./chat-menu-btn";
+import { useChatMenuBtnStore } from "~/store/chat-menu-store";
+import { useEffect, type PropsWithChildren } from "react";
+import { Card, CardHeader } from "../ui/card";
 
 interface ChatPanelProps {
   panelRef: React.RefObject<PanelImperativeHandle | null>;
-  onToolsTrigger: VoidFunction;
   chatId?: string;
 }
 
-const MenuButton = ({
-  show,
-  open,
-  toggle,
-}: {
-  show: boolean;
-  open: boolean;
-  toggle: VoidFunction;
-}) => {
-  return (
-    <Button size="icon" variant={open ? "outline" : "ghost"} onClick={toggle}>
-      <Menu />
-    </Button>
-  );
+const LRWrapper = ({ children }: PropsWithChildren) => {
+  return <div className="flex flex-row size-full ">{children}</div>;
 };
-const ChatPanel = ({ panelRef, onToolsTrigger, chatId }: ChatPanelProps) => {
+const LWrapper = ({ children }: PropsWithChildren) => {
+  return <div className="flex-1">{children}</div>;
+};
+
+const RWrapper = ({ children }: PropsWithChildren) => {
+  return <div className="sticky top-0 self-start">{children}</div>;
+};
+
+const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
   const onChatResize = useChatToolsPanelStore.use.onChatResize();
-  const toolsClosed = useChatToolsPanelStore.use.toolsClosed();
-  const { value, setValue, setTrue, setFalse, toggle } = useBoolean(false);
+  const toolsShow = useChatToolsPanelStore.use.toolsShow();
+  const menuShow = useChatMenuBtnStore.use.value();
+  const menuOff = useChatMenuBtnStore.use.off();
 
   return (
     <ResizablePanel
@@ -61,21 +60,20 @@ const ChatPanel = ({ panelRef, onToolsTrigger, chatId }: ChatPanelProps) => {
       onResize={(size) => onChatResize(size)}
       className="flex flex-col"
     >
-      <ChatHeaderContainer>
+      <ChatHeaderContainer className=" border-b-2">
         <span className="h-14"></span>
         <div className="gap-2 flex">
-          <MenuButton show open={value} toggle={toggle} />
-          {toolsClosed && <ToolsTrigger onTrigger={onToolsTrigger} />}
+          <ChatMenuBtn />
+          {!toolsShow && <ToolsToggleBtn />}
         </div>
       </ChatHeaderContainer>
-
-      <MessageScrollerProvider>
-        <div className="relative w-full flex-1 overflow-hidden">
-          <div className="mx-auto size-full overflow-hidden flex flex-col">
-            <div className="flex-1 h-full overflow-hidden p-0">
-              <MessageScroller>
-                <MessageScrollerViewport>
-                  <div className="flex flex-row">
+      <div className="flex flex-row relative w-full flex-1 overflow-hidden">
+        <MessageScrollerProvider>
+          <div className="w-full">
+            <div className="mx-auto size-full overflow-hidden flex flex-col">
+              <div className="flex-1 h-full overflow-hidden p-0 bg-red-50">
+                <MessageScroller>
+                  <MessageScrollerViewport className="flex flex-row  p-2">
                     <MessageScrollerContent className="m-4 w-full mx-auto max-w-3xl">
                       {new Array(40).fill(null).map((_, i) => (
                         <Message align="end" key={i}>
@@ -89,29 +87,43 @@ const ChatPanel = ({ panelRef, onToolsTrigger, chatId }: ChatPanelProps) => {
                         </Message>
                       ))}
                     </MessageScrollerContent>
-                  </div>
-                </MessageScrollerViewport>
-                <MessageScrollerButton />
-              </MessageScroller>
-            </div>
-            <div className="flex flex-row">
-              <div className="m-4 w-full mx-auto max-w-3xl">
-                <PromptInputProvider>
-                  <PromptInput globalDrop multiple onSubmit={() => {}}>
-                    <PromptInputBody>
-                      <PromptInputTextarea className="scrollbar-thin" />
-                    </PromptInputBody>
-                    <PromptInputFooter>
-                      <PromptInputTools />
-                      <PromptInputSubmit />
-                    </PromptInputFooter>
-                  </PromptInput>
-                </PromptInputProvider>
+                    {menuShow && !toolsShow && (
+                      <div className="sticky top-0 w-xs  max-h-full p-2">
+                        <Card>
+                          <CardHeader>123</CardHeader>
+                        </Card>
+                      </div>
+                    )}
+                  </MessageScrollerViewport>
+                  <MessageScrollerButton
+                    className={
+                      menuShow && !toolsShow
+                        ? "-translate-x-[calc(50%+10rem)]"
+                        : ""
+                    }
+                  />
+                </MessageScroller>
+              </div>
+              <div className="flex flex-row">
+                <div className="m-4 w-full mx-auto max-w-3xl p-2">
+                  <PromptInputProvider>
+                    <PromptInput globalDrop multiple onSubmit={() => {}}>
+                      <PromptInputBody>
+                        <PromptInputTextarea className="scrollbar-thin" />
+                      </PromptInputBody>
+                      <PromptInputFooter>
+                        <PromptInputTools />
+                        <PromptInputSubmit />
+                      </PromptInputFooter>
+                    </PromptInput>
+                  </PromptInputProvider>
+                </div>
+                {menuShow && !toolsShow && <div className="w-xs" />}
               </div>
             </div>
           </div>
-        </div>
-      </MessageScrollerProvider>
+        </MessageScrollerProvider>
+      </div>
     </ResizablePanel>
   );
 };

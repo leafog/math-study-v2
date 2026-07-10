@@ -6,57 +6,58 @@ import { createSelectors } from "./create-selectors";
 
 type ChatToolsPanelState = {
   toolsSize: PanelSize;
-  toolsClosed: boolean;
   chatSize: PanelSize;
-  chatClosed: boolean;
-  toolsZenMod: boolean;
   restoreChatPercentage: string;
   restoreToolsPercentage: string;
+  zenMode: boolean;
+  toolsShow: boolean;
 };
 type ChatToolsPanelAction = {
   onToolsResize: (size: PanelSize) => void;
   onChatResize: (size: PanelSize) => void;
-  toolsZenModTrigger: VoidFunction;
+  zenModeToggle: VoidFunction;
+  toolsShowToggle: VoidFunction;
 };
 type ChatToolsPanelStore = ChatToolsPanelState & ChatToolsPanelAction;
 
 const useChatToolsPanelStoreBase = create<ChatToolsPanelStore>(
-  combine(
+  combine<ChatToolsPanelState, ChatToolsPanelAction>(
     {
       toolsSize: { asPercentage: 0, inPixels: 0 },
       chatSize: { asPercentage: 0, inPixels: 0 },
-      toolsClosed: true,
-      chatClosed: false,
-      toolsZenMod: false,
       restoreChatPercentage: "50%",
       restoreToolsPercentage: "50%",
+      zenMode: false,
+      toolsShow: false,
     },
     (set) => ({
       onToolsResize: (size) =>
         set(({ restoreToolsPercentage }) => ({
           toolsSize: size,
-          toolsClosed: size.inPixels === 0,
           restoreToolsPercentage:
             size.asPercentage === 0 || size.asPercentage === 100
               ? restoreToolsPercentage
               : `${size.asPercentage}%`,
         })),
       onChatResize: (size) =>
-        set(({ restoreChatPercentage }) => {
+        set(({ restoreChatPercentage, zenMode }) => {
           return {
             chatSize: size,
-            chatClosed: size.inPixels === 0,
             restoreChatPercentage:
               size.asPercentage === 0 || size.asPercentage === 100
                 ? restoreChatPercentage
                 : `${size.asPercentage}%`,
+            zenMode: size.asPercentage === 0 ? true : zenMode,
           };
         }),
-      toolsZenModTrigger: () => {
-        set(({ toolsZenMod }) => ({
-          toolsZenMod: !toolsZenMod,
-        }));
-      },
+      zenModeToggle: () =>
+        set(({ zenMode }) => ({
+          zenMode: !zenMode,
+        })),
+      toolsShowToggle: () =>
+        set(({ toolsShow }) => ({
+          toolsShow: !toolsShow,
+        })),
     }),
   ),
 );

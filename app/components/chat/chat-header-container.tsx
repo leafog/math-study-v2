@@ -1,6 +1,18 @@
-const ChatHeaderContainer = ({ children }: { children: React.ReactNode }) => {
+import { cn } from "~/lib/utils";
+
+const ChatHeaderContainer = ({
+  children,
+  className,
+  ...props
+}: React.ComponentProps<"div">) => {
   return (
-    <div className="h-10 bg-red-100 flex w-full justify-between items-center px-2">
+    <div
+      className={cn(
+        "h-10 flex w-full justify-between items-center px-2 ",
+        className,
+      )}
+      {...props}
+    >
       {children}
     </div>
   );
