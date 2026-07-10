@@ -10,7 +10,8 @@ type ChatToolsPanelState = {
   chatSize: PanelSize;
   chatClosed: boolean;
   toolsZenMod: boolean;
-  zenLastChatSize: PanelSize;
+  restoreChatPercentage: string;
+  restoreToolsPercentage: string;
 };
 type ChatToolsPanelAction = {
   onToolsResize: (size: PanelSize) => void;
@@ -24,37 +25,37 @@ const useChatToolsPanelStoreBase = create<ChatToolsPanelStore>(
     {
       toolsSize: { asPercentage: 0, inPixels: 0 },
       chatSize: { asPercentage: 0, inPixels: 0 },
-      toolsClosed: false,
+      toolsClosed: true,
       chatClosed: false,
       toolsZenMod: false,
-      zenLastChatSize: { asPercentage: 0, inPixels: 0 },
+      restoreChatPercentage: "50%",
+      restoreToolsPercentage: "50%",
     },
     (set) => ({
       onToolsResize: (size) =>
-        set({
+        set(({ restoreToolsPercentage }) => ({
           toolsSize: size,
           toolsClosed: size.inPixels === 0,
-        }),
+          restoreToolsPercentage:
+            size.asPercentage === 0 || size.asPercentage === 100
+              ? restoreToolsPercentage
+              : `${size.asPercentage}%`,
+        })),
       onChatResize: (size) =>
-        set(({ toolsZenMod }) => {
+        set(({ restoreChatPercentage }) => {
           return {
             chatSize: size,
             chatClosed: size.inPixels === 0,
+            restoreChatPercentage:
+              size.asPercentage === 0 || size.asPercentage === 100
+                ? restoreChatPercentage
+                : `${size.asPercentage}%`,
           };
         }),
       toolsZenModTrigger: () => {
-        set(({ toolsZenMod, chatSize }) => {
-          if (toolsZenMod) {
-            return {
-              toolsZenMod: false,
-            };
-          } else {
-            return {
-              toolsZenMod: true,
-              zenLastChatSize: chatSize,
-            };
-          }
-        });
+        set(({ toolsZenMod }) => ({
+          toolsZenMod: !toolsZenMod,
+        }));
       },
     }),
   ),
