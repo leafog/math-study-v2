@@ -1,63 +1,44 @@
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, X } from "lucide-react";
 import { Button } from "../ui/button";
-import {
-  Item,
-  ItemActions,
-  ItemContent,
-  ItemDescription,
-  ItemGroup,
-  ItemTitle,
-} from "../ui/item";
+import { ItemGroup, ItemTitle } from "../ui/item";
 
 const ToolsGreeting = () => {
   return (
     <div className="flex flex-1 size-full justify-center items-center">
-      <div className="flex flex-col min-w-xs max-w-md w-full p-4 gap-2">
-        <ItemGroup className="gap-2">
-          <Item variant={"outline"}>
-            <ItemContent className="gap-1">
-              <ItemTitle>look here </ItemTitle>
-            </ItemContent>
-            <ItemActions>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <PlusIcon />
-              </Button>
-            </ItemActions>
-          </Item>
-          <Item variant={"outline"}>
-            <ItemContent className="gap-1">
-              <ItemTitle>look here </ItemTitle>
-            </ItemContent>
-            <ItemActions>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <PlusIcon />
-              </Button>
-            </ItemActions>
-          </Item>
-          <Item variant={"outline"}>
-            <ItemContent className="gap-1">
-              <ItemTitle>look here </ItemTitle>
-            </ItemContent>
-            <ItemActions>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <PlusIcon />
-              </Button>
-            </ItemActions>
-          </Item>
-        </ItemGroup>
-        <div className="p-2"> 推荐</div>
-        <ItemGroup className="gap-2">
-          <Item variant={"outline"}>
-            <ItemContent className="gap-1">
-              <ItemTitle>look here </ItemTitle>
-            </ItemContent>
-            <ItemActions>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <PlusIcon />
-              </Button>
-            </ItemActions>
-          </Item>
-        </ItemGroup>
+      <div className="flex flex-col min-w-xs max-w-lg w-full p-4 gap-2">
+        <div className=" flex flex-col gap-2">
+          <Button
+            className="w-full justify-start"
+            size="lg"
+            variant={"outline"}
+          >
+            <X />
+            <span>titl松动的sse</span>
+          </Button>
+          <Button
+            className="w-full justify-start"
+            size="lg"
+            variant={"outline"}
+          >
+            <X />
+            <span>titl松动的sse</span>
+          </Button>
+          <Button
+            className="w-full justify-start"
+            size="lg"
+            variant={"outline"}
+          >
+            <X />
+            <span>titl松动的sse</span>
+          </Button>
+        </div>
+        <div className="flex flex-col gap-2">
+          <span className="pl-2">推荐</span>
+          <Button className="w-full justify-start" size="lg" variant={"ghost"}>
+            <X />
+            <span>titl松动的sse</span>
+          </Button>
+        </div>
       </div>
     </div>
   );

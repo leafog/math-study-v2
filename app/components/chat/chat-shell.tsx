@@ -7,6 +7,7 @@ import ToolsPanel from "./tools-panel";
 import ChatPanel from "./chat-panel";
 import { useChatToolsPanelStore } from "~/store/chat-tools-panel-store";
 import { withRefs } from "~/lib/ref-utils";
+import { ActiveChatProvider } from "~/hooks/chat/use-active-chat";
 
 const ChatShell = () => {
   const { id } = useParams();
@@ -38,7 +39,9 @@ const ChatShell = () => {
   return (
     <div className="size-full flex flex-col">
       <ResizablePanelGroup className="w-full grow" orientation="horizontal">
-        <ChatPanel panelRef={chatPanelRef} chatId={id} />
+        <ActiveChatProvider>
+          <ChatPanel panelRef={chatPanelRef} chatId={id} />
+        </ActiveChatProvider>
         <ResizableHandle withHandle />
         <ToolsPanel panelRef={toolsPanelRef} />
       </ResizablePanelGroup>

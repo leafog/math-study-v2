@@ -1,4 +1,11 @@
-import { ChartBarStackedIcon, ChefHat, Files, Plus } from "lucide-react";
+import {
+  ChartBarStackedIcon,
+  ChefHat,
+  Files,
+  Moon,
+  Plus,
+  Sun,
+} from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -15,6 +22,7 @@ import {
 import { Button } from "../ui/button";
 import { cn } from "~/lib/utils";
 import { Link, useLocation } from "react-router";
+import { useTheme } from "next-themes";
 import NavHistoryChat from "./nav-history-chat";
 
 type RouteItem = {
@@ -36,6 +44,7 @@ const topRoutes: RouteItem[] = [
 ];
 
 const AppSidebar = () => {
+  const { theme, setTheme } = useTheme();
   const { state } = useSidebar();
   const { pathname } = useLocation();
   const isOpen = state === "expanded";
@@ -89,7 +98,19 @@ const AppSidebar = () => {
         </SidebarGroup>
         <NavHistoryChat />
       </SidebarContent>
-      <SidebarFooter>footer</SidebarFooter>
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            >
+              <Sun className="hidden dark:block" />
+              <Moon className="block dark:hidden" />
+              <span>{theme === "dark" ? "浅色" : "深色"}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );

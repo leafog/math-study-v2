@@ -38,8 +38,8 @@ const ToolsPanel = ({ panelRef }: ToolsPanelProps) => {
         )}
       </ChatHeaderContainer>
       <div className="flex-1 size-full">
-        {/* <ToolsGreeting /> */}
-        <ToolExclidraw />
+        <ToolsGreeting />
+        {/* <ToolExclidraw /> */}
       </div>
     </ResizablePanel>
   );

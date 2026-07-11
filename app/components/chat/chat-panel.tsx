@@ -8,9 +8,6 @@ import {
   MessageScrollerProvider,
   MessageScrollerViewport,
 } from "../ui/message-scroller";
-import { Message, MessageContent } from "../ui/message";
-import { Bubble, BubbleContent } from "../ui/bubble";
-import { useBoolean } from "usehooks-ts";
 
 import {
   PromptInput,
@@ -20,36 +17,29 @@ import {
   PromptInputSubmit,
   PromptInputTextarea,
   PromptInputTools,
-} from "../../../components/ai-elements/prompt-input";
+} from "~/components/ai-elements/prompt-input";
 import ChatHeaderContainer from "./chat-header-container";
 
 import ToolsToggleBtn from "./tools-toggle-btn";
 import ChatMenuBtn from "./chat-menu-btn";
 import { useChatMenuBtnStore } from "~/store/chat-menu-store";
-import { useEffect, type PropsWithChildren } from "react";
 import { Card, CardHeader } from "../ui/card";
+import { useActiveChat } from "~/hooks/chat/use-active-chat";
+
+import ChatMessage from "./chat-message";
+import { useNavigate } from "react-router";
 
 interface ChatPanelProps {
   panelRef: React.RefObject<PanelImperativeHandle | null>;
   chatId?: string;
 }
 
-const LRWrapper = ({ children }: PropsWithChildren) => {
-  return <div className="flex flex-row size-full ">{children}</div>;
-};
-const LWrapper = ({ children }: PropsWithChildren) => {
-  return <div className="flex-1">{children}</div>;
-};
-
-const RWrapper = ({ children }: PropsWithChildren) => {
-  return <div className="sticky top-0 self-start">{children}</div>;
-};
-
 const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
   const onChatResize = useChatToolsPanelStore.use.onChatResize();
   const toolsShow = useChatToolsPanelStore.use.toolsShow();
   const menuShow = useChatMenuBtnStore.use.value();
-  const menuOff = useChatMenuBtnStore.use.off();
+  const { messages, sendMessage, status, id } = useActiveChat();
+  const navigate = useNavigate();
 
   return (
     <ResizablePanel
@@ -60,32 +50,24 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
       onResize={(size) => onChatResize(size)}
       className="flex flex-col"
     >
-      <ChatHeaderContainer className=" border-b-2">
-        <span className="h-14"></span>
+      <ChatHeaderContainer className="border-b-2">
+        <span className="h-10"></span>
         <div className="gap-2 flex">
           <ChatMenuBtn />
           {!toolsShow && <ToolsToggleBtn />}
         </div>
       </ChatHeaderContainer>
-      <div className="flex flex-row relative w-full flex-1 overflow-hidden">
+      <div className="flex flex-row relative w-full grow overflow-hidden">
         <MessageScrollerProvider>
-          <div className="w-full">
-            <div className="mx-auto size-full overflow-hidden flex flex-col">
-              <div className="flex-1 h-full overflow-hidden p-0 ">
+          <div className="w-full  h-full ">
+            <div className="mx-auto h-full overflow-hidden flex flex-col">
+              <div className="h-full overflow-hidden p-0">
                 <MessageScroller>
-                  <MessageScrollerViewport className="flex flex-row  p-2">
-                    <MessageScrollerContent className="m-4 w-full mx-auto max-w-3xl">
-                      {new Array(40).fill(null).map((_, i) => (
-                        <Message align="end" key={i}>
-                          <MessageContent>
-                            <Bubble>
-                              <BubbleContent>
-                                Deploying to prod real quick. {chatId}
-                              </BubbleContent>
-                            </Bubble>
-                          </MessageContent>
-                        </Message>
-                      ))}
+                  <MessageScrollerViewport className="flex flex-row ">
+                    <MessageScrollerContent className="w-full mx-auto max-w-3xl px-6 py-2">
+                      {messages.map((message, i) => {
+                        return <ChatMessage message={message} key={i} />;
+                      })}
                     </MessageScrollerContent>
                     {menuShow && !toolsShow && (
                       <div className="sticky top-0 w-xs  max-h-full p-2">
@@ -104,16 +86,23 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
                   />
                 </MessageScroller>
               </div>
-              <div className="flex flex-row">
-                <div className="m-4 w-full mx-auto max-w-3xl p-2">
+              <div className="flex flex-row flex-none">
+                <div className="w-full mx-auto max-w-3xl p-6">
                   <PromptInputProvider>
-                    <PromptInput globalDrop multiple onSubmit={() => {}}>
+                    <PromptInput
+                      globalDrop
+                      multiple
+                      onSubmit={(message) => {
+                        navigate(`/chat/${id}`);
+                        sendMessage(message);
+                      }}
+                    >
                       <PromptInputBody>
                         <PromptInputTextarea className="scrollbar-thin" />
                       </PromptInputBody>
                       <PromptInputFooter>
                         <PromptInputTools />
-                        <PromptInputSubmit />
+                        <PromptInputSubmit status={status} />
                       </PromptInputFooter>
                     </PromptInput>
                   </PromptInputProvider>
