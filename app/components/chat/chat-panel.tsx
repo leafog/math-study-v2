@@ -9,25 +9,19 @@ import {
   MessageScrollerViewport,
 } from "../ui/message-scroller";
 
-import {
-  PromptInput,
-  PromptInputBody,
-  PromptInputFooter,
-  PromptInputProvider,
-  PromptInputSubmit,
-  PromptInputTextarea,
-  PromptInputTools,
-} from "~/components/ai-elements/prompt-input";
 import ChatHeaderContainer from "./chat-header-container";
+import ChatPromptInput from "./chat-prompt-input";
 
 import ToolsToggleBtn from "./tools-toggle-btn";
 import ChatMenuBtn from "./chat-menu-btn";
 import { useChatMenuBtnStore } from "~/store/chat-menu-store";
 import { Card, CardHeader } from "../ui/card";
-import { useActiveChat } from "~/hooks/chat/use-active-chat";
 
 import ChatMessage from "./chat-message";
-import { useNavigate } from "react-router";
+import { useActiveChat } from "~/hooks/chat/use-active-chat";
+import { eq, useLiveQuery } from "@tanstack/react-db";
+import { chatToolsPanelStatesColl } from "~/db/tdb-collections";
+import { useEffect } from "react";
 
 interface ChatPanelProps {
   panelRef: React.RefObject<PanelImperativeHandle | null>;
@@ -35,11 +29,28 @@ interface ChatPanelProps {
 }
 
 const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
+  const { id, isNewChat } = useActiveChat();
   const onChatResize = useChatToolsPanelStore.use.onChatResize();
+
+  const { data } = useLiveQuery(
+    (q) =>
+      q
+        .from({ chatToolsPanelStatesColl })
+        .where(({ chatToolsPanelStatesColl }) =>
+          eq(chatToolsPanelStatesColl.conversationId, id),
+        )
+        .findOne(),
+    [id, isNewChat],
+  );
+
+  const { messages, status } = useActiveChat();
+
   const toolsShow = useChatToolsPanelStore.use.toolsShow();
   const menuShow = useChatMenuBtnStore.use.value();
-  const { messages, sendMessage, status, id } = useActiveChat();
-  const navigate = useNavigate();
+
+  useEffect(() => {
+    console.log(data, status);
+  }, [data]);
 
   return (
     <ResizablePanel
@@ -58,7 +69,7 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
         </div>
       </ChatHeaderContainer>
       <div className="flex flex-row relative w-full grow overflow-hidden">
-        <MessageScrollerProvider>
+        <MessageScrollerProvider autoScroll>
           <div className="w-full  h-full ">
             <div className="mx-auto h-full overflow-hidden flex flex-col">
               <div className="h-full overflow-hidden p-0">
@@ -88,24 +99,7 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
               </div>
               <div className="flex flex-row flex-none">
                 <div className="w-full mx-auto max-w-3xl p-6">
-                  <PromptInputProvider>
-                    <PromptInput
-                      globalDrop
-                      multiple
-                      onSubmit={(message) => {
-                        navigate(`/chat/${id}`);
-                        sendMessage(message);
-                      }}
-                    >
-                      <PromptInputBody>
-                        <PromptInputTextarea className="scrollbar-thin" />
-                      </PromptInputBody>
-                      <PromptInputFooter>
-                        <PromptInputTools />
-                        <PromptInputSubmit status={status} />
-                      </PromptInputFooter>
-                    </PromptInput>
-                  </PromptInputProvider>
+                  <ChatPromptInput />
                 </div>
                 {menuShow && !toolsShow && <div className="w-xs" />}
               </div>

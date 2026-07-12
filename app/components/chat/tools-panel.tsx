@@ -6,7 +6,6 @@ import ToolsToggleBtn from "./tools-toggle-btn";
 import ToolsZentoggleBtn from "./tools-zen-toogle-btn";
 import ToolsGreeting from "./tools-greeting";
 import ToolsBar from "./tools-bar";
-import ToolExclidraw from "./tools/tool-exclidraw";
 
 interface ToolsPanelProps {
   panelRef: React.RefObject<PanelImperativeHandle | null>;
@@ -20,7 +19,7 @@ const ToolsPanel = ({ panelRef }: ToolsPanelProps) => {
     <ResizablePanel
       panelRef={panelRef}
       defaultSize={"0%"}
-      minSize={"25%"}
+      minSize={"30%"}
       collapsible
       onResize={(size) => onToolsResize(size)}
       className="flex flex-col w-full "

@@ -5,7 +5,7 @@ import {
   powerSyncCollectionOptions,
   type PowerSyncCollectionUtils,
 } from "@tanstack/powersync-db-collection";
-import { APP_SCHEMA, db } from "./pw-db";
+import { AppSchema, db } from "./pw-db";
 import type { Table } from "@powersync/web";
 
 import {
@@ -24,6 +24,7 @@ import {
   ChatMessageSchema,
   FileRecordSchema,
   AlbumSchema,
+  ChatToolsPanelStateSchema,
 } from "./types";
 
 // ── 自动生成 deserializationSchema ──────────────────────────────
@@ -59,17 +60,26 @@ function makeDeserSchema(schema: z.ZodObject<any>): z.ZodObject<any> {
 
     switch (raw._def?.type) {
       case "boolean":
-        // SQLite INTEGER → JS boolean
-        innerDeser = z.number().transform((v) => v === 1);
+        // SQLite INTEGER → JS boolean（可能为 NULL）
+        innerDeser = z
+          .number()
+          .nullable()
+          .transform((v) => (v === null ? null : v === 1));
         break;
       case "date":
-        // SQLite TEXT (ISO string) → JS Date
-        innerDeser = z.string().transform((s) => new Date(s));
+        // SQLite TEXT (ISO string) → JS Date（可能为 NULL）
+        innerDeser = z
+          .string()
+          .nullable()
+          .transform((s) => (s === null ? null : new Date(s)));
         break;
       case "array":
       case "object":
-        // SQLite TEXT (JSON) → JS array/object
-        innerDeser = z.string().transform((v) => JSON.parse(v));
+        // SQLite TEXT (JSON) → JS array/object（可能为 NULL）
+        innerDeser = z
+          .string()
+          .nullable()
+          .transform((v) => (v === null ? null : JSON.parse(v)));
         break;
       default:
         // string / number / enum / date → 保持原样
@@ -101,7 +111,7 @@ function makeDeserSchema(schema: z.ZodObject<any>): z.ZodObject<any> {
 type ZodOutput<T extends z.ZodType<any, any>> = T["_zod"]["output"];
 type ZodInput<T extends z.ZodType<any, any>> = T["_zod"]["input"];
 
-function mkCol<TTable extends Table, TSchema extends z.ZodType<any, any>>(
+function mkColl<TTable extends Table, TSchema extends z.ZodType<any, any>>(
   table: TTable,
   schema: TSchema,
 ): Collection<
@@ -127,39 +137,43 @@ function mkCol<TTable extends Table, TSchema extends z.ZodType<any, any>>(
 
 // ── Collections ────────────────────────────────────────────────
 
-export const problems = mkCol(APP_SCHEMA.props.problems, ProblemSchema);
-export const sessions = mkCol(APP_SCHEMA.props.sessions, PracticeSessionSchema);
-export const records = mkCol(APP_SCHEMA.props.records, AnswerRecordSchema);
-export const notes = mkCol(APP_SCHEMA.props.notes, StudyNoteSchema);
-export const knowledge = mkCol(
-  APP_SCHEMA.props.knowledge,
+export const problemsColl = mkColl(AppSchema.props.problems, ProblemSchema);
+export const sessionsColl = mkColl(AppSchema.props.sessions, PracticeSessionSchema);
+export const recordsColl = mkColl(AppSchema.props.records, AnswerRecordSchema);
+export const notesColl = mkColl(AppSchema.props.notes, StudyNoteSchema);
+export const knowledgeColl = mkColl(
+  AppSchema.props.knowledge,
   KnowledgePointSchema,
 );
-export const knowledgeEdges = mkCol(
-  APP_SCHEMA.props.knowledgeEdges,
+export const knowledgeEdgesColl = mkColl(
+  AppSchema.props.knowledgeEdges,
   KnowledgeEdgeSchema,
 );
-export const knowledgeInteractions = mkCol(
-  APP_SCHEMA.props.knowledgeInteractions,
+export const knowledgeInteractionsColl = mkColl(
+  AppSchema.props.knowledgeInteractions,
   KnowledgeInteractionSchema,
 );
-export const masteryScores = mkCol(
-  APP_SCHEMA.props.masteryScores,
+export const masteryScoresColl = mkColl(
+  AppSchema.props.masteryScores,
   MasteryScoreSchema,
 );
-export const practiceLogs = mkCol(
-  APP_SCHEMA.props.practiceLogs,
+export const practiceLogsColl = mkColl(
+  AppSchema.props.practiceLogs,
   PracticeLogSchema,
 );
-export const tags = mkCol(APP_SCHEMA.props.tags, TagSchema);
-export const knowledgeTags = mkCol(
-  APP_SCHEMA.props.knowledgeTags,
+export const tagsColl = mkColl(AppSchema.props.tags, TagSchema);
+export const knowledgeTagsColl = mkColl(
+  AppSchema.props.knowledgeTags,
   KnowledgeTagSchema,
 );
-export const conversations = mkCol(
-  APP_SCHEMA.props.conversations,
+export const conversationsColl = mkColl(
+  AppSchema.props.conversations,
   ConversationSchema,
 );
-export const messages = mkCol(APP_SCHEMA.props.messages, ChatMessageSchema);
-export const files = mkCol(APP_SCHEMA.props.files, FileRecordSchema);
-export const albums = mkCol(APP_SCHEMA.props.albums, AlbumSchema);
+export const messagesColl = mkColl(AppSchema.props.messages, ChatMessageSchema);
+export const filesColl = mkColl(AppSchema.props.files, FileRecordSchema);
+export const albumsColl = mkColl(AppSchema.props.albums, AlbumSchema);
+export const chatToolsPanelStatesColl = mkColl(
+  AppSchema.props.chatToolsPanelStates,
+  ChatToolsPanelStateSchema,
+);

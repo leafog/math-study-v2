@@ -1,8 +1,7 @@
-import type { ChatMessage } from "./types";
+import type { UIChatMessage } from "./types";
 
 const useChatDb = (chatId: string | undefined) => {
-  const messages: ChatMessage[] = [];
-
+  const messages: UIChatMessage[] = [];
   return { messages };
 };
 

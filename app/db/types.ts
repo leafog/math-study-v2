@@ -115,10 +115,10 @@ export type KnowledgeInteraction = z.infer<typeof KnowledgeInteractionSchema>;
 /** 掌握度评分（程序维护，规则引擎驱动） */
 export const MasteryScoreSchema = z.object({
   id: z.string(),
-  score: z.number().min(0).max(100),
-  totalAttempts: z.number(),
-  correctCount: z.number(),
-  hintCount: z.number(),
+  score: z.number().int().min(0).max(100),
+  totalAttempts: z.number().int(),
+  correctCount: z.number().int(),
+  hintCount: z.number().int(),
   lastPracticedAt: z.date().nullable(),
   nextReviewAt: z.date().nullable(),
   createdAt: z.date(),
@@ -234,16 +234,40 @@ export const ConversationSchema = z.object({
 });
 export type Conversation = z.infer<typeof ConversationSchema>;
 
+/** 聊天工具面板状态 */
+export const ChatToolsPanelStateSchema = z.object({
+  id: z.string(),
+  conversationId: z.string(),
+  toolsSize: z.object({
+    asPercentage: z.number(),
+    inPixels: z.number(),
+  }),
+  chatSize: z.object({
+    asPercentage: z.number(),
+    inPixels: z.number(),
+  }),
+  restoreChatPercentage: z.string(),
+  restoreToolsPercentage: z.string(),
+  zenMode: z.boolean(),
+  toolsShow: z.boolean(),
+});
+export type ChatToolsPanelState = z.infer<
+  typeof ChatToolsPanelStateSchema
+>;
+
 export const ChatMessageSchema = z.object({
   id: z.string(),
   conversationId: z.string(),
-  role: z.enum(["user", "assistant"]),
-  content: z.string(),
-  problemIds: z.array(z.string()).optional(),
-  fileIds: z.array(z.string()).optional(),
-  partsJson: z.string().optional(),
-  createdAt: z.date(),
+  role: z.enum(["user", "assistant", "system"]),
+  parts: z.array(z.any()),
+  metadata: z
+    .object({
+      createdAt: z.date(),
+    })
+    .optional(),
+  createdAt: z.date().optional(),
 });
+
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 
 // ─── File / Album schemas ───────────────────────────────────────
