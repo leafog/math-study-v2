@@ -1,44 +1,26 @@
-import { PlusIcon, X } from "lucide-react";
+import { useChatTools } from "~/hooks/chat/active-chat";
 import { Button } from "../ui/button";
-import { ItemGroup, ItemTitle } from "../ui/item";
+import { toolRegistry } from "./tools";
 
 const ToolsGreeting = () => {
+  const { open } = useChatTools();
   return (
     <div className="flex flex-1 size-full justify-center items-center">
       <div className="flex flex-col min-w-xs max-w-lg w-full p-4 gap-2">
-        <div className=" flex flex-col gap-2">
+        {toolRegistry.map(({ kind, Icon }) => (
           <Button
             className="w-full justify-start"
             size="lg"
+            key={kind}
             variant={"outline"}
+            onClick={(e) => {
+              open(kind, "title");
+            }}
           >
-            <X />
-            <span>titl松动的sse</span>
+            <Icon />
+            <span>{kind}</span>
           </Button>
-          <Button
-            className="w-full justify-start"
-            size="lg"
-            variant={"outline"}
-          >
-            <X />
-            <span>titl松动的sse</span>
-          </Button>
-          <Button
-            className="w-full justify-start"
-            size="lg"
-            variant={"outline"}
-          >
-            <X />
-            <span>titl松动的sse</span>
-          </Button>
-        </div>
-        <div className="flex flex-col gap-2">
-          <span className="pl-2">推荐</span>
-          <Button className="w-full justify-start" size="lg" variant={"ghost"}>
-            <X />
-            <span>titl松动的sse</span>
-          </Button>
-        </div>
+        ))}
       </div>
     </div>
   );

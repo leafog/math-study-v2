@@ -5,22 +5,21 @@ import { ResizableHandle, ResizablePanelGroup } from "../ui/resizable";
 import type { PanelImperativeHandle } from "react-resizable-panels";
 import ToolsPanel from "./tools-panel";
 import ChatPanel from "./chat-panel";
-import { useChatToolsPanelStore } from "~/store/chat-tools-panel-store";
 import { withRefs } from "~/lib/ref-utils";
-import { ActiveChatProvider } from "~/hooks/chat/use-active-chat";
+import { useActiveChatToolsPanelStore } from "~/hooks/chat/active-chat";
 
 const ChatShell = () => {
   const { id } = useParams();
   const toolsPanelRef = useRef<PanelImperativeHandle>(null);
   const chatPanelRef = useRef<PanelImperativeHandle>(null);
-  const zenMode = useChatToolsPanelStore.use.zenMode();
-  const toolsShow = useChatToolsPanelStore.use.toolsShow();
+  const zenMode = useActiveChatToolsPanelStore().use.zenMode();
+  const toolsShow = useActiveChatToolsPanelStore().use.toolsShow();
   const restoreChatPercentage =
-    useChatToolsPanelStore.use.restoreChatPercentage();
+    useActiveChatToolsPanelStore().use.restoreChatPercentage();
   const restoreToolsPercentage =
-    useChatToolsPanelStore.use.restoreToolsPercentage();
+    useActiveChatToolsPanelStore().use.restoreToolsPercentage();
+
   useEffect(() => {
-    console.log("hehe");
     withRefs({ toolsPanelRef, chatPanelRef }, ({ toolsPanel, chatPanel }) => {
       if (toolsShow) {
         if (zenMode) {
@@ -38,10 +37,8 @@ const ChatShell = () => {
 
   return (
     <div className="size-full flex flex-col">
-      <ResizablePanelGroup className="w-full grow" orientation="horizontal">
-        <ActiveChatProvider>
-          <ChatPanel panelRef={chatPanelRef} chatId={id} />
-        </ActiveChatProvider>
+      <ResizablePanelGroup className="w-full" orientation="horizontal">
+        <ChatPanel panelRef={chatPanelRef} chatId={id} />
         <ResizableHandle withHandle />
         <ToolsPanel panelRef={toolsPanelRef} />
       </ResizablePanelGroup>

@@ -14,14 +14,13 @@ import ChatPromptInput from "./chat-prompt-input";
 
 import ToolsToggleBtn from "./tools-toggle-btn";
 import ChatMenuBtn from "./chat-menu-btn";
-import { useChatMenuBtnStore } from "~/store/chat-menu-store";
 import { Card, CardHeader } from "../ui/card";
 
 import ChatMessage from "./chat-message";
-import { useActiveChat } from "~/hooks/chat/use-active-chat";
-import { eq, useLiveQuery } from "@tanstack/react-db";
-import { chatToolsPanelStatesColl } from "~/db/tdb-collections";
-import { useEffect } from "react";
+import {
+  useActiveChatHelpers,
+  useActiveChatToolsPanelStore,
+} from "~/hooks/chat/active-chat";
 
 interface ChatPanelProps {
   panelRef: React.RefObject<PanelImperativeHandle | null>;
@@ -29,28 +28,11 @@ interface ChatPanelProps {
 }
 
 const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
-  const { id, isNewChat } = useActiveChat();
   const onChatResize = useChatToolsPanelStore.use.onChatResize();
-
-  const { data } = useLiveQuery(
-    (q) =>
-      q
-        .from({ chatToolsPanelStatesColl })
-        .where(({ chatToolsPanelStatesColl }) =>
-          eq(chatToolsPanelStatesColl.conversationId, id),
-        )
-        .findOne(),
-    [id, isNewChat],
-  );
-
-  const { messages, status } = useActiveChat();
-
-  const toolsShow = useChatToolsPanelStore.use.toolsShow();
-  const menuShow = useChatMenuBtnStore.use.value();
-
-  useEffect(() => {
-    console.log(data, status);
-  }, [data]);
+  const { messages } = useActiveChatHelpers();
+  useActiveChatToolsPanelStore().getState();
+  const toolsShow = useActiveChatToolsPanelStore().use.toolsShow();
+  const menuShow = useActiveChatToolsPanelStore().use.menuShow();
 
   return (
     <ResizablePanel
@@ -76,8 +58,10 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
                 <MessageScroller>
                   <MessageScrollerViewport className="flex flex-row ">
                     <MessageScrollerContent className="w-full mx-auto max-w-3xl px-6 py-2">
-                      {messages.map((message, i) => {
-                        return <ChatMessage message={message} key={i} />;
+                      {messages.map((message) => {
+                        return (
+                          <ChatMessage message={message} key={message.id} />
+                        );
                       })}
                     </MessageScrollerContent>
                     {menuShow && !toolsShow && (

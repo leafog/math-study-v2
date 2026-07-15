@@ -1,21 +1,23 @@
 import { Excalidraw } from "@excalidraw/excalidraw";
 import "@excalidraw/excalidraw/index.css";
-import { Item, ItemContent, ItemMedia } from "~/components/ui/item";
+import { Pen } from "lucide-react";
+import ToolOpenBtn from "./tool-open-btn";
 
-export const ToolExclidrawItem = () => {
+export const kind = "excalidraw";
+export const Icon = Pen;
+
+export const Btn = () => {
   return (
-    <Item>
-      <ItemMedia></ItemMedia>
-      <ItemContent></ItemContent>
-    </Item>
+    <ToolOpenBtn kind={kind} title={"画板"}>
+      <Pen />
+    </ToolOpenBtn>
   );
 };
-const ToolExclidraw = () => {
+
+export const Panel = () => {
   return (
     <div className="size-full">
       <Excalidraw gridModeEnabled />
     </div>
   );
 };
-
-export default ToolExclidraw;

@@ -1,6 +1,6 @@
-import { useChatToolsPanelStore } from "~/store/chat-tools-panel-store";
 import { Button } from "../ui/button";
 import { PanelRight, PanelRightDashed } from "lucide-react";
+import { useActiveChatToolsPanelStore } from "~/hooks/chat/active-chat";
 
 interface ToolsTriggerProps {
   onTrigger: VoidFunction;
@@ -8,8 +8,8 @@ interface ToolsTriggerProps {
 }
 
 const ToolsToggleBtn = () => {
-  const toolsShow = useChatToolsPanelStore.use.toolsShow();
-  const toolsShowToggle = useChatToolsPanelStore.use.toolsShowToggle();
+  const toolsShow = useActiveChatToolsPanelStore().use.toolsShow();
+  const toolsShowToggle = useActiveChatToolsPanelStore().use.toolsShowToggle();
   return (
     <Button
       size="icon"

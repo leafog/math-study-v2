@@ -1,11 +1,4 @@
-import {
-  ChartBarStackedIcon,
-  ChefHat,
-  Files,
-  Moon,
-  Plus,
-  Sun,
-} from "lucide-react";
+import { ChefHat, Files, Moon, Plus, Sun } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -79,8 +72,8 @@ const AppSidebar = () => {
           {isOpen && <SidebarTrigger />}
         </div>
       </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
+      <SidebarContent className="scrollbar-thin">
+        <SidebarGroup className="sticky top-0 bg-background z-50 ">
           <SidebarMenu>
             {topRoutes.map(({ path, icon, title }) => {
               return (

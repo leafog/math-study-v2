@@ -1,10 +1,10 @@
 import { Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "../ui/button";
-import { useChatToolsPanelStore } from "~/store/chat-tools-panel-store";
+import { useActiveChatToolsPanelStore } from "~/hooks/chat/active-chat";
 
 const ToolsZentoggleBtn = () => {
-  const zenMode = useChatToolsPanelStore.use.zenMode();
-  const zenModeToggle = useChatToolsPanelStore.use.zenModeToggle();
+  const zenMode = useActiveChatToolsPanelStore().use.zenMode();
+  const zenModeToggle = useActiveChatToolsPanelStore().use.zenModeToggle();
   return (
     <Button
       size="icon"

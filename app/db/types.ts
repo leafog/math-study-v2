@@ -234,27 +234,6 @@ export const ConversationSchema = z.object({
 });
 export type Conversation = z.infer<typeof ConversationSchema>;
 
-/** 聊天工具面板状态 */
-export const ChatToolsPanelStateSchema = z.object({
-  id: z.string(),
-  conversationId: z.string(),
-  toolsSize: z.object({
-    asPercentage: z.number(),
-    inPixels: z.number(),
-  }),
-  chatSize: z.object({
-    asPercentage: z.number(),
-    inPixels: z.number(),
-  }),
-  restoreChatPercentage: z.string(),
-  restoreToolsPercentage: z.string(),
-  zenMode: z.boolean(),
-  toolsShow: z.boolean(),
-});
-export type ChatToolsPanelState = z.infer<
-  typeof ChatToolsPanelStateSchema
->;
-
 export const ChatMessageSchema = z.object({
   id: z.string(),
   conversationId: z.string(),
@@ -299,3 +278,32 @@ export const AlbumSchema = z.object({
 });
 
 export type Album = z.infer<typeof AlbumSchema>;
+
+export const ChatToolInstanceSchema = z.object({
+  id: z.string(),
+  conversationId: z.string(), // 关联到 conversation
+  kind: z.string(), // "excalidraw" | "calculator" | "reference-viewer"
+  title: z.string(), // tab 上显示的标题
+  data: z.any(), // JSON — 工具自己的数据，按 kind 不同结构不同
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+export type ChatToolInstance = z.infer<typeof ChatToolInstanceSchema>;
+
+export const ChatToolsBarStateSchema = z.object({
+  id: z.string(),
+  activeToolId: z.string().nullish(),
+  toolOrder: z.array(z.string()).nullish(),
+});
+
+export type ChatToolsBar = z.infer<typeof ChatToolsBarStateSchema>;
+
+// ─── Zustand persist ────────────────────────────────────────────
+
+export const ZustandStorageSchema = z.object({
+  id: z.string(),
+  value: z.string(),
+  updatedAt: z.date(),
+});
+
+export type ZustandStorage = z.infer<typeof ZustandStorageSchema>;

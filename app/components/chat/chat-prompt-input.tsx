@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router";
-import { useActiveChat } from "~/hooks/chat/use-active-chat";
+import { useActiveChat, useActiveChatHelpers } from "~/hooks/chat/active-chat";
 import {
   PromptInput,
   PromptInputBody,
@@ -10,17 +10,16 @@ import {
   PromptInputTools,
   type PromptInputProps,
 } from "~/components/ai-elements/prompt-input";
-import { useEffect } from "react";
+
 import { conversationsColl, messagesColl } from "~/db/tdb-collections";
 import { genId } from "~/lib/id-utils";
 import type { TextPart } from "ai";
 
 const ChatPromptInput = () => {
-  const { id, sendMessage, status, isNewChat } = useActiveChat();
+  const { id, sendMessage, status } = useActiveChatHelpers();
+  const { isNewChat } = useActiveChat();
   const navigate = useNavigate();
-  useEffect(() => {
-    console.log(isNewChat);
-  }, [isNewChat]);
+
   const onSubmit: PromptInputProps["onSubmit"] = (message) => {
     //
     const title = message.text;
@@ -56,7 +55,10 @@ const ChatPromptInput = () => {
     <PromptInputProvider>
       <PromptInput globalDrop multiple onSubmit={onSubmit}>
         <PromptInputBody>
-          <PromptInputTextarea className="scrollbar-thin" />
+          <PromptInputTextarea
+            onChange={(e) => {}}
+            className="scrollbar-thin"
+          />
         </PromptInputBody>
         <PromptInputFooter>
           <PromptInputTools />

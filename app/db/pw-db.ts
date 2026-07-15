@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { column, PowerSyncDatabase, Schema, Table } from "@powersync/web";
 import * as S from "./types";
+import { PowerSyncTransactor } from "@tanstack/powersync-db-collection";
+import { createOptimisticAction } from "@tanstack/react-db";
+import { ChatToolsBarStateSchema } from "./types";
 
 // ── Zod → PowerSync column type ─────────────────────────────────
 
@@ -93,7 +96,9 @@ const tableSchemas = {
   messages: S.ChatMessageSchema,
   files: S.FileRecordSchema,
   albums: S.AlbumSchema,
-  chatToolsPanelStates: S.ChatToolsPanelStateSchema,
+  chatToolInstances: S.ChatToolInstanceSchema,
+  chatToolPanelActive: S.ChatToolsBarStateSchema,
+  zustandStorage: S.ZustandStorageSchema,
 } as const;
 
 // ── PowerSync schema ───────────────────────────────────────────

@@ -1,0 +1,3 @@
+type ToolsTabsState = {
+  tools: [];
+};

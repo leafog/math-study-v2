@@ -12,7 +12,7 @@ import {
 } from "../ui/sidebar";
 import { Button } from "../ui/button";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 30;
 
 const NavHistoryChat = () => {
   const { pathname } = useLocation();
@@ -21,15 +21,15 @@ const NavHistoryChat = () => {
       (q) =>
         q
           .from({ conversations: conversationsColl })
-          .orderBy(({ conversations: conversationsColl }) => conversationsColl.updatedAt, "desc"),
+          .orderBy(
+            ({ conversations: conversationsColl }) =>
+              conversationsColl.updatedAt,
+            "desc",
+          ),
       { pageSize: PAGE_SIZE },
       [],
     );
-  const { data } = useLiveQuery((q) => q.from({ conversations: conversationsColl }), []);
 
-  useEffect(() => {
-    console.log(data);
-  }, [data]);
   const allChats = pages.flat();
 
   return (

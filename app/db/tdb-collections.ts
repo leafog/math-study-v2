@@ -24,7 +24,9 @@ import {
   ChatMessageSchema,
   FileRecordSchema,
   AlbumSchema,
-  ChatToolsPanelStateSchema,
+  ChatToolInstanceSchema,
+  ChatToolsBarStateSchema,
+  ZustandStorageSchema,
 } from "./types";
 
 // ── 自动生成 deserializationSchema ──────────────────────────────
@@ -138,7 +140,10 @@ function mkColl<TTable extends Table, TSchema extends z.ZodType<any, any>>(
 // ── Collections ────────────────────────────────────────────────
 
 export const problemsColl = mkColl(AppSchema.props.problems, ProblemSchema);
-export const sessionsColl = mkColl(AppSchema.props.sessions, PracticeSessionSchema);
+export const sessionsColl = mkColl(
+  AppSchema.props.sessions,
+  PracticeSessionSchema,
+);
 export const recordsColl = mkColl(AppSchema.props.records, AnswerRecordSchema);
 export const notesColl = mkColl(AppSchema.props.notes, StudyNoteSchema);
 export const knowledgeColl = mkColl(
@@ -173,7 +178,15 @@ export const conversationsColl = mkColl(
 export const messagesColl = mkColl(AppSchema.props.messages, ChatMessageSchema);
 export const filesColl = mkColl(AppSchema.props.files, FileRecordSchema);
 export const albumsColl = mkColl(AppSchema.props.albums, AlbumSchema);
-export const chatToolsPanelStatesColl = mkColl(
-  AppSchema.props.chatToolsPanelStates,
-  ChatToolsPanelStateSchema,
+export const chatToolInstancesColl = mkColl(
+  AppSchema.props.chatToolInstances,
+  ChatToolInstanceSchema,
+);
+export const chatToolsBarStateColl = mkColl(
+  AppSchema.props.chatToolPanelActive,
+  ChatToolsBarStateSchema,
+);
+export const zustandStorageColl = mkColl(
+  AppSchema.props.zustandStorage,
+  ZustandStorageSchema,
 );
