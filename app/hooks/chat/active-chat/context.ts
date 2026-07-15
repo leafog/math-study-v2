@@ -3,10 +3,9 @@ import type { UseChatHelpers } from "@ai-sdk/react";
 import type { UIChatMessage } from "../types";
 import type { ChatToolsPanelStore } from "~/store/chat-tools-panel-store";
 import { useChatToolsManager } from "./manager/use-chat-tools-manager";
+import type { useChatIdManager } from "./manager/use-chat-id-manager";
 
-export type ActiveChatState = {
-  isNewChat: boolean;
-};
+export type ActiveChatState = ReturnType<typeof useChatIdManager>;
 
 export const ActiveChatContext = createContext<ActiveChatState | null>(null);
 export const ChatHelpersContext =

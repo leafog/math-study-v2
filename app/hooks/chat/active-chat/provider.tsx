@@ -1,8 +1,12 @@
-import { useMemo, type ReactNode } from "react";
+import { useEffect, useMemo, type ReactNode } from "react";
 import { useChat } from "@ai-sdk/react";
 import { transport } from "~/lib/agent/client-agent";
 import { genId } from "~/lib/id-utils";
-import { messagesColl } from "~/db/tdb-collections";
+import {
+  chatToolsBarStateColl,
+  conversationsColl,
+  messagesColl,
+} from "~/db/tdb-collections";
 import { createChatToolsPanelStore } from "~/store/chat-tools-panel-store";
 import { useHydrated } from "~/store/use-hydrated";
 import type { UIChatMessage } from "../types";
@@ -11,14 +15,19 @@ import {
   ChatHelpersContext,
   ChatToolsPanelStoreContext,
   ChatToolsContext,
-  type ActiveChatState,
 } from "./context";
 import { useChatIdManager } from "./manager/use-chat-id-manager";
 import { useMessagesManager } from "./manager/use-messages-manager";
 import { useChatToolsManager } from "./manager/use-chat-tools-manager";
+import { createTx } from "~/db/tx";
+import { useNavigate } from "react-router";
 
 export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
-  const { chatId, isNewChat } = useChatIdManager();
+  // const { chatId, isNewChat, createChat } = useChatIdManager();
+
+  const activeChatState = useChatIdManager();
+
+  const { chatId, isNewChat, createChat } = activeChatState;
 
   const initMessages = useMessagesManager(chatId);
 
@@ -36,19 +45,19 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
     },
   });
 
-  const activeChatState: ActiveChatState = useMemo(
-    () => ({ isNewChat }),
-    [isNewChat],
-  );
+  //console.log({ isNewChat, chatId, depKey: `${isNewChat}-${chatId}` });
 
-  const chatToolsPanelStore = useMemo(
-    () => createChatToolsPanelStore(isNewChat, chatId),
-    [isNewChat, chatId],
-  );
+  const chatToolsPanelStore = useMemo(() => {
+    return createChatToolsPanelStore(isNewChat, chatId);
+  }, [isNewChat, chatId]);
 
   const hydrated = useHydrated(chatToolsPanelStore);
-
-  const chatToolsManager = useChatToolsManager(chatId);
+  const onOpenBefore = (kind: string, title?: string) => {
+    if (isNewChat) {
+      createChat(title ?? kind);
+    }
+  };
+  const chatToolsManager = useChatToolsManager(chatId, onOpenBefore);
 
   return (
     <ActiveChatContext.Provider value={activeChatState}>

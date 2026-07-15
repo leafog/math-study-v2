@@ -1,8 +1,9 @@
 import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { eq, useLiveSuspenseQuery } from "@tanstack/react-db";
-import { conversationsColl } from "~/db/tdb-collections";
+import { chatToolsBarStateColl, conversationsColl } from "~/db/tdb-collections";
 import { genId } from "~/lib/id-utils";
+import { createTx } from "~/db/tx";
 
 const chatRegExp = new RegExp(/\/chat\/([^/]+)/);
 
@@ -47,5 +48,23 @@ export const useChatIdManager = () => {
 
   const chatId = chatIdFromUrl ?? newChatIdRef.current;
 
-  return { chatId, isNewChat };
+  // only sign
+  const createChat = (title: string) => {
+    const id = chatId;
+    const tx = createTx();
+    tx.mutate(() => {
+      conversationsColl.insert({
+        id,
+        title,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      chatToolsBarStateColl.insert({
+        id,
+      });
+    });
+    navigate(`/chat/${id}`);
+  };
+
+  return { chatId, isNewChat, createChat };
 };

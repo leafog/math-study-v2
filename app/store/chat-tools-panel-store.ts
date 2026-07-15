@@ -23,20 +23,17 @@ type ChatToolsPanelAction = {
   menuShowSet: (value: boolean) => void;
 };
 
-const chatToolsPanelStoreCreator = combine<
-  ChatToolsPanelState,
-  ChatToolsPanelAction
->(
-  {
-    toolsSize: { asPercentage: 0, inPixels: 0 },
-    chatSize: { asPercentage: 0, inPixels: 0 },
-    restoreChatPercentage: "50%",
-    restoreToolsPercentage: "50%",
-    zenMode: false,
-    toolsShow: false,
-    menuShow: false,
-  },
-  (set) => ({
+const chatToolsPanelStateDefault = {
+  toolsSize: { asPercentage: 0, inPixels: 0 },
+  chatSize: { asPercentage: 0, inPixels: 0 },
+  restoreChatPercentage: "50%",
+  restoreToolsPercentage: "50%",
+  zenMode: false,
+  toolsShow: false,
+  menuShow: false,
+};
+const chatToolsPanelStoreCreator = (init: ChatToolsPanelState) =>
+  combine<ChatToolsPanelState, ChatToolsPanelAction>(init, (set) => ({
     onToolsResize: (size) =>
       set(({ restoreToolsPercentage }) => ({
         toolsSize: size,
@@ -70,13 +67,13 @@ const chatToolsPanelStoreCreator = combine<
         menuShow: !menuShow,
       })),
     menuShowSet: (value) => set({ menuShow: value }),
-  }),
-);
+  }));
 
+const newChatToolsPanelStoreName = "chat-tools-panel-store-new";
 const newChatToolsPanelStore = createSelectors(
   create(
-    persist(chatToolsPanelStoreCreator, {
-      name: "chat-tools-panel-store-new",
+    persist(chatToolsPanelStoreCreator(chatToolsPanelStateDefault), {
+      name: newChatToolsPanelStoreName,
       storage: createJSONStorage(() => sessionStorage),
     }),
   ),
@@ -93,12 +90,12 @@ export const createChatToolsPanelStore = (
   if (isNewChat) {
     return newChatToolsPanelStore;
   }
-
+  console.log("next");
   let store = chatToolsPanelStoreCache.get(chatId);
   if (!store) {
     store = createSelectors(
       create(
-        persist(chatToolsPanelStoreCreator, {
+        persist(chatToolsPanelStoreCreator(newChatToolsPanelStore.getState()), {
           name: `chat-tools-panel-store-${chatId}`,
           storage: createJSONStorage(() => tanstackDbStorage),
         }),
@@ -108,14 +105,3 @@ export const createChatToolsPanelStore = (
   }
   return store;
 };
-
-const useChatToolsPanelStoreBase = create(
-  persist(chatToolsPanelStoreCreator, {
-    name: "food-storage",
-    storage: createJSONStorage(() => tanstackDbStorage),
-    partialize: ({ menuShow: _, ...state }) => state,
-  }),
-);
-export const useChatToolsPanelStore = createSelectors(
-  useChatToolsPanelStoreBase,
-);

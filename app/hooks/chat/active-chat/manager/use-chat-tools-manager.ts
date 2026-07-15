@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from "react";
-import { eq, useLiveQuery, useLiveSuspenseQuery } from "@tanstack/react-db";
+import { eq, useLiveQuery } from "@tanstack/react-db";
 import {
   chatToolInstancesColl,
   chatToolsBarStateColl,
@@ -9,7 +9,10 @@ import { useImmer } from "use-immer";
 import { hasToolKind } from "~/components/chat/tools";
 import { usePrevious } from "@uidotdev/usehooks";
 
-export const useChatToolsManager = (chatId: string) => {
+export const useChatToolsManager = (
+  chatId: string,
+  onOpenBefore?: (kind: string, title?: string) => void,
+) => {
   const { data: chatToolInstances = [] } = useLiveQuery(
     (q) =>
       q
@@ -77,9 +80,10 @@ export const useChatToolsManager = (chatId: string) => {
 
   const open = useCallback(
     async (kind: string, title?: string) => {
-      const InstanceId = genId();
+      onOpenBefore?.(kind, title);
+      const instanceId = genId();
       chatToolInstancesColl.insert({
-        id: InstanceId,
+        id: instanceId,
         conversationId: chatId,
         kind,
         title: title ?? kind,
@@ -87,9 +91,21 @@ export const useChatToolsManager = (chatId: string) => {
         createdAt: new Date(),
         updatedAt: new Date(),
       });
-      active(InstanceId);
+      const chatToolsBarState = chatToolsBarStateColl.get(chatId);
+      if (chatToolsBarState) {
+        console.log(chatToolsBarState);
+        chatToolsBarStateColl.update(chatToolsBarState.id, (draft) => {
+          const origin = draft.toolOrder;
+          if (origin === undefined) {
+            draft.toolOrder = [instanceId];
+          } else {
+            draft.toolOrder?.push(instanceId);
+          }
+        });
+      }
+      active(instanceId);
     },
-    [chatId],
+    [chatId, onOpenBefore],
   );
 
   const close = useCallback(
@@ -104,7 +120,6 @@ export const useChatToolsManager = (chatId: string) => {
 
   const reorder = useCallback(
     (orderedIds: string[]) => {
-      console.log(orderedIds + "-----");
       const current = chatToolsBarStateColl.get(chatId);
       if (current === undefined) {
         chatToolsBarStateColl.insert({

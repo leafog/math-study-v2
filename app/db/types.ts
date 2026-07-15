@@ -292,8 +292,8 @@ export type ChatToolInstance = z.infer<typeof ChatToolInstanceSchema>;
 
 export const ChatToolsBarStateSchema = z.object({
   id: z.string(),
-  activeToolId: z.string().nullish(),
-  toolOrder: z.array(z.string()).nullish(),
+  activeToolId: z.string().optional(),
+  toolOrder: z.array(z.string()).optional(),
 });
 
 export type ChatToolsBar = z.infer<typeof ChatToolsBarStateSchema>;

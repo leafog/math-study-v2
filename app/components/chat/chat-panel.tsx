@@ -1,6 +1,5 @@
 import type { PanelImperativeHandle } from "react-resizable-panels";
 import { ResizablePanel } from "../ui/resizable";
-import { useChatToolsPanelStore } from "~/store/chat-tools-panel-store";
 import {
   MessageScroller,
   MessageScrollerButton,
@@ -28,7 +27,7 @@ interface ChatPanelProps {
 }
 
 const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
-  const onChatResize = useChatToolsPanelStore.use.onChatResize();
+  const onChatResize = useActiveChatToolsPanelStore().use.onChatResize();
   const { messages } = useActiveChatHelpers();
   useActiveChatToolsPanelStore().getState();
   const toolsShow = useActiveChatToolsPanelStore().use.toolsShow();

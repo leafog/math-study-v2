@@ -17,22 +17,15 @@ import type { TextPart } from "ai";
 
 const ChatPromptInput = () => {
   const { id, sendMessage, status } = useActiveChatHelpers();
-  const { isNewChat } = useActiveChat();
+  const { isNewChat, createChat } = useActiveChat();
   const navigate = useNavigate();
 
   const onSubmit: PromptInputProps["onSubmit"] = (message) => {
     //
     const title = message.text;
     if (isNewChat) {
-      conversationsColl.insert({
-        id,
-        title,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
-      navigate(`/chat/${id}`);
+      createChat(title);
     }
-
     sendMessage(message);
     const textPart: TextPart = {
       text: message.text,

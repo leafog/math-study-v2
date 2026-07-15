@@ -84,8 +84,12 @@ function makeDeserSchema(schema: z.ZodObject<any>): z.ZodObject<any> {
           .transform((v) => (v === null ? null : JSON.parse(v)));
         break;
       default:
-        // string / number / enum / date → 保持原样
-        innerDeser = field;
+        // SQLite 将 undefined 存为 null，读回时转回 undefined
+        if (wrappers.includes("optional") && !wrappers.includes("nullable")) {
+          innerDeser = raw.nullable().transform((v: any) => v ?? undefined);
+        } else {
+          innerDeser = field;
+        }
         break;
     }
 

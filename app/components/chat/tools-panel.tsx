@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import type { PanelImperativeHandle } from "react-resizable-panels";
 import { ResizablePanel } from "../ui/resizable";
 import ChatHeaderContainer from "./chat-header-container";
@@ -16,10 +17,21 @@ interface ToolsPanelProps {
   panelRef: React.RefObject<PanelImperativeHandle | null>;
 }
 
+// TODO: 工具 Panel 可通过 data-active 属性感知激活状态自行聚焦
+// 例: 父容器 [data-active="true"] 时调用 apiRef.current?.focus()
+const ToolPanelContent = ({ kind }: { kind: string }) => {
+  const { Panel } = kindToTool(kind)!;
+  return <Panel />;
+};
 const ToolsPanel = ({ panelRef }: ToolsPanelProps) => {
   const onToolsResize = useActiveChatToolsPanelStore().use.onToolsResize();
   const toolsShow = useActiveChatToolsPanelStore().use.toolsShow();
   const { tools, hasTools, activeId, mountedTools } = useChatTools();
+
+  const activeIndex = useMemo(
+    () => mountedTools.findIndex((t) => t.id === activeId),
+    [mountedTools, activeId],
+  );
 
   return (
     <ResizablePanel
@@ -42,19 +54,29 @@ const ToolsPanel = ({ panelRef }: ToolsPanelProps) => {
           </div>
         )}
       </ChatHeaderContainer>
-      <div className="flex-1 size-full">
-        {!hasTools && <ToolsGreeting />}
-        {mountedTools.map(({ kind, id }) => {
-          const { Panel } = kindToTool(kind)!;
-          return (
-            <div
-              className={cn("size-full", id === activeId ? "" : "hidden")}
-              key={id}
-            >
-              <Panel />
-            </div>
-          );
-        })}
+      <div className="flex-1 size-full relative overflow-hidden">
+        {!hasTools ? (
+          <ToolsGreeting />
+        ) : (
+          mountedTools.map(({ kind, id }) => {
+            const isActive = id === activeId;
+            return (
+              <div
+                key={id}
+                data-panel-id={id}
+                data-active={isActive}
+                className={cn(
+                  "size-full absolute inset-0 transition-opacity duration-300",
+                  isActive
+                    ? "opacity-100"
+                    : "opacity-0 pointer-events-none",
+                )}
+              >
+                <ToolPanelContent kind={kind} />
+              </div>
+            );
+          })
+        )}
       </div>
     </ResizablePanel>
   );
