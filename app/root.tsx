@@ -10,6 +10,7 @@ import {
 import { useEffect } from "react";
 import type { Route } from "./+types/root";
 import "./app.css";
+import "./lib/i18n";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "./components/ui/sonner";

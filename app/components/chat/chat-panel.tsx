@@ -17,6 +17,7 @@ import { Card, CardHeader } from "../ui/card";
 
 import ChatMessage from "./chat-message";
 import {
+  useActiveChat,
   useActiveChatHelpers,
   useActiveChatToolsPanelStore,
 } from "~/hooks/chat/active-chat";
@@ -27,9 +28,10 @@ interface ChatPanelProps {
 }
 
 const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
-  const onChatResize = useActiveChatToolsPanelStore().use.onChatResize();
   const { messages } = useActiveChatHelpers();
-  useActiveChatToolsPanelStore().getState();
+  const { currentConversation } = useActiveChat();
+  const onChatResize = useActiveChatToolsPanelStore().use.onChatResize();
+
   const toolsShow = useActiveChatToolsPanelStore().use.toolsShow();
   const menuShow = useActiveChatToolsPanelStore().use.menuShow();
 
@@ -43,7 +45,9 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
       className="flex flex-col"
     >
       <ChatHeaderContainer className="border-b-2">
-        <span className="h-10"></span>
+        <div>
+          <span>{currentConversation?.title}</span>
+        </div>
         <div className="gap-2 flex">
           <ChatMenuBtn />
           {!toolsShow && <ToolsToggleBtn />}

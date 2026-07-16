@@ -1,0 +1,44 @@
+{
+  "common": {
+    "loading": "加载中...",
+    "error": "出错了",
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "edit": "编辑",
+    "create": "新建",
+    "search": "搜索",
+    "close": "关闭",
+    "confirm": "确认",
+    "loadMore": "加载更多"
+  },
+  "chat": {
+    "title": "对话",
+    "newChat": "新聊天",
+    "inputPlaceholder": "输入消息...",
+    "send": "发送",
+    "noMessages": "暂无消息",
+    "history": "历史记录",
+    "recent": "最近"
+  },
+  "routes": {
+    "files": "文件"
+  },
+  "tools": {
+    "excalidraw": "画板",
+    "mathlive": "数学公式",
+    "panel": "工具面板",
+    "toggle": "切换工具",
+    "openTool": "打开工具",
+    "addTool": "添加工具",
+    "noTools": "暂无工具"
+  },
+  "settings": {
+    "title": "设置",
+    "language": "语言",
+    "theme": "主题",
+    "light": "浅色",
+    "dark": "深色",
+    "system": "跟随系统"
+  }
+}

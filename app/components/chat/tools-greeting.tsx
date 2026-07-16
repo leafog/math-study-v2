@@ -1,8 +1,10 @@
+import { useTranslation } from "react-i18next";
 import { useChatTools } from "~/hooks/chat/active-chat";
 import { Button } from "../ui/button";
 import { toolRegistry } from "./tools";
 
 const ToolsGreeting = () => {
+  const { t } = useTranslation();
   const { open } = useChatTools();
   return (
     <div className="flex flex-1 size-full justify-center items-center">
@@ -14,11 +16,11 @@ const ToolsGreeting = () => {
             key={kind}
             variant={"outline"}
             onClick={(e) => {
-              open(kind, "title");
+              open(kind, t("tools." + kind));
             }}
           >
             <Icon />
-            <span>{kind}</span>
+            <span>{t("tools." + kind)}</span>
           </Button>
         ))}
       </div>

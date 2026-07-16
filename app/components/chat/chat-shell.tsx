@@ -6,10 +6,14 @@ import type { PanelImperativeHandle } from "react-resizable-panels";
 import ToolsPanel from "./tools-panel";
 import ChatPanel from "./chat-panel";
 import { withRefs } from "~/lib/ref-utils";
-import { useActiveChatToolsPanelStore } from "~/hooks/chat/active-chat";
+import {
+  useActiveChat,
+  useActiveChatToolsPanelStore,
+} from "~/hooks/chat/active-chat";
 
 const ChatShell = () => {
   const { id } = useParams();
+  const { chatId } = useActiveChat();
   const toolsPanelRef = useRef<PanelImperativeHandle>(null);
   const chatPanelRef = useRef<PanelImperativeHandle>(null);
   const zenMode = useActiveChatToolsPanelStore().use.zenMode();
@@ -33,7 +37,7 @@ const ChatShell = () => {
         chatPanel.resize("100%");
       }
     });
-  }, [zenMode, toolsShow]);
+  }, [zenMode, toolsShow, chatId]);
 
   return (
     <div className="size-full flex flex-col">

@@ -1,15 +1,19 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Plus } from "lucide-react";
 import { Button } from "../ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { toolRegistry } from "./tools";
 import { useChatTools } from "~/hooks/chat/active-chat";
-import { genId } from "~/lib/id-utils";
 
 const ToolsBarOpenBtn = () => {
-  const { open } = useChatTools();
+  const { t } = useTranslation();
+  const { open, tools } = useChatTools();
   const [popoverOpen, setPopoverOpen] = useState(false);
-
+  const kindEnd = (kind: string) => {
+    const kindLength = tools.filter((it) => it.kind === kind).length;
+    return kindLength >= 1 ? `${kindLength + 1}` : "";
+  };
   return (
     <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
       <PopoverTrigger asChild>
@@ -27,12 +31,12 @@ const ToolsBarOpenBtn = () => {
             key={kind}
             variant={"ghost"}
             onClick={() => {
-              open(kind, "title" + genId());
+              open(kind, ` ${t("tools." + kind)} ${kindEnd(kind)}`);
               setPopoverOpen(false);
             }}
           >
             <Icon />
-            <span>{kind}</span>
+            <span>{t("tools." + kind)}</span>
           </Button>
         ))}
       </PopoverContent>

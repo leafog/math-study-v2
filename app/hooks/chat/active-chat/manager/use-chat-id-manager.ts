@@ -18,7 +18,7 @@ export const useChatIdManager = () => {
   const chatIdFromUrl = extractChatId(pathname);
   const hasChatIdInUrl = chatIdFromUrl !== null;
 
-  const { data: currentConversations } = useLiveSuspenseQuery(
+  const { data: currentConversation } = useLiveSuspenseQuery(
     (q) =>
       q
         .from({ conversationColl })
@@ -27,13 +27,13 @@ export const useChatIdManager = () => {
     [chatIdFromUrl],
   );
 
-  const isNewChat = !hasChatIdInUrl && currentConversations === undefined;
+  const isNewChat = !hasChatIdInUrl && currentConversation === undefined;
 
   useEffect(() => {
-    if (hasChatIdInUrl && currentConversations === undefined) {
+    if (hasChatIdInUrl && currentConversation === undefined) {
       navigate("/", { replace: true });
     }
-  }, [hasChatIdInUrl, currentConversations, navigate]);
+  }, [hasChatIdInUrl, currentConversation, navigate]);
 
   const newChatIdRef = useRef(genId());
   const prevPathnameRef = useRef(pathname);
@@ -66,5 +66,5 @@ export const useChatIdManager = () => {
     navigate(`/chat/${id}`);
   };
 
-  return { chatId, isNewChat, createChat };
+  return { chatId, isNewChat, createChat, currentConversation };
 };

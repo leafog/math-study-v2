@@ -1,4 +1,4 @@
-import { ChefHat, Files, Moon, Plus, Sun } from "lucide-react";
+import { ChefHat, Files, Languages, Moon, Plus, Sun } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -16,6 +16,7 @@ import { Button } from "../ui/button";
 import { cn } from "~/lib/utils";
 import { Link, useLocation } from "react-router";
 import { useTheme } from "next-themes";
+import { useTranslation } from "react-i18next";
 import NavHistoryChat from "./nav-history-chat";
 
 type RouteItem = {
@@ -23,24 +24,27 @@ type RouteItem = {
   title: string;
   icon: React.ReactElement;
 };
-const topRoutes: RouteItem[] = [
-  {
-    path: "/",
-    icon: <ChefHat />,
-    title: "新聊天",
-  },
-  {
-    path: "/file",
-    icon: <Files />,
-    title: "文件",
-  },
-];
 
 const AppSidebar = () => {
+  const { t, i18n } = useTranslation();
   const { theme, setTheme } = useTheme();
   const { state } = useSidebar();
   const { pathname } = useLocation();
   const isOpen = state === "expanded";
+
+  const topRoutes: RouteItem[] = [
+    {
+      path: "/",
+      icon: <ChefHat />,
+      title: t("chat.newChat"),
+    },
+    {
+      path: "/file",
+      icon: <Files />,
+      title: t("routes.files"),
+    },
+  ];
+
   return (
     <Sidebar
       collapsible="icon"
@@ -99,7 +103,19 @@ const AppSidebar = () => {
             >
               <Sun className="hidden dark:block" />
               <Moon className="block dark:hidden" />
-              <span>{theme === "dark" ? "浅色" : "深色"}</span>
+              <span>
+                {theme === "dark" ? t("settings.light") : t("settings.dark")}
+              </span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() =>
+                i18n.changeLanguage(i18n.language === "zh" ? "en" : "zh")
+              }
+            >
+              <Languages />
+              <span>{i18n.language === "zh" ? "EN" : "中文"}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

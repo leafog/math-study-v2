@@ -1,0 +1,44 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "close": "Close",
+    "confirm": "Confirm",
+    "loadMore": "Load More"
+  },
+  "chat": {
+    "title": "Chat",
+    "newChat": "New Chat",
+    "inputPlaceholder": "Type a message...",
+    "send": "Send",
+    "noMessages": "No messages yet",
+    "history": "History",
+    "recent": "Recent"
+  },
+  "routes": {
+    "files": "Files"
+  },
+  "tools": {
+    "excalidraw": "Whiteboard",
+    "mathlive": "Math Formula",
+    "panel": "Tools Panel",
+    "toggle": "Toggle Tools",
+    "openTool": "Open Tool",
+    "addTool": "Add Tool",
+    "noTools": "No tools available"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  }
+}

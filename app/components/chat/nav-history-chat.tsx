@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { Link, useLocation } from "react-router";
 import { cn } from "~/lib/utils";
+import { useTranslation } from "react-i18next";
 import { useLiveInfiniteQuery, useLiveQuery } from "@tanstack/react-db";
 import { conversationColl } from "~/db/tdb-collections";
 import {
@@ -15,6 +16,7 @@ import { Button } from "../ui/button";
 const PAGE_SIZE = 30;
 
 const NavHistoryChat = () => {
+  const { t } = useTranslation();
   const { pathname } = useLocation();
   const { pages, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useLiveInfiniteQuery(
@@ -33,7 +35,7 @@ const NavHistoryChat = () => {
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel>最近</SidebarGroupLabel>
+      <SidebarGroupLabel>{t("chat.recent")}</SidebarGroupLabel>
       <SidebarMenu>
         {allChats.map((chat) => (
           <SidebarMenuItem key={chat.id}>
@@ -56,7 +58,7 @@ const NavHistoryChat = () => {
               onClick={fetchNextPage}
               disabled={isFetchingNextPage}
             >
-              {isFetchingNextPage ? "加载中..." : "加载更多"}
+              {isFetchingNextPage ? t("common.loading") : t("common.loadMore")}
             </Button>
           </SidebarMenuItem>
         )}

@@ -57,13 +57,6 @@ function makeDeserSchema(schema: z.ZodObject<any>): z.ZodObject<any> {
           .nullable()
           .transform((s) => (s === null ? null : new Date(s)));
         break;
-      case "set":
-        // SQLite TEXT (JSON array) → JS Set
-        innerDeser = z
-          .string()
-          .nullable()
-          .transform((v) => (v === null ? new Set() : new Set(JSON.parse(v))));
-        break;
       case "array":
       case "object":
         // SQLite TEXT (JSON) → JS array/object（可能为 NULL）
