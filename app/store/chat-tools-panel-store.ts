@@ -90,7 +90,6 @@ export const createChatToolsPanelStore = (
   if (isNewChat) {
     return newChatToolsPanelStore;
   }
-  console.log("next");
   let store = chatToolsPanelStoreCache.get(chatId);
   if (!store) {
     store = createSelectors(

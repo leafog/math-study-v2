@@ -1,122 +1,188 @@
 import { z } from "zod";
 import { column, PowerSyncDatabase, Schema, Table } from "@powersync/web";
-import * as S from "./types";
-import { PowerSyncTransactor } from "@tanstack/powersync-db-collection";
-import { createOptimisticAction } from "@tanstack/react-db";
-import { ChatToolsBarStateSchema } from "./types";
 
-// ── Zod → PowerSync column type ─────────────────────────────────
+import * as S from "./db-zod-schema";
+import { camelCase, mapKeys, mapValues } from "lodash-es";
 
-/** 从 Zod type 自动推导 PowerSync column type */
-function getColumnType(type: z.ZodTypeAny) {
-  // 剥除外层 optional / nullable / default 包装
-  let inner: any = type;
-  while (inner instanceof z.ZodOptional || inner instanceof z.ZodNullable) {
-    inner = inner.unwrap();
+function unwrapZod(type: any): any {
+  let current = type;
+  while (true) {
+    if (current instanceof z.ZodOptional || current instanceof z.ZodNullable) {
+      current = current.unwrap();
+      continue;
+    }
+
+    if (current instanceof z.ZodDefault) {
+      current = current.removeDefault();
+      continue;
+    }
+
+    if (current instanceof z.ZodCatch) {
+      current = current._def.innerType;
+      continue;
+    }
+
+    if (current instanceof z.ZodReadonly) {
+      current = current.unwrap();
+      continue;
+    }
+
+    break;
   }
-  if (inner._def?.type === "default") inner = inner._def.innerType;
 
-  const rawType = inner._def?.type;
-
-  switch (rawType) {
-    case "string":
-      return column.text;
-    case "number": {
-      // z.number().int() → column.integer，其余 → column.real
-      const checks = inner._def?.checks ?? [];
-      return checks.some((c: any) => c.kind === "int")
-        ? column.integer
-        : column.real;
-    }
-    case "boolean":
-      return column.integer;
-    case "date":
-      return column.text;
-    case "enum":
-      return column.text;
-    case "union": {
-      // z.union([z.literal(1), z.literal(2), ...]) → integer
-      const options = inner._def?.options ?? [];
-      if (
-        Array.isArray(options) &&
-        options.length > 0 &&
-        options.every(
-          (o: any) =>
-            o._def?.type === "literal" &&
-            typeof o._def?.value === "number" &&
-            Number.isInteger(o._def?.value),
-        )
-      ) {
-        return column.integer;
-      }
-      return column.text;
-    }
-    case "literal": {
-      const val = inner._def?.value;
-      if (typeof val === "number") {
-        return Number.isInteger(val) ? column.integer : column.real;
-      }
-      return column.text;
-    }
-    case "array":
-    case "object":
-    case "record":
-    case "json":
-      return column.text;
-    default:
-      return column.text;
-  }
+  return current;
 }
 
-function toTable(schema: z.ZodObject<any>): Table {
-  const shape =
-    typeof schema.shape === "function" ? schema.shape() : schema.shape;
-  const columns: Record<string, any> = {};
-  for (const key of Object.keys(shape)) {
-    columns[key] = getColumnType(shape[key]);
+// ============================================================
+// Zod -> PowerSync column
+// ============================================================
+
+function getColumnType(schema: any): any {
+  const type = unwrapZod(schema);
+
+  /**
+   * string
+   */
+  if (type instanceof z.ZodString) {
+    return column.text;
   }
+
+  /**
+   * number
+   *
+   * int -> INTEGER
+   * float -> REAL
+   */
+  if (type instanceof z.ZodNumber) {
+    const checks = type._def.checks ?? [];
+
+    const isInteger = checks.some((c: any) => c.kind === "int");
+
+    return isInteger ? column.integer : column.real;
+  }
+
+  /**
+   * boolean
+   *
+   * sqlite no boolean
+   * use 0 / 1
+   */
+  if (type instanceof z.ZodBoolean) {
+    return column.integer;
+  }
+
+  /**
+   * Date
+   *
+   * ISO string
+   */
+  if (type instanceof z.ZodDate) {
+    return column.text;
+  }
+
+  /**
+   * enum
+   */
+  if (type instanceof z.ZodEnum) {
+    return column.text;
+  }
+
+  /**
+   * literal
+   */
+  if (type instanceof z.ZodLiteral) {
+    const value = type.value;
+
+    if (typeof value === "number") {
+      return Number.isInteger(value) ? column.integer : column.real;
+    }
+
+    return column.text;
+  }
+
+  /**
+   * union
+   *
+   * enum number:
+   *
+   * 1 | 2 | 3
+   *
+   * => INTEGER
+   */
+  if (type instanceof z.ZodUnion) {
+    const options = type.options;
+
+    const integerLiteral =
+      options.length > 0 &&
+      options.every(
+        (x) =>
+          x instanceof z.ZodLiteral &&
+          typeof x.value === "number" &&
+          Number.isInteger(x.value),
+      );
+
+    return integerLiteral ? column.integer : column.text;
+  }
+
+  /**
+   * JSON
+   */
+  if (
+    type instanceof z.ZodArray ||
+    type instanceof z.ZodObject ||
+    type instanceof z.ZodRecord ||
+    type instanceof z.ZodTuple ||
+    type instanceof z.ZodMap ||
+    type instanceof z.ZodSet
+  ) {
+    return column.text;
+  }
+
+  /**
+   * fallback
+   */
+  return column.text;
+}
+
+// ============================================================
+// Zod object -> PowerSync Table
+// ============================================================
+
+export function toTable(schema: any) {
+  const columns: Record<string, any> = {};
+
+  for (const [key, value] of Object.entries(schema.shape)) {
+    const columnName = camelCase(key);
+
+    columns[columnName] = getColumnType(value);
+  }
+
   return new Table(columns);
 }
 
-// ── 表名 → Zod schema 映射 ─────────────────────────────────────
+/** 将 S 中所有 *Schema 导出，去掉 Schema 后缀并 camelCase 作为 key */
+type ExtractSchemaMap<T> = {
+  [
+    K in keyof T as K extends `${infer Base}Schema` ? Uncapitalize<Base> : never
+  ]: T[K];
+};
 
-const tableSchemas = {
-  problems: S.ProblemSchema,
-  sessions: S.PracticeSessionSchema,
-  records: S.AnswerRecordSchema,
-  notes: S.StudyNoteSchema,
-  knowledge: S.KnowledgePointSchema,
-  knowledgeEdges: S.KnowledgeEdgeSchema,
-  knowledgeInteractions: S.KnowledgeInteractionSchema,
-  masteryScores: S.MasteryScoreSchema,
-  practiceLogs: S.PracticeLogSchema,
-  tags: S.TagSchema,
-  knowledgeTags: S.KnowledgeTagSchema,
-  conversations: S.ConversationSchema,
-  messages: S.ChatMessageSchema,
-  files: S.FileRecordSchema,
-  albums: S.AlbumSchema,
-  chatToolInstances: S.ChatToolInstanceSchema,
-  chatToolPanelActive: S.ChatToolsBarStateSchema,
-  zustandStorage: S.ZustandStorageSchema,
-} as const;
+export type SchemaMap = ExtractSchemaMap<typeof S>;
 
-// ── PowerSync schema ───────────────────────────────────────────
+export const schemas: SchemaMap = mapKeys(S, (_, key) => {
+  return camelCase(key.replace("Schema", ""));
+}) as unknown as SchemaMap;
 
-export const AppSchema = new Schema(
-  Object.fromEntries(
-    Object.entries(tableSchemas).map(([name, schema]) => [
-      name,
-      toTable(schema),
-    ]),
-  ),
-);
+export type TableMap = { [K in keyof SchemaMap]: Table };
 
-// ── Database instance ─────────────────────────────────────────
+export const tables: TableMap = mapValues(schemas, (value) => {
+  return toTable(value);
+}) as unknown as TableMap;
 
+export const AppSchema = new Schema(tables);
 export const db = new PowerSyncDatabase({
   database: {
-    dbFilename: "math-study-v2.db",
+    dbFilename: "math-study.db",
   },
   schema: AppSchema,
 });

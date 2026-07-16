@@ -177,34 +177,32 @@ export type ConversationKnowledgePoint = z.infer<
 
 // ─── Provider / API config schemas ──────────────────────────────
 
-export const PROVIDERS = [
-  {
-    id: "deepseek",
-    label: "DeepSeek",
-    endpoint: "https://api.deepseek.com/v1",
-    models: ["deepseek-v4-flash", "deepseek-v4-pro"],
-  },
-  {
-    id: "openai",
-    label: "OpenAI",
-    endpoint: "https://api.openai.com/v1",
-    models: ["gpt-4o", "gpt-4o-mini"],
-  },
-  {
-    id: "anthropic",
-    label: "Anthropic",
-    endpoint: "https://api.anthropic.com/v1",
-    models: ["claude-sonnet-4-6", "claude-haiku-4-5"],
-  },
-  {
-    id: "qwen",
-    label: "通义千问",
-    endpoint: "https://dashscope.aliyuncs.com/compatible-mode/v1",
-    models: ["qwen-plus", "qwen-max"],
-  },
-] as const;
-
-export type ProviderId = (typeof PROVIDERS)[number]["id"];
+// export const PROVIDERS = [
+//   {
+//     id: "deepseek",
+//     label: "DeepSeek",
+//     endpoint: "https://api.deepseek.com/v1",
+//     models: ["deepseek-v4-flash", "deepseek-v4-pro"],
+//   },
+//   {
+//     id: "openai",
+//     label: "OpenAI",
+//     endpoint: "https://api.openai.com/v1",
+//     models: ["gpt-4o", "gpt-4o-mini"],
+//   },
+//   {
+//     id: "anthropic",
+//     label: "Anthropic",
+//     endpoint: "https://api.anthropic.com/v1",
+//     models: ["claude-sonnet-4-6", "claude-haiku-4-5"],
+//   },
+//   {
+//     id: "qwen",
+//     label: "通义千问",
+//     endpoint: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+//     models: ["qwen-plus", "qwen-max"],
+//   },
+// ] as const;
 
 export const ApiConfigSchema = z.object({
   id: z.string(),
@@ -292,11 +290,12 @@ export type ChatToolInstance = z.infer<typeof ChatToolInstanceSchema>;
 
 export const ChatToolsBarStateSchema = z.object({
   id: z.string(),
-  activeToolId: z.string().optional(),
-  toolOrder: z.array(z.string()).optional(),
+  activeId: z.string().optional(),
+  toolOrder: z.array(z.string()),
+  activedHistory: z.array(z.string()),
 });
 
-export type ChatToolsBar = z.infer<typeof ChatToolsBarStateSchema>;
+export type ChatToolsBarState = z.infer<typeof ChatToolsBarStateSchema>;
 
 // ─── Zustand persist ────────────────────────────────────────────
 

@@ -28,11 +28,6 @@ const ToolsPanel = ({ panelRef }: ToolsPanelProps) => {
   const toolsShow = useActiveChatToolsPanelStore().use.toolsShow();
   const { tools, hasTools, activeId, mountedTools } = useChatTools();
 
-  const activeIndex = useMemo(
-    () => mountedTools.findIndex((t) => t.id === activeId),
-    [mountedTools, activeId],
-  );
-
   return (
     <ResizablePanel
       panelRef={panelRef}
@@ -63,13 +58,9 @@ const ToolsPanel = ({ panelRef }: ToolsPanelProps) => {
             return (
               <div
                 key={id}
-                data-panel-id={id}
-                data-active={isActive}
                 className={cn(
                   "size-full absolute inset-0 transition-opacity duration-300",
-                  isActive
-                    ? "opacity-100"
-                    : "opacity-0 pointer-events-none",
+                  isActive ? "opacity-100" : "opacity-0 pointer-events-none",
                 )}
               >
                 <ToolPanelContent kind={kind} />

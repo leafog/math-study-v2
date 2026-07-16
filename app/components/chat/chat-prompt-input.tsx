@@ -11,7 +11,7 @@ import {
   type PromptInputProps,
 } from "~/components/ai-elements/prompt-input";
 
-import { conversationsColl, messagesColl } from "~/db/tdb-collections";
+import { conversationColl, chatMessageColl } from "~/db/tdb-collections";
 import { genId } from "~/lib/id-utils";
 import type { TextPart } from "ai";
 
@@ -36,7 +36,7 @@ const ChatPromptInput = () => {
     if (message.files.length > 0) {
       parts.push(message.files);
     }
-    messagesColl.insert({
+    chatMessageColl.insert({
       conversationId: id,
       role: "user",
       id: genId(),

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router";
-import { eq, useLiveSuspenseQuery } from "@tanstack/react-db";
-import { chatToolsBarStateColl, conversationsColl } from "~/db/tdb-collections";
+import { eq, useLiveSuspenseQuery, useLiveQuery } from "@tanstack/react-db";
+import { chatToolsBarStateColl, conversationColl } from "~/db/tdb-collections";
 import { genId } from "~/lib/id-utils";
 import { createTx } from "~/db/tx";
 
@@ -21,10 +21,8 @@ export const useChatIdManager = () => {
   const { data: currentConversations } = useLiveSuspenseQuery(
     (q) =>
       q
-        .from({ conversationsColl })
-        .where(({ conversationsColl }) =>
-          eq(conversationsColl.id, chatIdFromUrl),
-        )
+        .from({ conversationColl })
+        .where(({ conversationColl }) => eq(conversationColl.id, chatIdFromUrl))
         .findOne(),
     [chatIdFromUrl],
   );
@@ -53,7 +51,7 @@ export const useChatIdManager = () => {
     const id = chatId;
     const tx = createTx();
     tx.mutate(() => {
-      conversationsColl.insert({
+      conversationColl.insert({
         id,
         title,
         createdAt: new Date(),
@@ -61,6 +59,8 @@ export const useChatIdManager = () => {
       });
       chatToolsBarStateColl.insert({
         id,
+        toolOrder: [],
+        activedHistory: [],
       });
     });
     navigate(`/chat/${id}`);

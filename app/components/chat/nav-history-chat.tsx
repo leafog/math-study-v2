@@ -1,8 +1,8 @@
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { Link, useLocation } from "react-router";
 import { cn } from "~/lib/utils";
 import { useLiveInfiniteQuery, useLiveQuery } from "@tanstack/react-db";
-import { conversationsColl } from "~/db/tdb-collections";
+import { conversationColl } from "~/db/tdb-collections";
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -20,10 +20,9 @@ const NavHistoryChat = () => {
     useLiveInfiniteQuery(
       (q) =>
         q
-          .from({ conversations: conversationsColl })
+          .from({ conversationColl })
           .orderBy(
-            ({ conversations: conversationsColl }) =>
-              conversationsColl.updatedAt,
+            ({ conversationColl }) => conversationColl.updatedAt,
             "desc",
           ),
       { pageSize: PAGE_SIZE },

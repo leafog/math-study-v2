@@ -1,13 +1,14 @@
 import { useCallback, useEffect } from "react";
-import { eq, useLiveQuery } from "@tanstack/react-db";
+import { eq, queryOnce, useLiveQuery } from "@tanstack/react-db";
 import {
-  chatToolInstancesColl,
+  chatToolInstanceColl,
   chatToolsBarStateColl,
 } from "~/db/tdb-collections";
 import { genId } from "~/lib/id-utils";
 import { useImmer } from "use-immer";
 import { hasToolKind } from "~/components/chat/tools";
-import { usePrevious } from "@uidotdev/usehooks";
+import { keyBy, without } from "lodash-es";
+import { moveToEnd } from "~/lib/coll-utils";
 
 export const useChatToolsManager = (
   chatId: string,
@@ -16,14 +17,14 @@ export const useChatToolsManager = (
   const { data: chatToolInstances = [] } = useLiveQuery(
     (q) =>
       q
-        .from({ chatToolInstancesColl })
-        .where(({ chatToolInstancesColl }) =>
-          eq(chatToolInstancesColl.conversationId, chatId),
+        .from({ chatToolInstanceColl })
+        .where(({ chatToolInstanceColl }) =>
+          eq(chatToolInstanceColl.conversationId, chatId),
         ),
     [chatId],
   );
 
-  const { data: chatToolsPanelActive } = useLiveQuery(
+  const { data: chatToolsBarState } = useLiveQuery(
     {
       query: (q) =>
         q
@@ -35,10 +36,8 @@ export const useChatToolsManager = (
     },
     [chatId],
   );
-  const activeId = chatToolsPanelActive?.activeToolId;
-  const toolOrder = chatToolsPanelActive?.toolOrder;
-  const prevActiveId = usePrevious(activeId);
 
+  const { activeId, toolOrder, activedHistory } = chatToolsBarState ?? {};
   const [mountedToolsIds, setMountedToolsIds] = useImmer(new Set());
 
   useEffect(() => {
@@ -50,39 +49,30 @@ export const useChatToolsManager = (
   const active = useCallback(
     async (instanceId: string) => {
       const current = chatToolsBarStateColl.get(chatId);
-      if (current === undefined) {
-        chatToolsBarStateColl.insert({
-          id: chatId,
-          activeToolId: instanceId,
-        });
-      } else {
+      if (current) {
         chatToolsBarStateColl.update(chatId, (it) => {
-          it.activeToolId = instanceId;
+          it.activeId = instanceId;
+          it.activedHistory = moveToEnd(it.activedHistory, instanceId);
         });
       }
     },
     [chatId],
   );
+  const availableToolInstances = chatToolInstances.filter(({ kind }) =>
+    hasToolKind(kind),
+  );
+  const availableToolInstancesMap = keyBy(availableToolInstances, "id");
 
-  const tools = chatToolInstances
-    .filter(({ kind }) => hasToolKind(kind))
-    .sort((a, b) => {
-      if (!toolOrder) return 0;
-      const ia = toolOrder.indexOf(a.id);
-      const ib = toolOrder.indexOf(b.id);
-      if (ia === -1 && ib === -1) return 0;
-      if (ia === -1) return 1;
-      if (ib === -1) return -1;
-      return ia - ib;
-    });
-
+  const tools = Array.from(toolOrder ?? []).map(
+    (it) => availableToolInstancesMap[it],
+  );
   const mountedTools = tools.filter(({ id }) => mountedToolsIds.has(id));
 
   const open = useCallback(
     async (kind: string, title?: string) => {
       onOpenBefore?.(kind, title);
       const instanceId = genId();
-      chatToolInstancesColl.insert({
+      chatToolInstanceColl.insert({
         id: instanceId,
         conversationId: chatId,
         kind,
@@ -93,14 +83,8 @@ export const useChatToolsManager = (
       });
       const chatToolsBarState = chatToolsBarStateColl.get(chatId);
       if (chatToolsBarState) {
-        console.log(chatToolsBarState);
         chatToolsBarStateColl.update(chatToolsBarState.id, (draft) => {
-          const origin = draft.toolOrder;
-          if (origin === undefined) {
-            draft.toolOrder = [instanceId];
-          } else {
-            draft.toolOrder?.push(instanceId);
-          }
+          draft.toolOrder.push(instanceId);
         });
       }
       active(instanceId);
@@ -108,33 +92,36 @@ export const useChatToolsManager = (
     [chatId, onOpenBefore],
   );
 
-  const close = useCallback(
-    async (instanceId: string) => {
-      chatToolInstancesColl.delete(instanceId);
-      setMountedToolsIds((it) => {
-        it.delete(instanceId);
-      });
-    },
-    [setMountedToolsIds, prevActiveId, tools],
-  );
+  const close = async (instanceId: string) => {
+    chatToolInstanceColl.delete(instanceId);
+    setMountedToolsIds((it) => {
+      it.delete(instanceId);
+    });
 
-  const reorder = useCallback(
-    (orderedIds: string[]) => {
-      const current = chatToolsBarStateColl.get(chatId);
-      if (current === undefined) {
-        chatToolsBarStateColl.insert({
-          id: chatId,
-          activeToolId: activeId ?? "",
-          toolOrder: orderedIds,
-        });
-      } else {
-        chatToolsBarStateColl.update(chatId, (it) => {
-          it.toolOrder = orderedIds;
-        });
+    const chatToolsBarState = chatToolsBarStateColl.get(chatId);
+    if (chatToolsBarState?.activeId === instanceId) {
+      const prevActivedId = activedHistory?.at(-2);
+      if (prevActivedId) {
+        active(prevActivedId);
       }
-    },
-    [chatId, activeId],
-  );
+    }
+
+    if (chatToolsBarState) {
+      chatToolsBarStateColl.update(chatToolsBarState.id, (draft) => {
+        draft.toolOrder = without(draft.toolOrder, instanceId);
+        draft.activedHistory = without(draft.activedHistory, instanceId);
+      });
+    }
+  };
+
+  const reorder = (orderedIds: string[]) => {
+    const current = chatToolsBarStateColl.get(chatId);
+    if (current) {
+      chatToolsBarStateColl.update(chatId, (it) => {
+        it.toolOrder = orderedIds;
+      });
+    }
+  };
 
   const hasTools = tools.length > 0;
 

@@ -5,29 +5,11 @@ import {
   powerSyncCollectionOptions,
   type PowerSyncCollectionUtils,
 } from "@tanstack/powersync-db-collection";
-import { AppSchema, db } from "./pw-db";
+import { schemas, db, AppSchema } from "./pw-db";
+import type { SchemaMap } from "./pw-db";
 import type { Table } from "@powersync/web";
 
-import {
-  ProblemSchema,
-  PracticeSessionSchema,
-  AnswerRecordSchema,
-  StudyNoteSchema,
-  KnowledgePointSchema,
-  KnowledgeEdgeSchema,
-  KnowledgeInteractionSchema,
-  MasteryScoreSchema,
-  PracticeLogSchema,
-  TagSchema,
-  KnowledgeTagSchema,
-  ConversationSchema,
-  ChatMessageSchema,
-  FileRecordSchema,
-  AlbumSchema,
-  ChatToolInstanceSchema,
-  ChatToolsBarStateSchema,
-  ZustandStorageSchema,
-} from "./types";
+import { zipObject } from "lodash-es";
 
 // ── 自动生成 deserializationSchema ──────────────────────────────
 // 将 rich schema 中的 z.boolean() → z.number().transform(...)
@@ -74,6 +56,13 @@ function makeDeserSchema(schema: z.ZodObject<any>): z.ZodObject<any> {
           .string()
           .nullable()
           .transform((s) => (s === null ? null : new Date(s)));
+        break;
+      case "set":
+        // SQLite TEXT (JSON array) → JS Set
+        innerDeser = z
+          .string()
+          .nullable()
+          .transform((v) => (v === null ? new Set() : new Set(JSON.parse(v))));
         break;
       case "array":
       case "object":
@@ -141,56 +130,45 @@ function mkColl<TTable extends Table, TSchema extends z.ZodType<any, any>>(
   );
 }
 
-// ── Collections ────────────────────────────────────────────────
+// ── CollMap 类型 ─────────────────────────────────────────────
 
-export const problemsColl = mkColl(AppSchema.props.problems, ProblemSchema);
-export const sessionsColl = mkColl(
-  AppSchema.props.sessions,
-  PracticeSessionSchema,
+type CollMap = {
+  [K in keyof SchemaMap as K extends string ? `${K}Coll` : never]: Collection<
+    ZodOutput<SchemaMap[K]>,
+    string,
+    PowerSyncCollectionUtils<Table>,
+    SchemaMap[K],
+    ZodInput<SchemaMap[K]>
+  >;
+};
+
+// ── 程序生成 ─────────────────────────────────────────────────
+
+const schemaKeys = Object.keys(schemas) as Array<keyof SchemaMap>;
+const collKeys = schemaKeys.map((k) => `${k}Coll`);
+const collValues = schemaKeys.map((k) =>
+  mkColl(AppSchema.props[k], schemas[k]),
 );
-export const recordsColl = mkColl(AppSchema.props.records, AnswerRecordSchema);
-export const notesColl = mkColl(AppSchema.props.notes, StudyNoteSchema);
-export const knowledgeColl = mkColl(
-  AppSchema.props.knowledge,
-  KnowledgePointSchema,
-);
-export const knowledgeEdgesColl = mkColl(
-  AppSchema.props.knowledgeEdges,
-  KnowledgeEdgeSchema,
-);
-export const knowledgeInteractionsColl = mkColl(
-  AppSchema.props.knowledgeInteractions,
-  KnowledgeInteractionSchema,
-);
-export const masteryScoresColl = mkColl(
-  AppSchema.props.masteryScores,
-  MasteryScoreSchema,
-);
-export const practiceLogsColl = mkColl(
-  AppSchema.props.practiceLogs,
-  PracticeLogSchema,
-);
-export const tagsColl = mkColl(AppSchema.props.tags, TagSchema);
-export const knowledgeTagsColl = mkColl(
-  AppSchema.props.knowledgeTags,
-  KnowledgeTagSchema,
-);
-export const conversationsColl = mkColl(
-  AppSchema.props.conversations,
-  ConversationSchema,
-);
-export const messagesColl = mkColl(AppSchema.props.messages, ChatMessageSchema);
-export const filesColl = mkColl(AppSchema.props.files, FileRecordSchema);
-export const albumsColl = mkColl(AppSchema.props.albums, AlbumSchema);
-export const chatToolInstancesColl = mkColl(
-  AppSchema.props.chatToolInstances,
-  ChatToolInstanceSchema,
-);
-export const chatToolsBarStateColl = mkColl(
-  AppSchema.props.chatToolPanelActive,
-  ChatToolsBarStateSchema,
-);
-export const zustandStorageColl = mkColl(
-  AppSchema.props.zustandStorage,
-  ZustandStorageSchema,
-);
+
+export const colls = zipObject(collKeys, collValues) as unknown as CollMap;
+
+export const {
+  problemColl,
+  practiceSessionColl,
+  answerRecordColl,
+  studyNoteColl,
+  knowledgePointColl,
+  knowledgeEdgeColl,
+  knowledgeInteractionColl,
+  masteryScoreColl,
+  practiceLogColl,
+  tagColl,
+  knowledgeTagColl,
+  conversationColl,
+  chatMessageColl,
+  fileRecordColl,
+  albumColl,
+  chatToolInstanceColl,
+  chatToolsBarStateColl,
+  zustandStorageColl,
+} = colls;
