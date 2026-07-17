@@ -38,7 +38,7 @@ const ToolsPanel = ({ panelRef }: ToolsPanelProps) => {
       className="flex flex-col w-full "
     >
       <ChatHeaderContainer>
-        <div className=" overflow-hidden">
+        <div className="overflow-hidden h-full">
           <ToolsBar />
         </div>
 

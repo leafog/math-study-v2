@@ -22,7 +22,9 @@ const ToolTab = ({ title, active, icon, onClose, onClick }: ToolTabProps) => {
     >
       <div className="flex flex-row items-center gap-2">
         <span className="text-16">{icon ?? <ToolCase size={16} />}</span>
-        <span className="min-w-20 text-sm">{title}</span>
+        <span className="min-w-20 text-sm truncate whitespace-nowrap">
+          {title}
+        </span>
         {onClose && (
           <Button
             size="icon-sm"

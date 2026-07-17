@@ -1,5 +1,11 @@
 import { z } from "zod";
-import { column, PowerSyncDatabase, Schema, Table } from "@powersync/web";
+import {
+  column,
+  PowerSyncDatabase,
+  Schema,
+  Table,
+  AttachmentTable,
+} from "@powersync/web";
 
 import * as S from "./db-zod-schema";
 import { camelCase, mapKeys, mapValues } from "lodash-es";
@@ -152,8 +158,8 @@ export function toTable(schema: any) {
   const columns: Record<string, any> = {};
 
   for (const [key, value] of Object.entries(schema.shape)) {
-    const columnName = camelCase(key);
-
+    const columnName = key;
+    console.log(key);
     columns[columnName] = getColumnType(value);
   }
 
@@ -175,11 +181,14 @@ export const schemas: SchemaMap = mapKeys(S, (_, key) => {
 
 export type TableMap = { [K in keyof SchemaMap]: Table };
 
-export const tables: TableMap = mapValues(schemas, (value) => {
+export const tables: TableMap = mapValues(schemas, (value, key) => {
+  if (key === "attachment") return new AttachmentTable();
   return toTable(value);
 }) as unknown as TableMap;
 
+console.log(new AttachmentTable());
 export const AppSchema = new Schema(tables);
+
 export const db = new PowerSyncDatabase({
   database: {
     dbFilename: "math-study.db",

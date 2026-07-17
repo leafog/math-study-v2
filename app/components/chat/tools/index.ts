@@ -2,21 +2,19 @@ import { lazy } from "react";
 import type { ToolDefinition } from "./types";
 import { keyBy } from "lodash-es";
 
-const lazyTool = (importFn: () => Promise<any>, exportName: string) =>
-  lazy(() => importFn().then((m) => ({ default: m[exportName] })));
-
 const loadTool = (
   kind: string,
   importFn: () => Promise<any>,
 ): ToolDefinition => ({
   kind,
-  Icon: lazyTool(importFn, "Icon"),
-  Panel: lazyTool(importFn, "Panel"),
+  Icon: lazy(() => importFn().then((m) => ({ default: m.default.Icon }))),
+  Panel: lazy(() => importFn().then((m) => ({ default: m.default.Panel }))),
 });
 
 export const toolRegistry: ToolDefinition[] = [
   loadTool("excalidraw", () => import("./tool-exclidraw")),
   loadTool("mathlive", () => import("./tool-mathlive")),
+  loadTool("jsxgraph", () => import("./tool-jsxgraph")),
 ];
 
 const toolRegistryMap = keyBy(toolRegistry, "kind");

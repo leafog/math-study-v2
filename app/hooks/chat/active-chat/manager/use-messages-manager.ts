@@ -1,4 +1,5 @@
 import { eq, useLiveSuspenseQuery } from "@tanstack/react-db";
+import { useEffect } from "react";
 import { chatMessageColl } from "~/db/tdb-collections";
 
 export const useMessagesManager = (chatId: string) => {
@@ -7,13 +8,16 @@ export const useMessagesManager = (chatId: string) => {
       q
         .from({ chatMessageColl })
         .where(({ chatMessageColl }) =>
-          eq(chatMessageColl.conversationId, chatId),
+          eq(chatMessageColl.conversation_id, chatId),
         )
-        .orderBy(({ chatMessageColl }) => chatMessageColl.createdAt, {
+        .orderBy(({ chatMessageColl }) => chatMessageColl.created_at, {
           direction: "asc",
         }),
     [chatId],
   );
+  useEffect(() => {
+    console.log(initMessages);
+  }, [initMessages]);
 
   return initMessages;
 };

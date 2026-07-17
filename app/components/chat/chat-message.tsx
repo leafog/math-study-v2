@@ -40,7 +40,6 @@ export const MessageAction = ({
       <span className="sr-only">{label || tooltip}</span>
     </Button>
   );
-
   if (tooltip) {
     return (
       <Tooltip>
@@ -56,7 +55,9 @@ export const MessageAction = ({
 };
 
 const PureChatMessage = ({ message }: { message: UIMessage }) => {
-  const align = message.role === "user" ? "end" : "start";
+  const isUser = message.role === "user";
+  const align = isUser ? "end" : "start";
+
   const [_, copyToClipboard] = useCopyToClipboard();
 
   const textFromParts = message.parts
@@ -77,10 +78,15 @@ const PureChatMessage = ({ message }: { message: UIMessage }) => {
     <div className="group">
       <Message align={align}>
         <MessageContent className="w-full">
-          <Bubble variant={"ghost"} className=" max-w-full">
+          <Bubble variant={isUser ? "muted" : "ghost"} className="max-w-full">
             <BubbleContent className="w-full">
               {message.parts.length === 1 &&
                 message.parts[0].type === "step-start" && <div>reading</div>}
+              {message.parts
+                .filter((it) => it.type === "file")
+                .map((it, t) => {
+                  return <div>{it.url}</div>;
+                })}
               {message.parts
                 .filter((it) => it.type === "text")
                 .map((it, i) => (

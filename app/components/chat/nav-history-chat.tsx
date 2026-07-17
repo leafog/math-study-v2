@@ -24,7 +24,7 @@ const NavHistoryChat = () => {
         q
           .from({ conversationColl })
           .orderBy(
-            ({ conversationColl }) => conversationColl.updatedAt,
+            ({ conversationColl }) => conversationColl.updated_at,
             "desc",
           ),
       { pageSize: PAGE_SIZE },

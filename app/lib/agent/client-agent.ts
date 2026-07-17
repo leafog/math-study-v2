@@ -2,14 +2,14 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { DirectChatTransport, ToolLoopAgent } from "ai";
 
 export const deepseek = createOpenAI({
-  apiKey: "",
-  baseURL: "https://api.deepseek.com/v1",
-  name: "deepseek",
+  apiKey: "tp-cjzn3llnl6biwgkqtk37kboaq6yvjf3t62wekap4a5ttllnq",
+  baseURL: "https://token-plan-cn.xiaomimimo.com/v1",
+  name: "mimo",
 });
-export const deepseeks = deepseek.chat("deepseek-v4-flash");
+export const deepseeks = deepseek.chat("mimo-v2.5");
 
 export const agent = new ToolLoopAgent({
-  id: "deepseek/deepseek-v4-flash",
+  id: "mimo/mimo-v2.5",
   model: deepseeks,
   instructions: "",
 });

@@ -1,4 +1,3 @@
-import { X } from "lucide-react";
 import type { ComponentProps } from "react";
 import { Button } from "~/components/ui/button";
 import { useChatTools } from "~/hooks/chat/active-chat";

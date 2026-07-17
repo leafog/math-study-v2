@@ -19,7 +19,7 @@ export const useChatToolsManager = (
       q
         .from({ chatToolInstanceColl })
         .where(({ chatToolInstanceColl }) =>
-          eq(chatToolInstanceColl.conversationId, chatId),
+          eq(chatToolInstanceColl.conversation_id, chatId),
         ),
     [chatId],
   );
@@ -37,22 +37,22 @@ export const useChatToolsManager = (
     [chatId],
   );
 
-  const { activeId, toolOrder, activedHistory } = chatToolsBarState ?? {};
+  const { active_id, tool_order, actived_history } = chatToolsBarState ?? {};
   const [mountedToolsIds, setMountedToolsIds] = useImmer(new Set());
 
   useEffect(() => {
     setMountedToolsIds((it) => {
-      if (activeId) it.add(activeId);
+      if (active_id) it.add(active_id);
     });
-  }, [activeId]);
+  }, [active_id]);
 
   const active = useCallback(
     async (instanceId: string) => {
       const current = chatToolsBarStateColl.get(chatId);
       if (current) {
         chatToolsBarStateColl.update(chatId, (it) => {
-          it.activeId = instanceId;
-          it.activedHistory = moveToEnd(it.activedHistory, instanceId);
+          it.active_id = instanceId;
+          it.actived_history = moveToEnd(it.actived_history, instanceId);
         });
       }
     },
@@ -63,7 +63,7 @@ export const useChatToolsManager = (
   );
   const availableToolInstancesMap = keyBy(availableToolInstances, "id");
 
-  const tools = Array.from(toolOrder ?? []).map(
+  const tools = Array.from(tool_order ?? []).map(
     (it) => availableToolInstancesMap[it],
   );
   const mountedTools = tools.filter(({ id }) => mountedToolsIds.has(id));
@@ -74,17 +74,17 @@ export const useChatToolsManager = (
       const instanceId = genId();
       chatToolInstanceColl.insert({
         id: instanceId,
-        conversationId: chatId,
+        conversation_id: chatId,
         kind,
         title: title ?? kind,
         data: "",
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        created_at: new Date(),
+        updated_at: new Date(),
       });
       const chatToolsBarState = chatToolsBarStateColl.get(chatId);
       if (chatToolsBarState) {
         chatToolsBarStateColl.update(chatToolsBarState.id, (draft) => {
-          draft.toolOrder.push(instanceId);
+          draft.tool_order.push(instanceId);
         });
       }
       active(instanceId);
@@ -99,8 +99,8 @@ export const useChatToolsManager = (
     });
 
     const chatToolsBarState = chatToolsBarStateColl.get(chatId);
-    if (chatToolsBarState?.activeId === instanceId) {
-      const prevActivedId = activedHistory?.at(-2);
+    if (chatToolsBarState?.active_id === instanceId) {
+      const prevActivedId = actived_history?.at(-2);
       if (prevActivedId) {
         active(prevActivedId);
       }
@@ -108,8 +108,8 @@ export const useChatToolsManager = (
 
     if (chatToolsBarState) {
       chatToolsBarStateColl.update(chatToolsBarState.id, (draft) => {
-        draft.toolOrder = without(draft.toolOrder, instanceId);
-        draft.activedHistory = without(draft.activedHistory, instanceId);
+        draft.tool_order = without(draft.tool_order, instanceId);
+        draft.actived_history = without(draft.actived_history, instanceId);
       });
     }
   };
@@ -118,7 +118,7 @@ export const useChatToolsManager = (
     const current = chatToolsBarStateColl.get(chatId);
     if (current) {
       chatToolsBarStateColl.update(chatId, (it) => {
-        it.toolOrder = orderedIds;
+        it.tool_order = orderedIds;
       });
     }
   };
@@ -132,7 +132,7 @@ export const useChatToolsManager = (
     close,
     reorder,
     active,
-    activeId,
+    activeId: active_id,
     mountedTools,
   };
 

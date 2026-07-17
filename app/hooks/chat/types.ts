@@ -1,7 +1,7 @@
 import type { UIMessage } from "ai";
 
 type MessageMetadata = {
-  createdAt: Date;
+  created_at: Date;
 };
 type ChatUIDataTypes = {};
 type ChatTools = {};

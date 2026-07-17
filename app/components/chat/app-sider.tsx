@@ -39,7 +39,7 @@ const AppSidebar = () => {
       title: t("chat.newChat"),
     },
     {
-      path: "/file",
+      path: "/library",
       icon: <Files />,
       title: t("routes.files"),
     },

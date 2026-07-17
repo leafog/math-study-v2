@@ -20,13 +20,13 @@ export const tanstackDbStorage: StateStorage = {
     if (existing) {
       zustandStorageColl.update(existing.id, (draft) => {
         draft.value = value;
-        draft.updatedAt = new Date();
+        draft.updated_at = new Date();
       });
     } else {
       zustandStorageColl.insert({
         id,
         value,
-        updatedAt: new Date(),
+        updated_at: new Date(),
       });
     }
   },

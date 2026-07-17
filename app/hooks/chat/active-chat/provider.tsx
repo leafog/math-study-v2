@@ -32,8 +32,8 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
     messages: initMessages,
     onFinish: ({ message }) => {
       chatMessageColl.insert({
-        conversationId: chatId,
-        createdAt: new Date(),
+        conversation_id: chatId,
+        created_at: new Date(),
         ...message,
       });
     },

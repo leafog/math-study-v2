@@ -27,6 +27,7 @@
   "tools": {
     "excalidraw": "画板",
     "mathlive": "数学公式",
+    "jsxgraph": "几何画板",
     "panel": "工具面板",
     "toggle": "切换工具",
     "openTool": "打开工具",

@@ -38,6 +38,7 @@ function makeDeserSchema(schema: z.ZodObject<any>): z.ZodObject<any> {
 
   for (const key of Object.keys(shape)) {
     const field = shape[key];
+
     const { raw, wrappers } = collectWrappers(field);
 
     let innerDeser: z.ZodType;
@@ -164,4 +165,5 @@ export const {
   chatToolInstanceColl,
   chatToolsBarStateColl,
   zustandStorageColl,
+  attachmentColl,
 } = colls;

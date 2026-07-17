@@ -54,13 +54,13 @@ export const useChatIdManager = () => {
       conversationColl.insert({
         id,
         title,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        created_at: new Date(),
+        updated_at: new Date(),
       });
       chatToolsBarStateColl.insert({
         id,
-        toolOrder: [],
-        activedHistory: [],
+        tool_order: [],
+        actived_history: [],
       });
     });
     navigate(`/chat/${id}`);

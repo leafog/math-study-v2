@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { Fragment, useCallback, useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import ToolTab from "./tool-tab";
 import { Separator } from "../ui/separator";
@@ -7,8 +7,6 @@ import { kindToTool } from "./tools";
 import ToolsBarOpenBtn from "./tools-bar-open-btn";
 import { DragDropProvider } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
-import { useResizeObserver } from "usehooks-ts";
-import { useMeasure } from "@uidotdev/usehooks";
 
 function SortableTab({
   id,
@@ -70,21 +68,23 @@ const ToolsBar = () => {
         {tools.map(({ id, kind, title }, index) => {
           const Icon = kindToTool(kind)?.Icon!!;
           return (
-            <SortableTab key={id} id={id} index={index}>
-              <ToolTab
-                title={title}
-                active={id === activeId}
-                icon={<Icon size={16} />}
-                onClick={() => active(id)}
-                onClose={() => {
-                  close(id);
-                }}
-              />
+            <Fragment key={id}>
+              <SortableTab key={id} id={id} index={index}>
+                <ToolTab
+                  title={title}
+                  active={id === activeId}
+                  icon={<Icon size={16} />}
+                  onClick={() => active(id)}
+                  onClose={() => {
+                    close(id);
+                  }}
+                />
+              </SortableTab>
               <Separator
                 orientation="vertical"
-                className="self-center scale-y-60"
+                className="h-full  scale-y-[0.6]"
               />
-            </SortableTab>
+            </Fragment>
           );
         })}
         {hasTools && <ToolsBarOpenBtn />}

@@ -27,6 +27,7 @@
   "tools": {
     "excalidraw": "Whiteboard",
     "mathlive": "Math Formula",
+    "jsxgraph": "Geometry",
     "panel": "Tools Panel",
     "toggle": "Toggle Tools",
     "openTool": "Open Tool",

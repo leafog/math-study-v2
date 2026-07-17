@@ -84,11 +84,13 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
                   />
                 </MessageScroller>
               </div>
-              <div className="flex flex-row flex-none">
-                <div className="w-full mx-auto max-w-3xl p-6">
+              <div className="flex flex-row ">
+                <div className="min-w-0 w-full mx-auto max-w-3xl px-6 py-2">
                   <ChatPromptInput />
                 </div>
-                {menuShow && !toolsShow && <div className="w-xs" />}
+                {menuShow && !toolsShow && (
+                  <div className="sticky top-0 w-xs  max-h-full p-2"></div>
+                )}
               </div>
             </div>
           </div>

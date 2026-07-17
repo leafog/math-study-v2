@@ -49,6 +49,7 @@
     "i18next-browser-languagedetector": "^8.2.1",
     "immer": "^11.1.11",
     "isbot": "^5.1.36",
+    "jsxgraph": "^1.12.2",
     "lodash-es": "^4.18.1",
     "lucide-react": "^1.23.0",
     "mathlive": "^0.110.0",
