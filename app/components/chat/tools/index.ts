@@ -15,6 +15,7 @@ export const toolRegistry: ToolDefinition[] = [
   loadTool("excalidraw", () => import("./tool-exclidraw")),
   loadTool("mathlive", () => import("./tool-mathlive")),
   loadTool("jsxgraph", () => import("./tool-jsxgraph")),
+  loadTool("blocknote", () => import("./tool-blocknote")),
 ];
 
 const toolRegistryMap = keyBy(toolRegistry, "kind");

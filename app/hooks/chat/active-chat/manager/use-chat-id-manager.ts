@@ -4,6 +4,8 @@ import { eq, useLiveSuspenseQuery, useLiveQuery } from "@tanstack/react-db";
 import { chatToolsBarStateColl, conversationColl } from "~/db/tdb-collections";
 import { genId } from "~/lib/id-utils";
 import { createTx } from "~/db/tx";
+import { chatIdStore } from "~/store/chat-id-store";
+import { useStore } from "zustand";
 
 const chatRegExp = new RegExp(/\/chat\/([^/]+)/);
 
@@ -45,8 +47,12 @@ export const useChatIdManager = () => {
   prevPathnameRef.current = pathname;
 
   const chatId = chatIdFromUrl ?? newChatIdRef.current;
+  const setChatId = useStore(chatIdStore).setChatId;
+  // 同步 chatId 到外部 store，非 React 环境也可读取
+  useEffect(() => {
+    setChatId(chatId);
+  }, [chatId]);
 
-  // only sign
   const createChat = (title: string) => {
     const id = chatId;
     const tx = createTx();

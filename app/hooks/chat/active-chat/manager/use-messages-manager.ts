@@ -1,5 +1,5 @@
 import { eq, useLiveSuspenseQuery } from "@tanstack/react-db";
-import { useEffect } from "react";
+
 import { chatMessageColl } from "~/db/tdb-collections";
 
 export const useMessagesManager = (chatId: string) => {
@@ -15,9 +15,6 @@ export const useMessagesManager = (chatId: string) => {
         }),
     [chatId],
   );
-  useEffect(() => {
-    console.log(initMessages);
-  }, [initMessages]);
 
   return initMessages;
 };

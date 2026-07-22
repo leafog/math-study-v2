@@ -13,7 +13,6 @@ import ChatPromptInput from "./chat-prompt-input";
 
 import ToolsToggleBtn from "./tools-toggle-btn";
 import ChatMenuBtn from "./chat-menu-btn";
-import { Card, CardHeader } from "../ui/card";
 
 import ChatMessage from "./chat-message";
 import {
@@ -21,6 +20,7 @@ import {
   useActiveChatHelpers,
   useActiveChatToolsPanelStore,
 } from "~/hooks/chat/active-chat";
+import ChatPanelRight from "./chat-panel-right";
 
 interface ChatPanelProps {
   panelRef: React.RefObject<PanelImperativeHandle | null>;
@@ -44,9 +44,9 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
       onResize={(size) => onChatResize(size)}
       className="flex flex-col"
     >
-      <ChatHeaderContainer className="border-b-2">
-        <div>
-          <span>{currentConversation?.title}</span>
+      <ChatHeaderContainer className="shrink-0 border-b-2">
+        <div className="min-w-0 flex-1">
+          <span className="block truncate">{currentConversation?.title}</span>
         </div>
         <div className="gap-2 flex">
           <ChatMenuBtn />
@@ -60,7 +60,7 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
               <div className="h-full overflow-hidden p-0">
                 <MessageScroller>
                   <MessageScrollerViewport className="flex flex-row ">
-                    <MessageScrollerContent className="w-full mx-auto max-w-3xl px-6 py-2">
+                    <MessageScrollerContent className="min-w-0 w-full mx-auto max-w-3xl px-6 py-2">
                       {messages.map((message) => {
                         return (
                           <ChatMessage message={message} key={message.id} />
@@ -68,10 +68,8 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
                       })}
                     </MessageScrollerContent>
                     {menuShow && !toolsShow && (
-                      <div className="sticky top-0 w-xs  max-h-full p-2">
-                        <Card>
-                          <CardHeader>123</CardHeader>
-                        </Card>
+                      <div className="sticky top-0 w-xs h-full p-2 overflow-hidden">
+                        <ChatPanelRight />
                       </div>
                     )}
                   </MessageScrollerViewport>

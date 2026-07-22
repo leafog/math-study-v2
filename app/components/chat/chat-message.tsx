@@ -1,17 +1,10 @@
-import {
-  memo,
-  useEffect,
-  type ComponentProps,
-  type PropsWithChildren,
-} from "react";
+import { memo, type ComponentProps } from "react";
 import { MessageResponse } from "../ai-elements/message";
 import { Bubble, BubbleContent } from "../ui/bubble";
 import { Message, MessageContent, MessageFooter } from "../ui/message";
 import type { UIMessage } from "ai";
-import { Marker, MarkerIcon, MarkerContent } from "../ui/marker";
-import { Spinner } from "../ui/spinner";
 import { Button } from "../ui/button";
-import { CopyIcon, ThumbsUpIcon } from "lucide-react";
+import { CopyIcon, FileIcon } from "lucide-react";
 import { useCopyToClipboard } from "usehooks-ts";
 import { toast } from "sonner";
 import {
@@ -74,27 +67,50 @@ const PureChatMessage = ({ message }: { message: UIMessage }) => {
     toast.success("Copied to clipboard!", { position: "top-center" });
   };
 
+  const parts = message.parts.map((part, i) => {
+    const { type } = part;
+    const key = `message-${message.id}-part-${i}`;
+    if (type === "reasoning") {
+      return <div key={key}>reasoning</div>;
+    }
+    if (type === "text") {
+      return (
+        <MessageContent key={key}>
+          <MessageResponse>{part.text}</MessageResponse>
+        </MessageContent>
+      );
+    }
+    if (type === "file") {
+      const isImage = part.mediaType.startsWith("image/");
+      return (
+        <div key={key} className="mb-2 last:mb-0">
+          {isImage ? (
+            <img
+              src={part.url}
+              alt={part.filename ?? ""}
+              className="max-h-48 w-auto rounded-lg object-cover border"
+              loading="lazy"
+            />
+          ) : (
+            <div className="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2 text-sm">
+              <FileIcon className="size-4 shrink-0 text-muted-foreground" />
+              <span className="truncate text-muted-foreground">
+                {part.filename ?? "file"}
+              </span>
+            </div>
+          )}
+        </div>
+      );
+    }
+    return <div key={key}>{part.type}</div>;
+  });
+
   return (
     <div className="group">
       <Message align={align}>
         <MessageContent className="w-full">
           <Bubble variant={isUser ? "muted" : "ghost"} className="max-w-full">
-            <BubbleContent className="w-full">
-              {message.parts.length === 1 &&
-                message.parts[0].type === "step-start" && <div>reading</div>}
-              {message.parts
-                .filter((it) => it.type === "file")
-                .map((it, t) => {
-                  return <div>{it.url}</div>;
-                })}
-              {message.parts
-                .filter((it) => it.type === "text")
-                .map((it, i) => (
-                  <MessageResponse className="w-full" key={i}>
-                    {it.text}
-                  </MessageResponse>
-                ))}
-            </BubbleContent>
+            <BubbleContent className="w-full">{parts}</BubbleContent>
           </Bubble>
           <MessageFooter className="opacity-0 group-hover:opacity-100 transition-opacity">
             <MessageAction

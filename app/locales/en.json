@@ -22,12 +22,24 @@
     "recent": "Recent"
   },
   "routes": {
-    "files": "Files"
+    "files": "Files",
+    "graph": "Graph"
+  },
+  "graph": {
+    "title": "Everything You Learn",
+    "subtitle": "Mathematics knowledge graph",
+    "concepts": "concepts",
+    "links": "prerequisite links",
+    "subjects": "Subjects",
+    "clear": "Clear",
+    "dataSource": "Built from curriculum data",
+    "viewOnGitHub": "View on GitHub"
   },
   "tools": {
     "excalidraw": "Whiteboard",
     "mathlive": "Math Formula",
     "jsxgraph": "Geometry",
+    "blocknote": "Notes",
     "panel": "Tools Panel",
     "toggle": "Toggle Tools",
     "openTool": "Open Tool",

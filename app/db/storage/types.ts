@@ -25,10 +25,13 @@ export interface FileStore {
   save(file: File): Promise<FileEntry>;
 
   /**
-   * 获取文件 URL（跨页面刷新后重建 blob URL）。
+   * 根据 IndexedDB 文件路径获取可消费的 blob URL。
    * URL 在页面刷新前一直有效，组件卸载时浏览器自动回收。
+   *
+   * @param uri - localStorage 中的文件路径（即 attachment 记录的 local_uri）
+   * @param mediaType - 文件 MIME 类型，调用方知道时应传入以避免内部探测
    */
-  getUrl(filePath: string): Promise<string>;
+  getUrl(uri: string, mediaType?: string): Promise<string>;
 
   /** 删除文件 */
   delete(id: string): Promise<void>;

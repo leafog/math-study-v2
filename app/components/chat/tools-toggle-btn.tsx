@@ -1,5 +1,6 @@
 import { Button } from "../ui/button";
 import { PanelRight, PanelRightDashed } from "lucide-react";
+import { useEffect } from "react";
 import { useActiveChatToolsPanelStore } from "~/hooks/chat/active-chat";
 
 interface ToolsTriggerProps {
@@ -10,6 +11,7 @@ interface ToolsTriggerProps {
 const ToolsToggleBtn = () => {
   const toolsShow = useActiveChatToolsPanelStore().use.toolsShow();
   const toolsShowToggle = useActiveChatToolsPanelStore().use.toolsShowToggle();
+
   return (
     <Button
       size="icon"

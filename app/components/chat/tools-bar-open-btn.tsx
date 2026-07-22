@@ -23,7 +23,7 @@ const ToolsBarOpenBtn = () => {
           </Button>
         </div>
       </PopoverTrigger>
-      <PopoverContent className="p-1">
+      <PopoverContent className="p-1 gap-1">
         {toolRegistry.map(({ kind, Icon }) => (
           <Button
             className="w-full justify-start"

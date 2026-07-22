@@ -8,23 +8,25 @@ import { cn } from "~/lib/utils";
 
 const AppLayout = () => {
   const { pathname } = useLocation();
-  const isLibrary = pathname === "/library";
+  const hiddenRoutes = ["/library", "/graph"];
   return (
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset className="border-l border-border  w-full overflow-hidden">
-        <div className="h-screen ">
+        <div className="h-screen flex">
           <div
             className={cn(
-              "size-full absolute inset-0 transition-opacity duration-200",
-              isLibrary ? "opacity-0 pointer-events-none" : "opacity-100",
+              "flex-1 absolute inset-0 transition-opacity duration-100",
+              hiddenRoutes.includes(pathname)
+                ? "opacity-0 pointer-events-none"
+                : "opacity-100",
             )}
           >
             <ActiveChatProvider>
               <ChatShell />
             </ActiveChatProvider>
           </div>
-          <div>
+          <div className="flex flex-1 min-h-0">
             <Outlet />
           </div>
         </div>

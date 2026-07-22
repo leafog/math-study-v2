@@ -1,8 +1,13 @@
-import { useEffect, useMemo, type ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { useChat } from "@ai-sdk/react";
 import { transport } from "~/lib/agent/client-agent";
+import { createTopic } from "~/lib/agent/tools/tool-create-topic";
 import { genId } from "~/lib/id-utils";
-import { conversationColl, chatMessageColl } from "~/db/tdb-collections";
+import {
+  chatMessageColl,
+  conversationKgTopicColl,
+  zustandStorageColl,
+} from "~/db/tdb-collections";
 import { createChatToolsPanelStore } from "~/store/chat-tools-panel-store";
 import type { UIChatMessage } from "../types";
 import {
@@ -14,8 +19,7 @@ import {
 import { useChatIdManager } from "./manager/use-chat-id-manager";
 import { useMessagesManager } from "./manager/use-messages-manager";
 import { useChatToolsManager } from "./manager/use-chat-tools-manager";
-import { createTx } from "~/db/tx";
-import { useNavigate } from "react-router";
+import { useLiveSuspenseQuery, eq } from "@tanstack/react-db";
 
 export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
   // const { chatId, isNewChat, createChat } = useChatIdManager();
@@ -30,6 +34,7 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
     transport,
     generateId: genId,
     messages: initMessages,
+    onToolCall: async ({ toolCall }) => {},
     onFinish: ({ message }) => {
       chatMessageColl.insert({
         conversation_id: chatId,
@@ -37,9 +42,20 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
         ...message,
       });
     },
+    // sendAutomaticallyWhen: () => true,
   });
 
-const chatToolsPanelStore = useMemo(() => {
+  useLiveSuspenseQuery(
+    (q) => {
+      return q
+        .from({ zustandStorageColl })
+        .where(({ zustandStorageColl }) => eq(zustandStorageColl.id, "none"))
+        .findOne();
+    },
+    [chatId],
+  );
+
+  const chatToolsPanelStore = useMemo(() => {
     return createChatToolsPanelStore(isNewChat, chatId);
   }, [isNewChat, chatId]);
 
@@ -49,6 +65,7 @@ const chatToolsPanelStore = useMemo(() => {
     }
   };
   const chatToolsManager = useChatToolsManager(chatId, onOpenBefore);
+
   return (
     <ActiveChatContext.Provider value={activeChatState}>
       <ChatHelpersContext.Provider value={chatHelpers}>

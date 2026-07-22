@@ -22,12 +22,24 @@
     "recent": "最近"
   },
   "routes": {
-    "files": "文件"
+    "files": "文件",
+    "graph": "图形"
+  },
+  "graph": {
+    "title": "知识图谱",
+    "subtitle": "数学知识体系",
+    "concepts": "个概念",
+    "links": "条前置关系",
+    "subjects": "科目",
+    "clear": "清除",
+    "dataSource": "基于课程数据构建",
+    "viewOnGitHub": "在 GitHub 上查看"
   },
   "tools": {
     "excalidraw": "画板",
     "mathlive": "数学公式",
     "jsxgraph": "几何画板",
+    "blocknote": "笔记",
     "panel": "工具面板",
     "toggle": "切换工具",
     "openTool": "打开工具",

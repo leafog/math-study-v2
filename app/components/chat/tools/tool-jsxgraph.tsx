@@ -2,9 +2,9 @@ import { useRef, useEffect } from "react";
 
 import { ChartScatter } from "lucide-react";
 import { JSXGraph } from "jsxgraph";
-import type { ToolDefinition } from "./types";
+import type { ToolDefinition, ToolPanelProps } from "./types";
 
-const Panel = () => {
+const Panel = ({}: ToolPanelProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -17,11 +17,11 @@ const Panel = () => {
     if (!container) return;
 
     const board = JSXGraph.initBoard(container, {
-      boundingbox: [-5, 5, 5, -5],
       axis: true,
       grid: true,
       showCopyright: false,
-      showNavigation: false,
+      showNavigation: true,
+      keepAspectRatio: true, // 保持横纵轴单位长度比例不变
     });
 
     return () => {
@@ -30,7 +30,14 @@ const Panel = () => {
     };
   }, []);
 
-  return <div ref={containerRef} className="size-full" />;
+  return (
+    <div className="flex-1 min-h-0">
+      <div
+        ref={containerRef}
+        className="aspect-square border mx-auto w-full"
+      ></div>
+    </div>
+  );
 };
 
 const jsxgraphTool: ToolDefinition = {

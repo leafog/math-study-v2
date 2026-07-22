@@ -4,8 +4,10 @@ import { combine, createJSONStorage, persist } from "zustand/middleware";
 
 import { createSelectors } from "./create-selectors";
 import { tanstackDbStorage } from "./tanstack-db-storage";
+import { hy } from "zod/v4/locales";
 
 type ChatToolsPanelState = {
+  _hydrated: boolean;
   toolsSize: PanelSize;
   chatSize: PanelSize;
   restoreChatPercentage: string;
@@ -24,6 +26,7 @@ type ChatToolsPanelAction = {
 };
 
 const chatToolsPanelStateDefault = {
+  _hydrated: false,
   toolsSize: { asPercentage: 0, inPixels: 0 },
   chatSize: { asPercentage: 0, inPixels: 0 },
   restoreChatPercentage: "50%",
@@ -33,41 +36,43 @@ const chatToolsPanelStateDefault = {
   menuShow: false,
 };
 const chatToolsPanelStoreCreator = (init: ChatToolsPanelState) =>
-  combine<ChatToolsPanelState, ChatToolsPanelAction>(init, (set) => ({
-    onToolsResize: (size) =>
-      set(({ restoreToolsPercentage }) => ({
-        toolsSize: size,
-        restoreToolsPercentage:
-          size.asPercentage === 0 || size.asPercentage === 100
-            ? restoreToolsPercentage
-            : `${size.asPercentage}%`,
-        toolsShow: size.asPercentage > 0,
-      })),
-    onChatResize: (size) =>
-      set(({ restoreChatPercentage, zenMode }) => {
-        return {
-          chatSize: size,
-          restoreChatPercentage:
+  combine<ChatToolsPanelState, ChatToolsPanelAction>({ ...init }, (set) => {
+    return {
+      onToolsResize: (size) =>
+        set(({ restoreToolsPercentage }) => ({
+          toolsSize: size,
+          restoreToolsPercentage:
             size.asPercentage === 0 || size.asPercentage === 100
-              ? restoreChatPercentage
+              ? restoreToolsPercentage
               : `${size.asPercentage}%`,
-          zenMode: size.asPercentage === 0 ? true : zenMode,
-        };
-      }),
-    zenModeToggle: () =>
-      set(({ zenMode }) => ({
-        zenMode: !zenMode,
-      })),
-    toolsShowToggle: () =>
-      set(({ toolsShow }) => ({
-        toolsShow: !toolsShow,
-      })),
-    menuShowToggle: () =>
-      set(({ menuShow }) => ({
-        menuShow: !menuShow,
-      })),
-    menuShowSet: (value) => set({ menuShow: value }),
-  }));
+          toolsShow: size.asPercentage > 0,
+        })),
+      onChatResize: (size) =>
+        set(({ restoreChatPercentage, zenMode }) => {
+          return {
+            chatSize: size,
+            restoreChatPercentage:
+              size.asPercentage === 0 || size.asPercentage === 100
+                ? restoreChatPercentage
+                : `${size.asPercentage}%`,
+            zenMode: size.asPercentage === 0 ? true : zenMode,
+          };
+        }),
+      zenModeToggle: () =>
+        set(({ zenMode }) => ({
+          zenMode: !zenMode,
+        })),
+      toolsShowToggle: () =>
+        set(({ toolsShow }) => ({
+          toolsShow: !toolsShow,
+        })),
+      menuShowToggle: () =>
+        set(({ menuShow }) => ({
+          menuShow: !menuShow,
+        })),
+      menuShowSet: (value) => set({ menuShow: value }),
+    };
+  });
 
 const newChatToolsPanelStoreName = "chat-tools-panel-store-new";
 const newChatToolsPanelStore = createSelectors(
@@ -82,7 +87,7 @@ const newChatToolsPanelStore = createSelectors(
 export type ChatToolsPanelStore = typeof newChatToolsPanelStore;
 
 const chatToolsPanelStoreCache = new Map<string, ChatToolsPanelStore>();
-
+export const toKey = (chatId: string) => `chat-tools-panel-store-${chatId}`;
 export const createChatToolsPanelStore = (
   isNewChat: boolean,
   chatId: string,
@@ -95,7 +100,7 @@ export const createChatToolsPanelStore = (
     store = createSelectors(
       create(
         persist(chatToolsPanelStoreCreator(newChatToolsPanelStore.getState()), {
-          name: `chat-tools-panel-store-${chatId}`,
+          name: toKey(chatId),
           storage: createJSONStorage(() => tanstackDbStorage),
         }),
       ),

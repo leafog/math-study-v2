@@ -159,7 +159,6 @@ export function toTable(schema: any) {
 
   for (const [key, value] of Object.entries(schema.shape)) {
     const columnName = key;
-    console.log(key);
     columns[columnName] = getColumnType(value);
   }
 
@@ -186,7 +185,6 @@ export const tables: TableMap = mapValues(schemas, (value, key) => {
   return toTable(value);
 }) as unknown as TableMap;
 
-console.log(new AttachmentTable());
 export const AppSchema = new Schema(tables);
 
 export const db = new PowerSyncDatabase({
@@ -195,3 +193,5 @@ export const db = new PowerSyncDatabase({
   },
   schema: AppSchema,
 });
+
+await db._initialize();

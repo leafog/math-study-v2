@@ -2,7 +2,7 @@ import { useRef, useEffect, useState } from "react";
 
 import { Pi } from "lucide-react";
 import { MathfieldElement } from "mathlive";
-import type { ToolDefinition } from "./types";
+import type { ToolDefinition, ToolPanelProps } from "./types";
 
 declare global {
   namespace React.JSX {
@@ -22,7 +22,7 @@ declare global {
 
 MathfieldElement.fontsDirectory = "/fonts";
 
-const Panel = () => {
+const Panel = ({}: ToolPanelProps) => {
   const mfRef = useRef<MathfieldElement>(null);
   const keyboardRef = useRef<HTMLDivElement>(null);
 
@@ -48,10 +48,7 @@ const Panel = () => {
   }, []);
 
   return (
-    <div
-      ref={keyboardRef}
-      className="size-full flex flex-col overflow-hidden"
-    >
+    <div ref={keyboardRef} className="size-full flex flex-col overflow-hidden">
       <div className="p-2 border">
         <div className="my-10">
           <math-field

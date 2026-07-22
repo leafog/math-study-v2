@@ -7,11 +7,14 @@ import ToolsZentoggleBtn from "./tools-zen-toogle-btn";
 import ToolsGreeting from "./tools-greeting";
 import ToolsBar from "./tools-bar";
 import {
+  useActiveChat,
   useActiveChatToolsPanelStore,
   useChatTools,
 } from "~/hooks/chat/active-chat";
 import { kindToTool } from "./tools";
 import { cn } from "~/lib/utils";
+import { chatToolInstanceColl } from "~/db/tdb-collections";
+import type { ToolPanelProps } from "~/components/chat/tools/types";
 
 interface ToolsPanelProps {
   panelRef: React.RefObject<PanelImperativeHandle | null>;
@@ -19,14 +22,38 @@ interface ToolsPanelProps {
 
 // TODO: 工具 Panel 可通过 data-active 属性感知激活状态自行聚焦
 // 例: 父容器 [data-active="true"] 时调用 apiRef.current?.focus()
-const ToolPanelContent = ({ kind }: { kind: string }) => {
+const ToolPanelContent = ({
+  chatId,
+  kind,
+  id,
+  init,
+}: {
+  id: string;
+  chatId: string;
+  kind: string;
+  init: unknown;
+}) => {
   const { Panel } = kindToTool(kind)!;
-  return <Panel />;
+  const handleChange: ToolPanelProps["onChange"] = (value) => {
+    chatToolInstanceColl.update(id, (draft) => {
+      draft.data = value;
+    });
+  };
+  return (
+    <Panel
+      kind={kind}
+      id={id}
+      chatId={chatId}
+      init={init}
+      onChange={handleChange}
+    />
+  );
 };
 const ToolsPanel = ({ panelRef }: ToolsPanelProps) => {
   const onToolsResize = useActiveChatToolsPanelStore().use.onToolsResize();
   const toolsShow = useActiveChatToolsPanelStore().use.toolsShow();
-  const { tools, hasTools, activeId, mountedTools } = useChatTools();
+  const { hasTools, activeId, mountedTools } = useChatTools();
+  const { chatId } = useActiveChat();
 
   return (
     <ResizablePanel
@@ -38,7 +65,7 @@ const ToolsPanel = ({ panelRef }: ToolsPanelProps) => {
       className="flex flex-col w-full "
     >
       <ChatHeaderContainer>
-        <div className="overflow-hidden h-full">
+        <div className="overflow-hidden">
           <ToolsBar />
         </div>
 
@@ -49,21 +76,26 @@ const ToolsPanel = ({ panelRef }: ToolsPanelProps) => {
           </div>
         )}
       </ChatHeaderContainer>
-      <div className="flex-1 size-full relative overflow-hidden">
+      <div className="flex-1 relative overflow-hidden">
         {!hasTools ? (
           <ToolsGreeting />
         ) : (
-          mountedTools.map(({ kind, id }) => {
+          mountedTools.map(({ kind, id, data }) => {
             const isActive = id === activeId;
             return (
               <div
-                key={id}
+                key={`${chatId}-${id}`}
                 className={cn(
-                  "size-full absolute inset-0 transition-opacity duration-300",
+                  "absolute inset-0 flex flex-col transition-opacity duration-300",
                   isActive ? "opacity-100" : "opacity-0 pointer-events-none",
                 )}
               >
-                <ToolPanelContent kind={kind} />
+                <ToolPanelContent
+                  chatId={chatId}
+                  kind={kind}
+                  id={id}
+                  init={data}
+                />
               </div>
             );
           })

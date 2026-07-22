@@ -102,8 +102,6 @@ const ChatPromptInput = () => {
       parts,
       created_at: new Date(),
     });
-    console.log(message.files);
-    // sendMessage(message);
     sendMessage(message);
   };
 
