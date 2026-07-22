@@ -66,6 +66,13 @@ function makeDeserSchema(schema: z.ZodObject<any>): z.ZodObject<any> {
           .nullable()
           .transform((v) => (v === null ? null : JSON.parse(v)));
         break;
+      case "record":
+        // SQLite TEXT (JSON) → JS Record，NULL → {} 兼容旧数据
+        innerDeser = z
+          .string()
+          .nullable()
+          .transform((v) => (v === null ? {} : JSON.parse(v)));
+        break;
       default:
         // SQLite 将 undefined 存为 null，读回时转回 undefined
         if (wrappers.includes("optional") && !wrappers.includes("nullable")) {
@@ -166,4 +173,10 @@ export const {
   chatToolsBarStateColl,
   zustandStorageColl,
   attachmentColl,
+  kgTopicColl,
+  kgEdgeColl,
+  kgClusterColl,
+  kgCurriculumColl,
+  conversationKgTopicColl,
+  toolDataColl,
 } = colls;
