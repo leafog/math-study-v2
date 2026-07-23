@@ -7,7 +7,6 @@ import {
   ScrollRestoration,
 } from "react-router";
 
-import { useEffect } from "react";
 import type { Route } from "./+types/root";
 import "./app.css";
 import "./lib/i18n";
@@ -33,7 +32,11 @@ export const links: Route.LinksFunction = () => [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className="font-geist font-inter font-geist-mono"
+    >
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />

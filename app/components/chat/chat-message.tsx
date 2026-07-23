@@ -48,7 +48,13 @@ export const MessageAction = ({
   return button;
 };
 
-const PureChatMessage = ({ message }: { message: UIMessage }) => {
+const PureChatMessage = ({
+  message,
+  isAnimating = false,
+}: {
+  message: UIMessage;
+  isAnimating?: boolean;
+}) => {
   const isUser = message.role === "user";
   const align = isUser ? "end" : "start";
 
@@ -77,7 +83,9 @@ const PureChatMessage = ({ message }: { message: UIMessage }) => {
     if (type === "text") {
       return (
         <MessageContent key={key}>
-          <MessageResponse>{part.text}</MessageResponse>
+          <MessageResponse isAnimating={isAnimating} caret="block">
+            {part.text}
+          </MessageResponse>
         </MessageContent>
       );
     }

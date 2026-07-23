@@ -100,7 +100,7 @@ export function KnowledgeGraph({
       .attr("stroke-opacity", 0.6)
       .attr("stroke-width", (d) => (d.type === "prerequisite" ? 1.5 : 1))
       .attr("stroke-dasharray", (d) =>
-        d.type === "prerequisite" ? "4,3" : "none",
+        d.type === "prerequisite" ? "none" : "4,3",
       );
 
     // ── Nodes ──

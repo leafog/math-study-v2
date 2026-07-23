@@ -28,7 +28,7 @@ interface ChatPanelProps {
 }
 
 const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
-  const { messages } = useActiveChatHelpers();
+  const { messages, status } = useActiveChatHelpers();
   const { currentConversation } = useActiveChat();
   const onChatResize = useActiveChatToolsPanelStore().use.onChatResize();
 
@@ -61,9 +61,9 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
                 <MessageScroller>
                   <MessageScrollerViewport className="flex flex-row ">
                     <MessageScrollerContent className="min-w-0 w-full mx-auto max-w-3xl px-6 py-2">
-                      {messages.map((message) => {
+                      {messages.map((message, i) => {
                         return (
-                          <ChatMessage message={message} key={message.id} />
+                          <ChatMessage message={message} key={message.id} isAnimating={status === 'streaming' && i === messages.length - 1} />
                         );
                       })}
                     </MessageScrollerContent>

@@ -3,6 +3,8 @@ import { FileQuestion } from "lucide-react";
 import { useActiveChat } from "~/hooks/chat/active-chat";
 import { problemColl } from "~/db/tdb-collections";
 import type { Problem as ProblemType } from "~/db/db-zod-schema";
+import { useMessageScrollerVisibility } from "@shadcn/react/message-scroller";
+import { useEffect } from "react";
 
 const ChatProblemsList = () => {
   const { chatId } = useActiveChat();
@@ -18,6 +20,10 @@ const ChatProblemsList = () => {
     [chatId],
   );
 
+  const { currentAnchorId, visibleMessageIds } = useMessageScrollerVisibility();
+  useEffect(() => {
+    console.log(currentAnchorId, visibleMessageIds);
+  }, [currentAnchorId, visibleMessageIds]);
   if (!problems?.length) {
     return (
       <div className="flex flex-col items-center gap-2 py-4 text-muted-foreground">
