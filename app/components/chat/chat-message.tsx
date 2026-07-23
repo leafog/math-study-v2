@@ -2,7 +2,7 @@ import { memo, type ComponentProps } from "react";
 import { MessageResponse } from "../ai-elements/message";
 import { Bubble, BubbleContent } from "../ui/bubble";
 import { Message, MessageContent, MessageFooter } from "../ui/message";
-import type { UIMessage } from "ai";
+import type { UIMessage, DynamicToolUIPart } from "ai";
 import { Button } from "../ui/button";
 import { CopyIcon, FileIcon } from "lucide-react";
 import { useCopyToClipboard } from "usehooks-ts";
@@ -13,6 +13,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../ui/tooltip";
+import Problem from "../math/problem";
 
 export type MessageActionProps = ComponentProps<typeof Button> & {
   tooltip?: string;
@@ -101,6 +102,24 @@ const PureChatMessage = ({ message }: { message: UIMessage }) => {
           )}
         </div>
       );
+    }
+    if (type === "tool-createProblem") {
+      const toolPart = part;
+      if (toolPart.state === "output-available") {
+        const r = toolPart.output as {
+          content: string;
+          description?: string;
+          source?: string;
+        };
+        return (
+          <Problem
+            key={key}
+            content={r.content}
+            description={r.description}
+            source={r.source}
+          />
+        );
+      }
     }
     return <div key={key}>{part.type}</div>;
   });

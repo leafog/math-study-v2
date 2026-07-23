@@ -70,7 +70,7 @@ export const createTopic = tool({
       updated_at: now,
     };
 
-    await kgTopicColl.insert(topic);
+    kgTopicColl.insert(topic);
 
     // 新知识点加入语义缓存
     addToCorpus(topic);

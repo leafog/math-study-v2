@@ -3,6 +3,7 @@ import { eq, queryOnce, useLiveQuery } from "@tanstack/react-db";
 import {
   chatToolInstanceColl,
   chatToolsBarStateColl,
+  toolDataColl,
 } from "~/db/tdb-collections";
 import { genId } from "~/lib/id-utils";
 import { useImmer } from "use-immer";
@@ -72,14 +73,22 @@ export const useChatToolsManager = (
     async (kind: string, title?: string) => {
       onOpenBefore?.(kind, title);
       const instanceId = genId();
+      const now = new Date();
       chatToolInstanceColl.insert({
         id: instanceId,
         conversation_id: chatId,
         kind,
         title: title ?? kind,
         data: "",
-        created_at: new Date(),
-        updated_at: new Date(),
+        created_at: now,
+        updated_at: now,
+      });
+      toolDataColl.insert({
+        id: instanceId,
+        chat_id: chatId,
+        kind: kind,
+        created_at: now,
+        updated_at: now,
       });
       const chatToolsBarState = chatToolsBarStateColl.get(chatId);
       if (chatToolsBarState) {

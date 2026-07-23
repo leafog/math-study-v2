@@ -191,7 +191,30 @@ export function KnowledgeGraph({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes, edges, filterSubjects]);
 
-  // ── Update selection styling without rebuilding ──
+  // ── Resize: update SVG dimensions without rebuilding ──
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const observer = new ResizeObserver(() => {
+      const svg = (container as any).__kgSvg__ as
+        d3.Selection<SVGSVGElement, unknown, null, undefined> | undefined;
+      if (!svg) return;
+
+      const w = container.clientWidth || 800;
+      const h = container.clientHeight || 600;
+
+      svg
+        .attr("width", w)
+        .attr("height", h)
+        .attr("viewBox", [-w / 2, -h / 2, w, h]);
+    });
+
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
+
+  // ── Update selected node styling ──
   useEffect(() => {
     if (!containerRef.current) return;
     const svg = (containerRef.current as any).__kgSvg__ as

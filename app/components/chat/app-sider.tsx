@@ -1,4 +1,13 @@
-import { ChartScatter, ChefHat, Files, Languages, Moon, Plus, Sun } from "lucide-react";
+import {
+  ChartScatter,
+  ChefHat,
+  Files,
+  Languages,
+  Moon,
+  Plus,
+  Sun,
+  BadgeQuestionMark,
+} from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -47,6 +56,11 @@ const AppSidebar = () => {
       path: "/graph",
       icon: <ChartScatter />,
       title: t("routes.graph"),
+    },
+    {
+      path: "/problem",
+      icon: <BadgeQuestionMark />,
+      title: t("problem.title"),
     },
   ];
 

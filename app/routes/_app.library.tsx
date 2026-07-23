@@ -1,8 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useLiveInfiniteQuery } from "@tanstack/react-db";
+import { useTranslation } from "react-i18next";
 import { attachmentColl } from "~/db/tdb-collections";
-import { FileIcon, ImageIcon } from "lucide-react";
+import { FileIcon, ImageIcon, FolderOpen } from "lucide-react";
 import { fileStore } from "~/db/indexdb-file-storage";
+import {
+  Container,
+  ContainerHeader,
+  ContainerBody,
+  ContainerSticky,
+} from "~/components/layout/Container";
+import { Input } from "~/components/ui/input";
 
 const PAGE_SIZE = 20;
 
@@ -36,13 +44,12 @@ function FileCard({ item }: { item: Record<string, unknown> }) {
 
   return (
     <div className="group relative overflow-hidden rounded-xl border bg-card transition-colors hover:bg-accent/50">
-      {/* 缩略图区 */}
       <div className="aspect-square overflow-hidden bg-muted">
         {isImage && blobUrl ? (
           <img
             src={blobUrl}
             alt={filename}
-            className="size-full object-cover transition-all group-hover:scale-105"
+            className="size-full object-cover transition-transform group-hover:scale-105"
             loading="lazy"
           />
         ) : (
@@ -56,7 +63,6 @@ function FileCard({ item }: { item: Record<string, unknown> }) {
         )}
       </div>
 
-      {/* 信息区 */}
       <div className="px-2.5 py-2">
         <p className="truncate text-sm font-medium">{filename}</p>
         {size != null && (
@@ -70,6 +76,7 @@ function FileCard({ item }: { item: Record<string, unknown> }) {
 }
 
 const Library = () => {
+  const { t } = useTranslation();
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     useLiveInfiniteQuery(
       (q) =>
@@ -103,40 +110,65 @@ const Library = () => {
 
   if (isLoading) {
     return (
-      <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-        加载中...
-      </div>
+      <Container>
+        <div className="flex flex-1 items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="size-8 animate-spin rounded-full border-2 border-muted-foreground/20 border-t-muted-foreground" />
+            <p className="text-sm text-muted-foreground">
+              {t("common.loading")}
+            </p>
+          </div>
+        </div>
+      </Container>
     );
   }
 
   return (
-    <div className="flex h-full flex-col ">
-      <div className="mb-4 shrink-0 px-6 pt-6">
-        <h1 className="text-xl font-bold">文件库</h1>
-        <p className="text-sm text-muted-foreground">
-          共 {data?.length ?? 0} 个文件
-        </p>
-      </div>
-
-      {!data?.length ? (
-        <p className="text-sm text-muted-foreground">暂无文件</p>
-      ) : (
-        <div className="flex-1 overflow-y-auto scrollbar-thin p-6">
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {data.map((item) => (
-              <FileCard key={item.id} item={item} />
-            ))}
+    <div className="w-full">
+      <Container>
+        <ContainerHeader className="h-20 mt-10">
+          <div className="flex h-full justify-between items-center align-middle">
+            <div className="text-3xl     font-mono">资料库</div>
+            <div>
+              <Input />
+            </div>
           </div>
+        </ContainerHeader>
+        <ContainerSticky className="flex items-center  justify-between align-middle">
+          <div className="bg-red-50">
+            <span className="h-full">123</span>
+          </div>
+        </ContainerSticky>
+        <ContainerBody>
+          {!data?.length ? (
+            <div className="flex flex-1 items-center justify-center">
+              <div className="flex flex-col items-center gap-4 text-muted-foreground">
+                <div className="rounded-full bg-muted p-4">
+                  <FolderOpen className="size-6" aria-hidden="true" />
+                </div>
+                <p className="text-sm">{t("library.empty", "No files yet")}</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="p-6">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {data.map((item) => (
+                    <FileCard key={item.id} item={item} />
+                  ))}
+                </div>
+              </div>
 
-          <div ref={sentinelRef} className="h-4" />
-
-          {isFetchingNextPage && (
-            <p className="py-4 text-center text-xs text-muted-foreground">
-              加载更多...
-            </p>
+              <div ref={sentinelRef} className="h-1" />
+              {isFetchingNextPage && (
+                <div className="flex justify-center pb-6">
+                  <div className="size-5 animate-spin rounded-full border-2 border-muted-foreground/20 border-t-muted-foreground" />
+                </div>
+              )}
+            </>
           )}
-        </div>
-      )}
+        </ContainerBody>
+      </Container>
     </div>
   );
 };

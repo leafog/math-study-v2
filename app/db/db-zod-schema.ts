@@ -4,21 +4,16 @@ import { z } from "zod";
 
 export const ProblemSchema = z.object({
   id: z.string(),
-  content: z.string(),
-  latex: z.string().optional(),
-  tags: z.array(z.string()),
-  difficulty: z.union([
-    z.literal(1),
-    z.literal(2),
-    z.literal(3),
-    z.literal(4),
-    z.literal(5),
-  ]),
-  source: z.enum(["photo", "latex", "batch", "ai", "manual"]),
-  image_blob: z.string().optional(),
-  content_hash: z.string().optional(),
-  variant_of: z.string().optional(),
-  variant_type: z.enum(["harder", "easier", "similar"]).optional(),
+  content: z.string().describe("Problem body, supports Markdown + LaTeX"),
+  chat_id: z.string().nullish(),
+  description: z
+    .string()
+    .optional()
+    .describe("Brief summary for AI generation or list preview"),
+  tags: z.array(z.string()).describe("IDs of related knowledge-point tags"),
+  source: z
+    .enum(["photo", "latex", "batch", "ai", "manual"])
+    .describe("How the problem was created"),
   created_at: z.date(),
   updated_at: z.date(),
 });
@@ -313,15 +308,6 @@ export const TagSchema = z.object({
 });
 export type Tag = z.infer<typeof TagSchema>;
 
-/** 知识点-标签关联 */
-export const KnowledgeTagSchema = z.object({
-  id: z.string(),
-  knowledge_point_id: z.string(),
-  tag_id: z.string(),
-  created_at: z.date(),
-});
-export type KnowledgeTag = z.infer<typeof KnowledgeTagSchema>;
-
 /** 对话-知识点关联 */
 export const ConversationKnowledgePointSchema = z.object({
   id: z.string(),
@@ -439,8 +425,8 @@ export type Attachment = z.infer<typeof AttachmentSchema>;
 export const ToolDataSchema = z.object({
   id: z.string(),
   chat_id: z.string(),
-  kind: z.string().nullable(),
-  data: z.string(),
+  kind: z.string().nullable().optional(),
+  data: z.string().nullable().optional(),
   created_at: z.date(),
   updated_at: z.date(),
 });

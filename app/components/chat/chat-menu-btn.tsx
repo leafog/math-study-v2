@@ -1,30 +1,25 @@
 import { Menu } from "lucide-react";
+import { useState } from "react";
 import { Button } from "../ui/button";
-import {
-  useActiveChatToolsPanelStore,
-} from "~/hooks/chat/active-chat";
+import { useActiveChatToolsPanelStore } from "~/hooks/chat/active-chat";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import ChatKnowledgeGraph from "./chat-kg-graph";
+import ChatMenuInfo from "./chat-menu-info";
 
 const ChatMenuBtn = () => {
+  const [popoverOpen, setPopoverOpen] = useState(false);
   const menuShow = useActiveChatToolsPanelStore().use.menuShow();
   const menuShowToggle = useActiveChatToolsPanelStore().use.menuShowToggle();
   const toolsShow = useActiveChatToolsPanelStore().use.toolsShow();
 
   return toolsShow ? (
-    <Popover>
+    <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
       <PopoverTrigger asChild>
         <Button size="icon" variant={"ghost"}>
           <Menu />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-72 p-0">
-        <div className="px-3 py-2 text-xs font-medium text-muted-foreground border-b">
-          知识点图谱
-        </div>
-        <div className="h-48">
-          <ChatKnowledgeGraph />
-        </div>
+      <PopoverContent align="end" asChild>
+        <ChatMenuInfo />
       </PopoverContent>
     </Popover>
   ) : (

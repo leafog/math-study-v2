@@ -46,6 +46,19 @@
     "addTool": "添加工具",
     "noTools": "暂无工具"
   },
+  "library": {
+    "totalFiles": "共 {{count}} 个文件",
+    "empty": "暂无文件"
+  },
+  "problem": {
+    "title": "题库",
+    "subtitle": "浏览和管理所有数学题目",
+    "total": "道题目",
+    "source": "来源",
+    "clearFilter": "清除",
+    "empty": "还没有题目，开始创建吧",
+    "noFiltered": "没有该来源的题目"
+  },
   "settings": {
     "title": "设置",
     "language": "语言",

@@ -49,15 +49,6 @@ const Panel = ({ chatId, id, kind }: ToolPanelProps) => {
       toolDataColl.update(existing.id, (it) => {
         it.data = data;
       });
-    } else {
-      toolDataColl.insert({
-        id: id,
-        chat_id: chatId,
-        kind,
-        data,
-        created_at: now,
-        updated_at: now,
-      });
     }
   };
   const onChangeWithDelay = useDebounceCallback(onChange, 500);

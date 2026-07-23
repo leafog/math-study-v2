@@ -12,7 +12,6 @@ const Panel = ({}: ToolPanelProps) => {
     link.rel = "stylesheet";
     link.href = "/jsxgraph.css";
     document.head.appendChild(link);
-
     const container = containerRef.current;
     if (!container) return;
 
@@ -34,7 +33,7 @@ const Panel = ({}: ToolPanelProps) => {
     <div className="flex-1 min-h-0">
       <div
         ref={containerRef}
-        className="aspect-square border mx-auto w-full"
+        className="aspect-square border mx-auto h-1/2"
       ></div>
     </div>
   );

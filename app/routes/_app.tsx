@@ -6,9 +6,11 @@ import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar";
 import { ActiveChatProvider } from "~/hooks/chat/active-chat";
 import { cn } from "~/lib/utils";
 
+import "katex/dist/katex.min.css";
+
 const AppLayout = () => {
   const { pathname } = useLocation();
-  const hiddenRoutes = ["/library", "/graph"];
+  const hiddenRoutes = ["/library", "/graph", "/problem"];
   return (
     <SidebarProvider>
       <AppSidebar />

@@ -1,17 +1,7 @@
-import { Card, CardContent, CardTitle } from "../ui/card";
-import ChatKnowledgeGraph from "./chat-kg-graph";
+import ChatMenuInfo from "./chat-menu-info";
 
 const ChatPanelRight = () => {
-  return (
-    <div>
-      <Card>
-        <CardTitle>知识图谱</CardTitle>
-        <CardContent>
-          <ChatKnowledgeGraph />
-        </CardContent>
-      </Card>
-    </div>
-  );
+  return <ChatMenuInfo />;
 };
 
 export default ChatPanelRight;

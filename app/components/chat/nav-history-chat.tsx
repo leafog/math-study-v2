@@ -1,8 +1,7 @@
-import { useCallback } from "react";
+import { useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router";
-import { cn } from "~/lib/utils";
 import { useTranslation } from "react-i18next";
-import { useLiveInfiniteQuery, useLiveQuery } from "@tanstack/react-db";
+import { useLiveInfiniteQuery } from "@tanstack/react-db";
 import { conversationColl } from "~/db/tdb-collections";
 import {
   SidebarGroup,
@@ -11,7 +10,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "../ui/sidebar";
-import { Button } from "../ui/button";
 
 const PAGE_SIZE = 30;
 
@@ -32,6 +30,27 @@ const NavHistoryChat = () => {
     );
 
   const allChats = pages.flat();
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const root = sentinel.closest<HTMLElement>('[data-slot="sidebar-content"]');
+    if (!root) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { root, rootMargin: "200px" },
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
@@ -49,19 +68,14 @@ const NavHistoryChat = () => {
             </SidebarMenuButton>
           </SidebarMenuItem>
         ))}
-        {hasNextPage && (
-          <SidebarMenuItem>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full justify-start text-muted-foreground"
-              onClick={fetchNextPage}
-              disabled={isFetchingNextPage}
-            >
-              {isFetchingNextPage ? t("common.loading") : t("common.loadMore")}
-            </Button>
-          </SidebarMenuItem>
-        )}
+        <SidebarMenuItem>
+          <div ref={sentinelRef} className="h-4" />
+          {isFetchingNextPage && (
+            <span className="px-2 py-1 text-xs text-muted-foreground">
+              {t("common.loading")}
+            </span>
+          )}
+        </SidebarMenuItem>
       </SidebarMenu>
     </SidebarGroup>
   );

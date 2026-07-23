@@ -46,6 +46,19 @@
     "addTool": "Add Tool",
     "noTools": "No tools available"
   },
+  "library": {
+    "totalFiles": "{{count}} files",
+    "empty": "No files yet"
+  },
+  "problem": {
+    "title": "Problem Bank",
+    "subtitle": "Browse and manage all math problems",
+    "total": "problems",
+    "source": "Source",
+    "clearFilter": "Clear",
+    "empty": "No problems yet, start creating!",
+    "noFiltered": "No problems from this source yet"
+  },
   "settings": {
     "title": "Settings",
     "language": "Language",

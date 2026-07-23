@@ -164,7 +164,6 @@ export const {
   masteryScoreColl,
   practiceLogColl,
   tagColl,
-  knowledgeTagColl,
   conversationColl,
   chatMessageColl,
   fileRecordColl,
