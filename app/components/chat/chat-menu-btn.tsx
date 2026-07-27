@@ -4,22 +4,32 @@ import { Button } from "../ui/button";
 import { useActiveChatToolsPanelStore } from "~/hooks/chat/active-chat";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import ChatMenuInfo from "./chat-menu-info";
+import { useClickAway } from "@uidotdev/usehooks";
 
 const ChatMenuBtn = () => {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const menuShow = useActiveChatToolsPanelStore().use.menuShow();
   const menuShowToggle = useActiveChatToolsPanelStore().use.menuShowToggle();
   const toolsShow = useActiveChatToolsPanelStore().use.toolsShow();
+  const ref = useClickAway<HTMLDivElement>(() => {
+    setPopoverOpen(false);
+  });
 
   return toolsShow ? (
-    <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+    <Popover open={popoverOpen} onOpenChange={(e) => console.log(e)}>
       <PopoverTrigger asChild>
-        <Button size="icon" variant={"ghost"}>
+        <Button
+          size="icon"
+          variant={"ghost"}
+          onClick={(e) => setPopoverOpen(true)}
+        >
           <Menu />
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" asChild>
-        <ChatMenuInfo />
+        <div ref={ref} style={{ display: "contents" }}>
+          <ChatMenuInfo />
+        </div>
       </PopoverContent>
     </Popover>
   ) : (

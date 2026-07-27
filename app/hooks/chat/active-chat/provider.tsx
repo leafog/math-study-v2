@@ -45,16 +45,6 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
     // sendAutomaticallyWhen: () => true,
   });
 
-  useLiveSuspenseQuery(
-    (q) => {
-      return q
-        .from({ zustandStorageColl })
-        .where(({ zustandStorageColl }) => eq(zustandStorageColl.id, "none"))
-        .findOne();
-    },
-    [chatId],
-  );
-
   const chatToolsPanelStore = useMemo(() => {
     return createChatToolsPanelStore(isNewChat, chatId);
   }, [isNewChat, chatId]);

@@ -4,6 +4,7 @@ import {
   MessageScroller,
   MessageScrollerButton,
   MessageScrollerContent,
+  MessageScrollerItem,
   MessageScrollerProvider,
   MessageScrollerViewport,
 } from "../ui/message-scroller";
@@ -21,6 +22,8 @@ import {
   useActiveChatToolsPanelStore,
 } from "~/hooks/chat/active-chat";
 import ChatPanelRight from "./chat-panel-right";
+import { Marker, MarkerContent, MarkerIcon } from "../ui/marker";
+import { Spinner } from "../ui/spinner";
 
 interface ChatPanelProps {
   panelRef: React.RefObject<PanelImperativeHandle | null>;
@@ -34,7 +37,7 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
 
   const toolsShow = useActiveChatToolsPanelStore().use.toolsShow();
   const menuShow = useActiveChatToolsPanelStore().use.menuShow();
-
+  const isThinking = status === "submitted";
   return (
     <ResizablePanel
       panelRef={panelRef}
@@ -44,56 +47,66 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
       onResize={(size) => onChatResize(size)}
       className="flex flex-col"
     >
-      <ChatHeaderContainer className="shrink-0 border-b-2">
-        <div className="min-w-0 flex-1">
-          <span className="block truncate">{currentConversation?.title}</span>
-        </div>
-        <div className="gap-2 flex">
-          <ChatMenuBtn />
-          {!toolsShow && <ToolsToggleBtn />}
-        </div>
-      </ChatHeaderContainer>
-      <div className="flex flex-row relative w-full grow overflow-hidden">
-        <MessageScrollerProvider autoScroll>
-          <div className="w-full  h-full ">
-            <div className="mx-auto h-full overflow-hidden flex flex-col">
-              <div className="h-full overflow-hidden p-0">
-                <MessageScroller>
-                  <MessageScrollerViewport className="flex flex-row ">
-                    <MessageScrollerContent className="min-w-0 w-full mx-auto max-w-3xl px-6 py-2">
-                      {messages.map((message, i) => {
-                        return (
-                          <ChatMessage message={message} key={message.id} isAnimating={status === 'streaming' && i === messages.length - 1} />
-                        );
-                      })}
-                    </MessageScrollerContent>
-                    {menuShow && !toolsShow && (
-                      <div className="sticky top-0 w-xs h-full p-2 overflow-hidden">
-                        <ChatPanelRight />
-                      </div>
-                    )}
-                  </MessageScrollerViewport>
-                  <MessageScrollerButton
-                    className={
-                      menuShow && !toolsShow
-                        ? "-translate-x-[calc(50%+10rem)]"
-                        : ""
-                    }
-                  />
-                </MessageScroller>
-              </div>
-              <div className="flex flex-row ">
-                <div className="min-w-0 w-full mx-auto max-w-3xl px-6 py-2">
-                  <ChatPromptInput />
-                </div>
-                {menuShow && !toolsShow && (
-                  <div className="sticky top-0 w-xs  max-h-full p-2"></div>
-                )}
-              </div>
-            </div>
+      <MessageScrollerProvider autoScroll>
+        <ChatHeaderContainer className="shrink-0 border-b-2">
+          <div className="min-w-0 flex-1">
+            <span className="block truncate">{currentConversation?.title}</span>
           </div>
-        </MessageScrollerProvider>
-      </div>
+          <div className="gap-2 flex">
+            <ChatMenuBtn />
+            {!toolsShow && <ToolsToggleBtn />}
+          </div>
+        </ChatHeaderContainer>
+        <div className="grid grid-rows-1 content-between relative w-full grow overflow-hidden ">
+          <div className="overflow-hidden p-0">
+            <MessageScroller>
+              <MessageScrollerViewport className="flex flex-row ">
+                <MessageScrollerContent className="min-w-0 w-full mx-auto max-w-3xl px-6 py-2">
+                  {messages.map((message, i) => {
+                    return (
+                      <ChatMessage
+                        message={message}
+                        key={message.id}
+                        isAnimating={
+                          status === "streaming" && i === messages.length - 1
+                        }
+                      />
+                    );
+                  })}
+                  {isThinking && (
+                    <Marker role="status">
+                      <MarkerIcon>
+                        <Spinner />
+                      </MarkerIcon>
+                      <MarkerContent className="shimmer">
+                        Thinking...
+                      </MarkerContent>
+                    </Marker>
+                  )}
+                </MessageScrollerContent>
+                {menuShow && !toolsShow && (
+                  <div className="sticky top-0 w-xs h-full p-2 overflow-hidden">
+                    <ChatPanelRight />
+                  </div>
+                )}
+              </MessageScrollerViewport>
+              <MessageScrollerButton
+                className={
+                  menuShow && !toolsShow ? "-translate-x-[calc(50%+10rem)]" : ""
+                }
+              />
+            </MessageScroller>
+          </div>
+          <div className="flex flex-row ">
+            <div className="min-w-0 w-full mx-auto max-w-3xl px-6 py-2">
+              <ChatPromptInput />
+            </div>
+            {menuShow && !toolsShow && (
+              <div className="sticky top-0 w-xs  max-h-full p-2"></div>
+            )}
+          </div>
+        </div>
+      </MessageScrollerProvider>
     </ResizablePanel>
   );
 };

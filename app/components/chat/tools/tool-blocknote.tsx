@@ -2,24 +2,22 @@ import { Notebook } from "lucide-react";
 import type { ToolDefinition, ToolPanelProps } from "./types";
 import { useCreateBlockNote, useEditorChange } from "@blocknote/react";
 
-// Or, you can use ariakit, shadcn, etc.
-import { BlockNoteView } from "@blocknote/mantine";
-// Default styles for the mantine editor
-import "@blocknote/mantine/style.css";
-// Include the included Inter font
-import "@blocknote/core/fonts/inter.css";
-import { useTranslation } from "react-i18next";
+import { BlockNoteView } from "@blocknote/shadcn";
 
+import { useTranslation } from "react-i18next";
 import * as locales from "@blocknote/core/locales";
 import { useTheme } from "next-themes";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { and, eq, queryOnce } from "@tanstack/react-db";
 import { toolDataColl } from "~/db/tdb-collections";
 
 const Panel = ({ chatId, kind, id }: ToolPanelProps) => {
   const { i18n } = useTranslation();
   const lang = i18n.language.split("-")[0];
-  const dictionary = (locales as Record<string, any>)[lang];
+  const dictionary = useMemo(
+    () => (locales as Record<string, any>)[lang],
+    [lang],
+  );
   const { theme } = useTheme();
   const editor = useCreateBlockNote({
     dictionary,
@@ -36,7 +34,7 @@ const Panel = ({ chatId, kind, id }: ToolPanelProps) => {
           .findOne();
       });
       if (result?.data) {
-        const blocks = await editor.tryParseHTMLToBlocks(result?.data ?? "");
+        const blocks = editor.tryParseHTMLToBlocks(result?.data ?? "");
         editor.replaceBlocks(editor.document, blocks);
       }
     };
@@ -44,7 +42,7 @@ const Panel = ({ chatId, kind, id }: ToolPanelProps) => {
   }, [chatId, id, editor]);
 
   useEditorChange(async (editor) => {
-    const html = await editor.blocksToFullHTML(editor.document);
+    const html = editor.blocksToFullHTML(editor.document);
     toolDataColl.update(id, (draft) => {
       draft.data = html;
       draft.updated_at = new Date();
@@ -57,10 +55,11 @@ const Panel = ({ chatId, kind, id }: ToolPanelProps) => {
         const a = editor.document;
         console.log(a);
       }}
-      className="flex-1 min-h-0 overflow-auto scrollbar-thin"
+      className="flex-1 min-h-0 overflow-auto scrollbar-thin w-full"
       lang={i18n.language}
-      editor={editor}
+
       theme={theme === "dark" ? "dark" : "light"}
+      editor={editor}
     />
   );
 };

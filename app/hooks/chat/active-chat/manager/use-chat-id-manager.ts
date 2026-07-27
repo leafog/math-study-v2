@@ -20,7 +20,7 @@ export const useChatIdManager = () => {
   const chatIdFromUrl = extractChatId(pathname);
   const hasChatIdInUrl = chatIdFromUrl !== null;
 
-  const { data: currentConversation } = useLiveSuspenseQuery(
+  const { data: currentConversation } = useLiveQuery(
     (q) =>
       q
         .from({ conversationColl })

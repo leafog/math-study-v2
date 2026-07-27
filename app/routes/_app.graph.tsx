@@ -1,12 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { ExternalLink } from "lucide-react";
 import { KnowledgeGraph } from "~/components/graph/knowledge-graph";
-import { NodeDetailPanel } from "~/components/graph/node-detail-panel";
-import { getSubjectColor } from "~/data/curriculum-mock";
-import { Badge } from "~/components/ui/badge";
 import { useTranslation } from "react-i18next";
-import { useLiveQuery, useLiveSuspenseQuery } from "@tanstack/react-db";
+import { useLiveQuery } from "@tanstack/react-db";
 import { kgTopicColl, kgEdgeColl } from "~/db/tdb-collections";
 import type { KgTopic, KgEdge } from "~/db/db-zod-schema";
 

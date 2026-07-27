@@ -1,10 +1,10 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
-import { useLiveInfiniteQuery } from "@tanstack/react-db";
+import { eq, useLiveInfiniteQuery } from "@tanstack/react-db";
 import { useTranslation } from "react-i18next";
 import { FileQuestion } from "lucide-react";
 import Problem from "~/components/math/problem";
 import { cn } from "~/lib/utils";
-import { problemColl } from "~/db/tdb-collections";
+import { kgTopicColl, problemColl } from "~/db/tdb-collections";
 import type { Problem as ProblemType } from "~/db/db-zod-schema";
 import {
   Container,
@@ -12,24 +12,20 @@ import {
   ContainerSticky,
   ContainerBody,
 } from "~/components/layout/Container";
+import useKgTopics from "~/hooks/use-kg-topics";
 
 const PAGE_SIZE = 20;
 
-const sources = [
-  { key: "photo", icon: "📷", label: "Photo" },
-  { key: "latex", icon: "📝", label: "LaTeX" },
-  { key: "batch", icon: "📦", label: "Batch" },
-  { key: "ai", icon: "🤖", label: "AI" },
-  { key: "manual", icon: "✍️", label: "Manual" },
-] as const;
-
 const ProblemIndex = () => {
   const { t } = useTranslation();
+  const { idsToTopics } = useKgTopics();
+
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     useLiveInfiniteQuery(
       (q) =>
         q
           .from({ problemColl })
+
           .orderBy(({ problemColl: col }) => col.created_at, {
             direction: "desc",
           }),
@@ -102,44 +98,8 @@ const ProblemIndex = () => {
       </ContainerHeader>
 
       <ContainerSticky className="flex items-center gap-1.5 flex-wrap">
-        {sources.map(({ key, icon, label }) => {
-          const active = filterSource === key;
-          return (
-            <button
-              key={key}
-              onClick={() => setFilterSource(active ? null : key)}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium",
-                "transition-colors duration-150",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
-                active
-                  ? "bg-foreground text-background"
-                  : "bg-secondary text-secondary-foreground hover:bg-secondary/70",
-              )}
-            >
-              <span>{icon}</span>
-              {label}
-              <span
-                className={cn(
-                  "tabular-nums",
-                  active ? "opacity-50" : "opacity-40",
-                )}
-              >
-                {sourceCounts[key] ?? 0}
-              </span>
-            </button>
-          );
-        })}
-        {filterSource && (
-          <button
-            onClick={() => setFilterSource(null)}
-            className="ml-1 text-xs text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded"
-          >
-            {t("problem.clearFilter")}
-          </button>
-        )}
+        123
       </ContainerSticky>
-
       <ContainerBody>
         {filtered.length === 0 ? (
           <div className="flex flex-1 items-center justify-center">
@@ -158,9 +118,11 @@ const ProblemIndex = () => {
               {filtered.map((p) => (
                 <Problem
                   key={p.id}
+                  id={p.id}
                   content={p.content}
                   description={p.description}
                   source={p.source}
+                  tags={idsToTopics(p.tags)}
                   className="m-0 hover:shadow-md transition-shadow duration-200"
                 />
               ))}

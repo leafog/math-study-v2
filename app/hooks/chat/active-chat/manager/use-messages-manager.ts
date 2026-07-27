@@ -1,9 +1,9 @@
-import { eq, useLiveSuspenseQuery } from "@tanstack/react-db";
+import { eq, useLiveQuery } from "@tanstack/react-db";
 
 import { chatMessageColl } from "~/db/tdb-collections";
 
 export const useMessagesManager = (chatId: string) => {
-  const { data: initMessages } = useLiveSuspenseQuery(
+  const { data: initMessages } = useLiveQuery(
     (q) =>
       q
         .from({ chatMessageColl })

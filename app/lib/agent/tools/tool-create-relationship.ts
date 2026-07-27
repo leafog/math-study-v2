@@ -30,7 +30,6 @@ export const createRelationship = tool({
   execute: async (input) => {
     const now = new Date();
     const created = [];
-
     for (const rel of input.relationships) {
       const edge = {
         id: genId(),
@@ -41,7 +40,7 @@ export const createRelationship = tool({
         created_at: now,
       };
 
-      await kgEdgeColl.insert(edge);
+      kgEdgeColl.insert(edge);
       created.push({
         id: edge.id,
         prerequisite_id: edge.prerequisite_id,

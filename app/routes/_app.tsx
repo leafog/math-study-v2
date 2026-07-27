@@ -1,13 +1,23 @@
+import { eq, useLiveSuspenseQuery } from "@tanstack/react-db";
 import { Outlet, useLocation } from "react-router";
 import AppSidebar from "~/components/chat/app-sider";
 import ChatShell from "~/components/chat/chat-shell";
 
 import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar";
+import { zustandStorageColl } from "~/db/tdb-collections";
 import { ActiveChatProvider } from "~/hooks/chat/active-chat";
 import { cn } from "~/lib/utils";
 
 const AppLayout = () => {
   const { pathname } = useLocation();
+
+  useLiveSuspenseQuery((q) => {
+    return q
+      .from({ zustandStorageColl })
+      .where(({ zustandStorageColl }) => eq(zustandStorageColl.id, "none"))
+      .findOne();
+  }, []);
+
   const hiddenRoutes = ["/library", "/graph", "/problem"];
   return (
     <SidebarProvider>

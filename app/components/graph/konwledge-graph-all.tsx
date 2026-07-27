@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { useLiveSuspenseQuery, useLiveQuery } from "@tanstack/react-db";
+import { memo, useMemo } from "react";
+import { useLiveQuery } from "@tanstack/react-db";
 import { useTranslation } from "react-i18next";
 import { KnowledgeGraph } from "~/components/graph/knowledge-graph";
 import { kgTopicColl, kgEdgeColl } from "~/db/tdb-collections";
@@ -54,4 +54,4 @@ const KnowledgeGraphAll = () => {
   return <KnowledgeGraph nodes={graphNodes} edges={graphEdges} />;
 };
 
-export default KnowledgeGraphAll;
+export default memo(KnowledgeGraphAll);

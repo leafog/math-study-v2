@@ -3,6 +3,7 @@ import { problemColl } from "~/db/tdb-collections";
 import { ProblemSchema } from "~/db/db-zod-schema";
 import { genId } from "~/lib/id-utils";
 import { chatIdStore } from "~/store/chat-id-store";
+import z from "zod";
 
 export const createProblem = tool({
   description:
@@ -12,26 +13,20 @@ export const createProblem = tool({
     created_at: true,
     updated_at: true,
   }),
-  execute: async (input) => {
+  execute: (input) => {
     const chatId = chatIdStore.getState().chatId;
-
     const now = new Date();
+    const pid = genId();
+    // 保存题目到 problem 表
     const problem = {
       ...input,
-      id: genId(),
+      id: pid,
       chat_id: chatId,
       created_at: now,
       updated_at: now,
     };
+    problemColl.insert(problem);
 
-    await problemColl.insert(problem);
-
-    return {
-      success: true,
-      problem_id: problem.id,
-      content: problem.content,
-      description: problem.description,
-      source: problem.source,
-    };
+    return { ...input, id: pid, chat_id: chatId };
   },
 });
