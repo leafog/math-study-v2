@@ -1,17 +1,27 @@
 import { Notebook } from "lucide-react";
 import type { ToolDefinition, ToolPanelProps } from "./types";
-import { useCreateBlockNote, useEditorChange } from "@blocknote/react";
+import {
+  SuggestionMenuController,
+  useCreateBlockNote,
+  useEditorChange,
+} from "@blocknote/react";
+import { filterSuggestionItems } from "@blocknote/core/extensions";
 
 import { BlockNoteView } from "@blocknote/shadcn";
 
 import { useTranslation } from "react-i18next";
 import * as locales from "@blocknote/core/locales";
 import { useTheme } from "next-themes";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { and, eq, queryOnce } from "@tanstack/react-db";
 import { toolDataColl } from "~/db/tdb-collections";
+import { getCustomSlashMenuItems, schema } from "./create-math";
+import type { MathfieldElement } from "mathlive";
 
 const Panel = ({ chatId, kind, id }: ToolPanelProps) => {
+  const mfRef = useRef<MathfieldElement>(null);
+  const keyboardRef = useRef<HTMLDivElement>(null);
+
   const { i18n } = useTranslation();
   const lang = i18n.language.split("-")[0];
   const dictionary = useMemo(
@@ -20,6 +30,7 @@ const Panel = ({ chatId, kind, id }: ToolPanelProps) => {
   );
   const { theme } = useTheme();
   const editor = useCreateBlockNote({
+    schema,
     dictionary,
   });
 
@@ -49,18 +60,34 @@ const Panel = ({ chatId, kind, id }: ToolPanelProps) => {
     });
   }, editor);
 
+  useEffect(() => {
+    const container = keyboardRef.current;
+    if (!container) return;
+    window.mathVirtualKeyboard.container = container;
+    window.mathVirtualKeyboard.visible = false;
+  }, []);
   return (
-    <BlockNoteView
-      onChange={async (editor) => {
-        const a = editor.document;
-        console.log(a);
-      }}
-      className="flex-1 min-h-0 overflow-auto scrollbar-thin w-full"
-      lang={i18n.language}
-
-      theme={theme === "dark" ? "dark" : "light"}
-      editor={editor}
-    />
+    <div
+      className=" grid  grid-cols-1 content-between flex-1 min-h-0"
+      ref={keyboardRef}
+    >
+      <BlockNoteView
+        className="grow min-h-0 overflow-auto scrollbar-thin w-full"
+        lang={i18n.language}
+        theme={theme === "dark" ? "dark" : "light"}
+        editor={editor}
+      >
+        <SuggestionMenuController
+          triggerCharacter={"/"}
+          getItems={async (query: string) => {
+            return filterSuggestionItems(
+              getCustomSlashMenuItems(editor),
+              query,
+            );
+          }}
+        />
+      </BlockNoteView>
+    </div>
   );
 };
 

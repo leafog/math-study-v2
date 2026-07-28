@@ -1,26 +1,14 @@
-import { embed, cosineSim, similar } from "@ternlight/base";
-import { useState } from "react";
-import { Button } from "~/components/ui/button";
+import { ComputeEngine, executeCortex } from "@cortex-js/compute-engine/cortex";
+import { useEffect } from "react";
 
-const a = cosineSim(embed("reset my password"), embed("I forgot my password")); // 0.91
-
+const ce = new ComputeEngine();
 const D = () => {
-  const [t, setT] = useState("");
-  return (
-    <div>
-      <Button
-        onClick={(e) => {
-          const r = similar("导 数", ["导数", "derivative"], {
-            topK: 3,
-          });
-          setT(JSON.stringify(r));
-        }}
-      >
-        click
-      </Button>
-      {t}
-    </div>
-  );
+  const { value, diagnostics } = executeCortex(ce, "1 + 2");
+
+  useEffect(() => {
+    console.log(value, diagnostics);
+  }, [value]);
+  return <div>123</div>;
 };
 
 export default D;

@@ -200,3 +200,7 @@ body {
     display: none;
   }
 }
+
+.ML__keyboard {
+  height: var(--_keyboard-height) !important;
+}

@@ -76,7 +76,7 @@ const ToolsPanel = ({ panelRef }: ToolsPanelProps) => {
           </div>
         )}
       </ChatHeaderContainer>
-      <div className="flex-1 relative overflow-hidden">
+      <div className="flex-1 relative overflow-visible">
         {!hasTools ? (
           <ToolsGreeting />
         ) : (

@@ -21,6 +21,7 @@ export const agent = new ToolLoopAgent({
   id: "deepseek/deepseek-v4-flash",
   model: deepseeks,
   instructions,
+
   toolApproval: {
     createTopic: "approved",
     createRelationship: "approved",

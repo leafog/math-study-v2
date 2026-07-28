@@ -4,7 +4,6 @@ import {
   MessageScroller,
   MessageScrollerButton,
   MessageScrollerContent,
-  MessageScrollerItem,
   MessageScrollerProvider,
   MessageScrollerViewport,
 } from "../ui/message-scroller";
@@ -38,6 +37,7 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
   const toolsShow = useActiveChatToolsPanelStore().use.toolsShow();
   const menuShow = useActiveChatToolsPanelStore().use.menuShow();
   const isThinking = status === "submitted";
+
   return (
     <ResizablePanel
       panelRef={panelRef}
