@@ -5,6 +5,7 @@ import {
   useCreateBlockNote,
   useEditorChange,
 } from "@blocknote/react";
+import { Extension, InputRule } from "@tiptap/core";
 import { filterSuggestionItems } from "@blocknote/core/extensions";
 
 import { BlockNoteView } from "@blocknote/shadcn";
@@ -16,10 +17,8 @@ import { useEffect, useMemo, useRef } from "react";
 import { and, eq, queryOnce } from "@tanstack/react-db";
 import { toolDataColl } from "~/db/tdb-collections";
 import { getCustomSlashMenuItems, schema } from "./create-math";
-import type { MathfieldElement } from "mathlive";
 
 const Panel = ({ chatId, kind, id }: ToolPanelProps) => {
-  const mfRef = useRef<MathfieldElement>(null);
   const keyboardRef = useRef<HTMLDivElement>(null);
 
   const { i18n } = useTranslation();
@@ -45,17 +44,18 @@ const Panel = ({ chatId, kind, id }: ToolPanelProps) => {
           .findOne();
       });
       if (result?.data) {
-        const blocks = editor.tryParseHTMLToBlocks(result?.data ?? "");
-        editor.replaceBlocks(editor.document, blocks);
+        const document = JSON.parse(result?.data ?? "");
+
+        editor.replaceBlocks(editor.document, document);
       }
     };
     load();
   }, [chatId, id, editor]);
 
   useEditorChange(async (editor) => {
-    const html = editor.blocksToFullHTML(editor.document);
+    const json = JSON.stringify(editor.document);
     toolDataColl.update(id, (draft) => {
-      draft.data = html;
+      draft.data = json;
       draft.updated_at = new Date();
     });
   }, editor);
@@ -68,7 +68,7 @@ const Panel = ({ chatId, kind, id }: ToolPanelProps) => {
   }, []);
   return (
     <div
-      className=" grid  grid-cols-1 content-between flex-1 min-h-0"
+      className=" grid  grid-cols-1 content-between flex-1 min-h-0 bg-red"
       ref={keyboardRef}
     >
       <BlockNoteView
@@ -76,6 +76,7 @@ const Panel = ({ chatId, kind, id }: ToolPanelProps) => {
         lang={i18n.language}
         theme={theme === "dark" ? "dark" : "light"}
         editor={editor}
+        portalElements={{ default: document.body }}
       >
         <SuggestionMenuController
           triggerCharacter={"/"}

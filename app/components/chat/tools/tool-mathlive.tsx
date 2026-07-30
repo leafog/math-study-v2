@@ -13,6 +13,7 @@ declare global {
           "virtual-keyboard-mode"?: "manual" | "auto" | "onfocus";
           "fonts-directory"?: string;
           class?: string;
+          placeholder?: string;
         },
         MathfieldElement
       >;

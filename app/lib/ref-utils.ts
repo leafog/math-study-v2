@@ -27,6 +27,5 @@ export function withRefs<R extends Record<string, RefObject<any>>>(
     const strippedKey = key.endsWith("Ref") ? key.slice(0, -3) : key;
     values[strippedKey] = ref.current;
   }
-
   fn(values);
 }

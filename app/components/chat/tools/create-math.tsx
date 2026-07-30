@@ -13,25 +13,53 @@ import { MathfieldElement } from "mathlive";
 import { useEffect, useRef } from "react";
 import { createReactInlineContentSpec } from "@blocknote/react";
 
-declare global {
-  namespace React.JSX {
-    interface IntrinsicElements {
-      "math-field": React.DetailedHTMLProps<
-        React.HTMLAttributes<MathfieldElement> & {
-          ref?: React.Ref<MathfieldElement>;
-          "virtual-keyboard-mode"?: "manual" | "auto" | "onfocus";
-          "fonts-directory"?: string;
-          class?: string;
-        },
-        MathfieldElement
-      >;
-    }
-  }
-}
+import { useBoolean } from "usehooks-ts";
+import { useClickAway } from "@uidotdev/usehooks";
+
+import { cn } from "~/lib/utils";
+import { withRef } from "~/lib/ref-utils";
+import "./math-live.css";
 
 MathfieldElement.fontsDirectory = "/fonts";
-const MathLiveInline = () => {};
-export const creata = createReactInlineContentSpec(
+
+const customMLStyle = `
+                /* 默认（没有 placeholder 时）应用 margin: auto */
+                .ML__latex {
+                  margin: auto !important;
+                }
+
+                /* 当 .ML__content 内存在 .ML__content-placeholder 时，取消 margin: auto */
+                .ML__content:has(.ML__content-placeholder) .ML__latex:first-of-type  {
+                  margin: 0 !important;
+                }
+                .ML__content:has(.ML__content-placeholder) .ML__content-placeholder {
+                  margin: auto !important;
+                }
+                .ML__content.ML__focused .ML__latex:first-of-type  {
+                   margin: auto !important;
+                }
+                .ML__content.ML__focused .ML__content-placeholder {
+                   margin: 0 !important;
+                   display:none !important; 
+                }
+                .ML__content::focus{
+                 margin: auto !important;
+                }
+              `;
+const applyStyle = (el: MathfieldElement) => {
+  if (!el?.shadowRoot) {
+    return;
+  }
+  if (el.shadowRoot.querySelector("#custom-style")) {
+    return;
+  }
+  const style = document.createElement("style");
+
+  style.id = "custom-style";
+  style.textContent = customMLStyle;
+  el.shadowRoot.appendChild(style);
+};
+export const createInline = createReactInlineContentSpec(
   {
     type: "math-inline",
     content: "none",
@@ -41,29 +69,50 @@ export const creata = createReactInlineContentSpec(
   },
   {
     render: (props) => {
-      const mathRef = useRef<MathfieldElement>(null);
-      useEffect(() => {
-        mathRef.current?.focus();
-      }, []);
+      const mathRef = useRef<MathfieldElement & EventTarget>(null);
+      const { value, setFalse, setTrue } = useBoolean(true);
 
+      const mathFieldRef = useClickAway(() => {
+        setTrue();
+      });
       return (
-        <div>
+        <div
+          className="inline-flex items-center"
+          onClickCapture={() => {
+            setFalse();
+          }}
+          onFocusCapture={() => {
+            setFalse();
+          }}
+          onBlurCapture={() => {
+            setTrue();
+          }}
+        >
           <math-field
-            className="w-fit inline-block dark"
-            ref={mathRef}
+            className={cn("w-fit")}
+            style={{ display: "inline" }}
+            ref={(el) => {
+              if (el === null) {
+                return;
+              }
+              mathRef.current = el;
+              mathFieldRef.current = el;
+              applyStyle(el);
+            }}
+            aria-multiline
+            virtual-keyboard-mode="onfocus"
+            read-only={value}
+
             onInput={(e) => {
-              const value = (e.target as any).value;
+              const value = (e.target as any).formula;
               props.updateInlineContent({
+                props: { latex: value },
                 type: "math-inline",
-                props: {
-                  latex: value,
-                },
               });
             }}
           >
-            {props.inlineContent.props.latex}
+            $${props.inlineContent.props.latex}$$
           </math-field>
-          <div className="hidden" ref={props.contentRef}></div>
         </div>
       );
     },
@@ -72,7 +121,7 @@ export const creata = createReactInlineContentSpec(
 export const createMath = createReactBlockSpec(
   {
     type: "math",
-    content: "inline",
+    content: "none",
     propSchema: {
       latex: {
         type: "string",
@@ -82,30 +131,49 @@ export const createMath = createReactBlockSpec(
   },
   {
     render: (props) => {
-      const mathRef = useRef<MathfieldElement>(null);
+      const mathRef = useRef<MathfieldElement & EventTarget>(null);
+      const { value, setFalse, setTrue } = useBoolean(true);
 
-      useEffect(() => {
-        mathRef.current?.focus();
-      }, []);
+      const mathFieldRef = useClickAway(() => {
+        setTrue();
+      });
 
       return (
-        <div className="w-full">
+        <div
+          className="w-full flex max-w-full items-center"
+          onClickCapture={() => {
+            setFalse();
+          }}
+          onFocusCapture={() => {
+            setFalse();
+          }}
+          onBlurCapture={() => {
+            setTrue();
+          }}
+        >
           <math-field
-            className="w-full inline-block"
-            ref={mathRef}
+            className={cn("mx-auto max-w-full w-full")}
+            placeholder="\text{Enter a formula}"
+            ref={(el) => {
+              if (el === null) {
+                return;
+              }
+              mathRef.current = el;
+              mathFieldRef.current = el;
+              applyStyle(el);
+            }}
+            aria-multiline
+            virtual-keyboard-mode="onfocus"
+            read-only={value}
             onInput={(e) => {
-              const value = (e.target as any).value;
+              const value = (e.target as any).formula;
               props.editor.updateBlock(props.block, {
-                type: "math",
-                props: {
-                  latex: value,
-                },
+                props: { latex: value },
               });
             }}
           >
-            {props.block.props.latex}
+            $$ {props.block.props.latex} $$
           </math-field>
-          <div className="hidden" ref={props.contentRef}></div>
         </div>
       );
     },
@@ -116,6 +184,9 @@ export const schema = BlockNoteSchema.create().extend({
   blockSpecs: {
     // Creates an instance of the Alert block and adds it to the schema.
     math: createMath(),
+  },
+  inlineContentSpecs: {
+    "math-inline": createInline,
   },
 });
 export const useCreateMathBlockNote = () => useCreateBlockNote({ schema });
@@ -136,10 +207,21 @@ const insertMathLiveItem = (editor: MathEditor) => ({
   icon: <Highlighter size={18} />,
   subtext: "math",
 });
+const insertInlineMathLiveItem = (editor: MathEditor) => ({
+  title: "Insert Inline math",
+  onItemClick: () => {
+    editor.insertInlineContent([{ type: "math-inline", props: { latex: "" } }]);
+  },
+  aliases: ["math"],
+  group: "Math",
+  icon: <Highlighter size={18} />,
+  subtext: "math inline",
+});
 
 export const getCustomSlashMenuItems = (
   editor: MathEditor,
 ): DefaultReactSuggestionItem[] => [
   ...getDefaultReactSlashMenuItems(editor),
   insertMathLiveItem(editor),
+  insertInlineMathLiveItem(editor),
 ];

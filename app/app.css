@@ -13,6 +13,7 @@
 @import "katex/dist/katex.min.css";
 @import "./typeset.css";
 @source "../node_modules/@streamdown/math/dist/*.js";
+@source "../node_modules/@blocknote/shadcn";
 
 @custom-variant dark (&:is(.dark *));
 
