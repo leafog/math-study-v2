@@ -1,3 +1,22 @@
 math-field {
-  --smart-fence-color: red;
+}
+
+/* math-inline 选中时 — 宿主轮廓 + 穿透 shadow DOM 强制全部背景 */
+.node-math-inline.bn-ic-react-node-view-renderer.ProseMirror-selectednode
+  math-field {
+  outline: 4px solid #64a0ff;
+  border-radius: 4px;
+  --force-select-bg: rgba(100, 160, 255, 0.15);
+}
+
+/* math block 选中时 — 轮廓 */
+[data-content-type="math"] .bn-block-content.ProseMirror-selectednode > * {
+  outline: 4px solid #64a0ff;
+  border-radius: 4px;
+}
+/* math block 选中时 — 穿透 shadow DOM 背景 */
+[data-content-type="math"]
+  .bn-block-content.ProseMirror-selectednode
+  math-field {
+  --force-select-bg: rgba(100, 160, 255, 0.15);
 }

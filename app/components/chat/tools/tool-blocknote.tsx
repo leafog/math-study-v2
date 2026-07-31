@@ -4,8 +4,10 @@ import {
   SuggestionMenuController,
   useCreateBlockNote,
   useEditorChange,
+  useEditorSelectionChange,
+  useSelectedBlocks,
 } from "@blocknote/react";
-import { Extension, InputRule } from "@tiptap/core";
+
 import { filterSuggestionItems } from "@blocknote/core/extensions";
 
 import { BlockNoteView } from "@blocknote/shadcn";
@@ -13,14 +15,21 @@ import { BlockNoteView } from "@blocknote/shadcn";
 import { useTranslation } from "react-i18next";
 import * as locales from "@blocknote/core/locales";
 import { useTheme } from "next-themes";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useDebounceCallback } from "usehooks-ts";
 import { and, eq, queryOnce } from "@tanstack/react-db";
 import { toolDataColl } from "~/db/tdb-collections";
-import { getCustomSlashMenuItems, schema } from "./create-math";
+import {
+  getCustomSlashMenuItems,
+  getMathSlashMenuItems,
+  getSelectedTextWithMath,
+  mathFieldExtension,
+  schema,
+} from "./create-math";
+import { useToolSelectionStore } from "./store/tool-selection";
 
 const Panel = ({ chatId, kind, id }: ToolPanelProps) => {
   const keyboardRef = useRef<HTMLDivElement>(null);
-
   const { i18n } = useTranslation();
   const lang = i18n.language.split("-")[0];
   const dictionary = useMemo(
@@ -31,6 +40,7 @@ const Panel = ({ chatId, kind, id }: ToolPanelProps) => {
   const editor = useCreateBlockNote({
     schema,
     dictionary,
+    extensions: [mathFieldExtension],
   });
 
   useEffect(() => {
@@ -45,19 +55,38 @@ const Panel = ({ chatId, kind, id }: ToolPanelProps) => {
       });
       if (result?.data) {
         const document = JSON.parse(result?.data ?? "");
-
         editor.replaceBlocks(editor.document, document);
       }
     };
     load();
   }, [chatId, id, editor]);
 
-  useEditorChange(async (editor) => {
+  const saveDocument = useDebounceCallback(async () => {
     const json = JSON.stringify(editor.document);
     toolDataColl.update(id, (draft) => {
       draft.data = json;
       draft.updated_at = new Date();
     });
+  }, 500);
+
+  useEditorChange(() => {
+    saveDocument();
+  }, editor);
+
+  const setSelection = useToolSelectionStore.use.setSelection();
+  const clearSelection = useToolSelectionStore.use.clearSelection();
+
+  const handleSelectionStable = useDebounceCallback(() => {
+    const content = getSelectedTextWithMath(editor);
+    const blocks = editor.getSelection()?.blocks ?? [];
+    const markdown = editor.blocksToMarkdownLossy(blocks);
+    if (content.length > 0) {
+      setSelection({ id, kind, type: "markdown", content: markdown });
+    }
+  }, 300);
+
+  useEditorSelectionChange(() => {
+    handleSelectionStable();
   }, editor);
 
   useEffect(() => {
@@ -66,6 +95,7 @@ const Panel = ({ chatId, kind, id }: ToolPanelProps) => {
     window.mathVirtualKeyboard.container = container;
     window.mathVirtualKeyboard.visible = false;
   }, []);
+
   return (
     <div
       className=" grid  grid-cols-1 content-between flex-1 min-h-0 bg-red"
@@ -76,6 +106,7 @@ const Panel = ({ chatId, kind, id }: ToolPanelProps) => {
         lang={i18n.language}
         theme={theme === "dark" ? "dark" : "light"}
         editor={editor}
+
         portalElements={{ default: document.body }}
       >
         <SuggestionMenuController
@@ -85,6 +116,12 @@ const Panel = ({ chatId, kind, id }: ToolPanelProps) => {
               getCustomSlashMenuItems(editor),
               query,
             );
+          }}
+        />
+        <SuggestionMenuController
+          triggerCharacter={"$"}
+          getItems={async (query: string) => {
+            return filterSuggestionItems(getMathSlashMenuItems(editor), query);
           }}
         />
       </BlockNoteView>

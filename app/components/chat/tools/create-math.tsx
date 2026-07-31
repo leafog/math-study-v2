@@ -1,5 +1,6 @@
 import {
   BlockNoteSchema,
+  createExtension,
   insertOrUpdateBlockForSlashMenu,
 } from "@blocknote/core";
 import {
@@ -17,8 +18,10 @@ import { useBoolean } from "usehooks-ts";
 import { useClickAway } from "@uidotdev/usehooks";
 
 import { cn } from "~/lib/utils";
-import { withRef } from "~/lib/ref-utils";
+import { withRef, withRefs } from "~/lib/ref-utils";
 import "./math-live.css";
+import { Button } from "~/components/ui/button";
+import { useTheme } from "next-themes";
 
 MathfieldElement.fontsDirectory = "/fonts";
 
@@ -45,6 +48,7 @@ const customMLStyle = `
                 .ML__content::focus{
                  margin: auto !important;
                 }
+ 
               `;
 const applyStyle = (el: MathfieldElement) => {
   if (!el?.shadowRoot) {
@@ -71,13 +75,22 @@ export const createInline = createReactInlineContentSpec(
     render: (props) => {
       const mathRef = useRef<MathfieldElement & EventTarget>(null);
       const { value, setFalse, setTrue } = useBoolean(true);
+      const { theme } = useTheme();
 
       const mathFieldRef = useClickAway(() => {
         setTrue();
       });
+      const noLatex = props.inlineContent.props.latex.length === 0;
+      useEffect(() => {
+        if (noLatex) {
+          withRef(mathRef, (it) => {
+            it.focus();
+          });
+        }
+      }, [noLatex, mathRef]);
       return (
         <div
-          className="inline-flex items-center"
+          className={cn("inline-flex items-center", noLatex ? "border-2 " : "")}
           onClickCapture={() => {
             setFalse();
           }}
@@ -86,11 +99,30 @@ export const createInline = createReactInlineContentSpec(
           }}
           onBlurCapture={() => {
             setTrue();
+            if (noLatex) {
+              props.editor._tiptapEditor.commands.command(({ tr, state }) => {
+                const { from } = tr.selection;
+                const $pos = state.doc.resolve(from);
+                const node = $pos.nodeBefore ?? $pos.nodeAfter;
+                if (node?.type.name === "math-inline") {
+                  const start = $pos.nodeBefore ? from - node.nodeSize : from;
+                  tr.delete(start, start + node.nodeSize);
+                  return true;
+                }
+                return false;
+              });
+            }
           }}
         >
           <math-field
-            className={cn("w-fit")}
-            style={{ display: "inline" }}
+            className={cn("w-fit min-w-10")}
+            style={
+              {
+                display: "inline",
+                backgroundColor: "var(--bn-colors-editor-background)",
+                "color-scheme": theme === "dark" ? "dark" : "light",
+              } as any
+            }
             ref={(el) => {
               if (el === null) {
                 return;
@@ -104,7 +136,7 @@ export const createInline = createReactInlineContentSpec(
             read-only={value}
 
             onInput={(e) => {
-              const value = (e.target as any).formula;
+              const value = (e.target as any).value;
               props.updateInlineContent({
                 props: { latex: value },
                 type: "math-inline",
@@ -115,6 +147,10 @@ export const createInline = createReactInlineContentSpec(
           </math-field>
         </div>
       );
+    },
+    // 复制到外部时输出纯文本 LaTeX，确保粘贴板内容包含公式
+    toExternalHTML: (props) => {
+      return <span>{`$$ ${props.inlineContent.props.latex} $$`}</span>;
     },
   },
 );
@@ -133,14 +169,21 @@ export const createMath = createReactBlockSpec(
     render: (props) => {
       const mathRef = useRef<MathfieldElement & EventTarget>(null);
       const { value, setFalse, setTrue } = useBoolean(true);
-
+      const { theme } = useTheme();
       const mathFieldRef = useClickAway(() => {
         setTrue();
       });
+      const divRef = useRef<HTMLDivElement>(null);
+      const noLatex = props.block.props.latex.length === 0;
 
       return (
         <div
-          className="w-full flex max-w-full items-center"
+          ref={divRef}
+          className={cn(
+            "w-full flex max-w-full items-center",
+
+            noLatex ? "border-2 " : "",
+          )}
           onClickCapture={() => {
             setFalse();
           }}
@@ -152,8 +195,14 @@ export const createMath = createReactBlockSpec(
           }}
         >
           <math-field
-            className={cn("mx-auto max-w-full w-full")}
+            className={cn("mx-auto max-w-full w-full light")}
             placeholder="\text{Enter a formula}"
+            style={
+              {
+                "color-scheme": theme === "dark" ? "dark" : "light",
+                backgroundColor: "var(--bn-colors-editor-background)",
+              } as any
+            }
             ref={(el) => {
               if (el === null) {
                 return;
@@ -166,7 +215,7 @@ export const createMath = createReactBlockSpec(
             virtual-keyboard-mode="onfocus"
             read-only={value}
             onInput={(e) => {
-              const value = (e.target as any).formula;
+              const value = (e.target as any).value;
               props.editor.updateBlock(props.block, {
                 props: { latex: value },
               });
@@ -176,6 +225,10 @@ export const createMath = createReactBlockSpec(
           </math-field>
         </div>
       );
+    },
+    // 复制到外部时输出纯文本 LaTeX，确保粘贴板内容包含公式
+    toExternalHTML: (props) => {
+      return <div>{`\n$$\n${props.block.props.latex}\n$$\n`}</div>;
     },
   },
 );
@@ -225,3 +278,93 @@ export const getCustomSlashMenuItems = (
   insertMathLiveItem(editor),
   insertInlineMathLiveItem(editor),
 ];
+
+export const getMathSlashMenuItems = (
+  editor: MathEditor,
+): DefaultReactSuggestionItem[] => [
+  insertMathLiveItem(editor),
+  insertInlineMathLiveItem(editor),
+];
+export const mathFieldExtension = createExtension({
+  key: "math-field",
+  inputRules: [
+    {
+      find: /^\$\$\s?$/,
+      replace: () => ({
+        type: "math",
+        props: { latex: "" },
+      }),
+    },
+  ],
+});
+
+/**
+ * 获取选区文本，包含 math-inline 和 math block 的 LaTeX 内容。
+ */
+export function getSelectedTextWithMath(editor: MathEditor): string {
+  const { state } = editor._tiptapEditor;
+  const { from, to } = state.selection;
+  if (from === to) return "";
+
+  return state.doc.textBetween(from, to, "\n", (node) => {
+    if (node.type.name === "math-inline") {
+      return `$${node.attrs.latex}$`;
+    }
+    if (node.type.name === "math") {
+      return `\n$$\n${node.attrs.latex}\n$$\n`;
+    }
+    return "";
+  });
+}
+
+/**
+ * 获取 block 的文本内容，直接用 ProseMirror textBetween，保留默认行为，只覆盖 math 节点。
+ */
+export function getBlockTextWithMath(
+  editor: MathEditor,
+  blockId: string,
+): string {
+  const { state } = editor._tiptapEditor;
+
+  // 在文档中查找该 block 的 ProseMirror 节点和位置
+  let foundPos = -1;
+  let foundNode: ReturnType<typeof state.doc.nodeAt> = null;
+  state.doc.descendants((node, pos) => {
+    if (node.attrs.id === blockId && node.type.isInGroup?.("bnBlock")) {
+      foundNode = node;
+      foundPos = pos;
+      return false;
+    }
+  });
+
+  if (!foundNode || foundPos < 0) return "";
+
+  const from = foundPos + 1;
+  const to = foundPos + foundNode - 1;
+
+  return state.doc
+    .textBetween(from, to, "\n", (leafNode) => {
+      if (leafNode.type.name === "math-inline") {
+        return `$${leafNode.attrs.latex}$`;
+      }
+      if (leafNode.type.name === "math") {
+        return `\n$$\n${leafNode.attrs.latex}\n$$\n`;
+      }
+      // 其他叶子节点（image 等）返回空跳过
+      return "";
+    })
+    .trim();
+}
+
+/**
+ * 把多个 block 的内容合并（用 textBetween 逐个处理）。
+ */
+export function getBlocksTextWithMath(
+  editor: MathEditor,
+  blockIds: string[],
+): string {
+  return blockIds
+    .map((id) => getBlockTextWithMath(editor, id))
+    .filter(Boolean)
+    .join("\n");
+}

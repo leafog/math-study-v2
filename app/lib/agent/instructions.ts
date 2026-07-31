@@ -27,6 +27,7 @@ description_i18n 存放各语言描述，必须提供。
 
 ### 6. 题目格式
 - content 字段支持 Markdown + LaTeX，数学公式**必须**使用 \`$$\` \`$$\` 包裹
+- **content 内容必须纯净**：只包含题干本身，严禁在 content 中出现任何提示、引导、解题思路、Hint 等内容
 - description 字段填写简要说明或提示（可选）
 - source 统一填写 "ai"
 - tags 填相关知识点的 ID 列表

@@ -79,6 +79,7 @@ const PureChatMessage = memo(
       () =>
         message.parts.map((part, i) => {
           const { type } = part;
+
           const key = `message-${message.id}-part-${i}`;
           if (type === "reasoning") {
             return <div key={key}>reasoning</div>;
