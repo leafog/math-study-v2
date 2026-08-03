@@ -10,16 +10,13 @@ import { MessageResponse } from "../ai-elements/message";
 import { Bubble, BubbleContent } from "../ui/bubble";
 import { Message, MessageContent, MessageFooter } from "../ui/message";
 import type { UIMessage } from "ai";
-import { useTranslation } from "react-i18next";
 import { Button } from "../ui/button";
 import { CopyIcon, FileIcon } from "lucide-react";
-import { Spinner } from "../ui/spinner";
 import { useCopyToClipboard } from "usehooks-ts";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
-import ProblemView from "../math/problem";
-import type { Problem } from "~/db/db-zod-schema";
 import confetti from "canvas-confetti";
+import { kindToRenderer } from "~/lib/agent/tools/tools-ui";
 
 export type MessageActionProps = ComponentProps<typeof Button> & {
   tooltip?: string;
@@ -54,49 +51,6 @@ export const MessageAction = ({
   return button;
 };
 
-// ── 工具调用内联标签 ──
-
-function ToolCallLabel({
-  state,
-  loadingKey,
-  doneText,
-  errorKey,
-}: Readonly<{
-  state: string;
-  loadingKey: string;
-  doneText?: string | null;
-  errorKey?: string;
-}>) {
-  const { t } = useTranslation();
-
-  if (state === "output-error") {
-    return (
-      <div className="flex items-center gap-1.5 text-xs text-destructive py-1">
-        <span className="text-[10px]">✕</span>
-        <span>{t(errorKey!, t("toolCall.execFailed"))}</span>
-      </div>
-    );
-  }
-
-  if (state === "output-available") {
-    if (!doneText) return null;
-    return (
-      <div className="flex items-center gap-1.5 text-xs text-primary py-1">
-        <span>✓</span>
-        <span>{doneText}</span>
-      </div>
-    );
-  }
-
-  // input-streaming | input-available → loading
-  return (
-    <div className="flex items-center gap-1.5 text-xs text-muted-foreground py-1">
-      <Spinner className="size-3" />
-      <span>{t(loadingKey)}</span>
-    </div>
-  );
-}
-
 const PureChatMessage = memo(
   ({
     message,
@@ -105,8 +59,6 @@ const PureChatMessage = memo(
     message: UIMessage;
     isAnimating?: boolean;
   }) => {
-    const { t } = useTranslation();
-
     // Confetti when answer is correct (only for live messages, not history)
     const confettiFiredRef = useRef(false);
     useEffect(() => {
@@ -188,89 +140,15 @@ const PureChatMessage = memo(
               </div>
             );
           }
-          // ── Tool: createProblem ──
-          if (type === "tool-createProblem") {
-            const toolPart = part;
-            if (toolPart.state === "output-available") {
-              const r = toolPart.output as Problem;
-              return (
-                <div key={key} id={`problem-${r.id}`}>
-                  <ProblemView
-                    id={r.id}
-                    content={r.content}
-                    description={r.description}
-                    source={r.source}
-                  />
-                </div>
-              );
-            }
-            return (
-              <ToolCallLabel
-                key={key}
-                state={toolPart.state}
-                loadingKey="toolCall.creatingProblem"
-                errorKey="toolCall.createProblemFailed"
-              />
-            );
-          }
-
-          // ── Tool: createTopic ──
-          if (type === "tool-createTopic") {
-            const toolPart = part;
-            const doneText =
-              toolPart.state === "output-available"
-                ? (toolPart.output as { created?: boolean })?.created
-                  ? t("toolCall.topicRecorded")
-                  : t("toolCall.topicLinked")
-                : undefined;
-            return (
-              <ToolCallLabel
-                key={key}
-                state={toolPart.state}
-                loadingKey="toolCall.recordingTopic"
-                doneText={doneText}
-                errorKey="toolCall.recordTopicFailed"
-              />
-            );
-          }
-
-          // ── Tool: createRelationship ──
-          if (type === "tool-createRelationship") {
-            const toolPart = part;
-            return (
-              <ToolCallLabel
-                key={key}
-                state={toolPart.state}
-                loadingKey="toolCall.buildingRelation"
-                doneText={t("toolCall.relationBuilt")}
-                errorKey="toolCall.buildRelationFailed"
-              />
-            );
-          }
-
-          // ── Tool: checkAnswer ──
-          if (type === "tool-checkAnswer") {
-            const toolPart = part;
-            const doneText =
-              toolPart.state === "output-available"
-                ? (toolPart.output as { correct?: boolean })?.correct
-                  ? t("toolCall.answerCorrect")
-                  : t("toolCall.answerWrong")
-                : undefined;
-            return (
-              <ToolCallLabel
-                key={key}
-                state={toolPart.state}
-                loadingKey="toolCall.checkingAnswer"
-                doneText={doneText}
-                errorKey="toolCall.checkAnswerFailed"
-              />
-            );
+          // ── Tool parts → registered renderers ──
+          const renderer = kindToRenderer(type);
+          if (renderer) {
+            return <renderer.Renderer key={key} part={part as any} />;
           }
 
           return <div key={key}>{part.type}</div>;
         }),
-      [message.parts, message.id, isAnimating, t],
+      [message.parts, message.id, isAnimating],
     );
 
     return (

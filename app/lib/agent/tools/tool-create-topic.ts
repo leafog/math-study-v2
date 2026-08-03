@@ -1,6 +1,6 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { kgTopicColl, conversationKgTopicColl } from "~/db/tdb-collections";
+import { kgTopicColl, chatKgTopicColl } from "~/db/tdb-collections";
 import { genId } from "~/lib/id-utils";
 import { queryOnce } from "@tanstack/react-db";
 import {
@@ -57,9 +57,9 @@ export const createTopic = tool({
     if (match) {
       // 关联已存在的知识点到当前会话
       if (chatId) {
-        conversationKgTopicColl.insert({
+        chatKgTopicColl.insert({
           id: genId(),
-          conversation_id: chatId,
+          chat_id: chatId,
           topic_id: match.id,
           created_at: new Date(),
         });
@@ -89,9 +89,9 @@ export const createTopic = tool({
 
     // 关联到当前会话
     if (chatId) {
-      conversationKgTopicColl.insert({
+      chatKgTopicColl.insert({
         id: genId(),
-        conversation_id: chatId,
+        chat_id: chatId,
         topic_id: topic.id,
         created_at: new Date(),
       });

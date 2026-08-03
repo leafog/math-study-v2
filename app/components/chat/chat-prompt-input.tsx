@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { useActiveChat, useActiveChatHelpers } from "~/hooks/chat/active-chat";
 import {
   PromptInput,
@@ -39,7 +39,11 @@ import {
 import { filter, isEmpty } from "lodash-es";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import {
+  HoverCard,
+  HoverCardTrigger,
+  HoverCardContent,
+} from "../ui/hover-card";
 import { MessageResponse } from "../ai-elements/message";
 const DisplayAttachments = () => {
   const attachments = usePromptInputAttachments();
@@ -78,16 +82,13 @@ const DisplayAttachments = () => {
   );
 };
 
-const kindLabels: Record<string, string> = {
-  blocknote: "笔记",
-};
-
 const DisplaySelectsMap = ({
   selectsMap,
 }: {
   selectsMap: Record<string, ToolSelectionItem>;
 }) => {
   const clearSelection = useToolSelectionStore.use.clearSelection();
+  const { t } = useTranslation();
 
   if (isEmpty(selectsMap)) {
     return null;
@@ -96,11 +97,11 @@ const DisplaySelectsMap = ({
   return (
     <div className="flex w-full flex-wrap gap-1.5">
       {Object.entries(selectsMap).map(([id, item]) => (
-        <Tooltip key={id}>
-          <TooltipTrigger asChild>
+        <HoverCard key={id}>
+          <HoverCardTrigger asChild>
             <Badge key={id} variant="outline" className="gap-1 pr-1">
               <span className="max-w-40 truncate text-xs">
-                {kindLabels[item.kind] ?? item.kind}: {item.content}
+                {t(`tools.${item.kind}`, item.kind)}: {item.content}
               </span>
               <Button
                 type="button"
@@ -112,17 +113,18 @@ const DisplaySelectsMap = ({
                 <X className="h-3 w-3" />
               </Button>
             </Badge>
-          </TooltipTrigger>
-          <TooltipContent>
+          </HoverCardTrigger>
+          <HoverCardContent>
             <MessageResponse>{item.content}</MessageResponse>
-          </TooltipContent>
-        </Tooltip>
+          </HoverCardContent>
+        </HoverCard>
       ))}
     </div>
   );
 };
 
 const ChatPromptInput = () => {
+  const { t } = useTranslation();
   const { id, sendMessage, status } = useActiveChatHelpers();
   const { isNewChat, createChat } = useActiveChat();
   const selectsMap = useToolSelectionStore.use.selectsMap();
@@ -148,10 +150,11 @@ const ChatPromptInput = () => {
       (it) => it.type === "markdown",
     );
     const selectionPrefix = selections
-      .map(
-        (it) =>
-          `> 来自 ${it.kind} 的引用:\n>\n> ${it.content.replace(/\n/g, "\n> ")}`,
-      )
+      .map((it) => {
+        const kindLabel = t(`tools.${it.kind}`, it.kind);
+        const quotedContent = it.content.replaceAll("\n", "\n> ");
+        return t("chat.quoteFrom", { kind: kindLabel, content: quotedContent });
+      })
       .join("\n\n");
 
     const fullText = selectionPrefix
@@ -165,7 +168,7 @@ const ChatPromptInput = () => {
     }
 
     chatMessageColl.insert({
-      conversation_id: id,
+      chat_id: id,
       role: "user",
       id: genId(),
       parts,

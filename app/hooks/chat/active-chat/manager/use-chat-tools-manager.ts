@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from "react";
-import { eq, queryOnce, useLiveQuery } from "@tanstack/react-db";
+import { eq, useLiveQuery } from "@tanstack/react-db";
 import {
   chatToolInstanceColl,
   chatToolsBarStateColl,
@@ -21,7 +21,7 @@ export const useChatToolsManager = (
         q
           .from({ chatToolInstanceColl })
           .where(({ chatToolInstanceColl }) =>
-            eq(chatToolInstanceColl.conversation_id, chatId),
+            eq(chatToolInstanceColl.chat_id, chatId),
           ),
       gcTime: 60_000,
     },
@@ -80,7 +80,7 @@ export const useChatToolsManager = (
       const now = new Date();
       chatToolInstanceColl.insert({
         id: instanceId,
-        conversation_id: chatId,
+        chat_id: chatId,
         kind,
         title: title ?? kind,
         data: "",

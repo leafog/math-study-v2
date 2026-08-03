@@ -9,7 +9,7 @@ export const useMessagesManager = (chatId: string) => {
         q
           .from({ chatMessageColl })
           .where(({ chatMessageColl }) =>
-            eq(chatMessageColl.conversation_id, chatId),
+            eq(chatMessageColl.chat_id, chatId),
           )
           .orderBy(({ chatMessageColl }) => chatMessageColl.created_at, {
             direction: "asc",

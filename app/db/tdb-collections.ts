@@ -176,6 +176,8 @@ export const {
   kgEdgeColl,
   kgClusterColl,
   kgCurriculumColl,
-  conversationKgTopicColl,
+  chatKgTopicColl,
   toolDataColl,
+  answerAnalysisColl,
+  problemExplanationColl,
 } = colls;

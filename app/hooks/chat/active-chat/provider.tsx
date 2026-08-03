@@ -5,7 +5,7 @@ import { createTopic } from "~/lib/agent/tools/tool-create-topic";
 import { genId } from "~/lib/id-utils";
 import {
   chatMessageColl,
-  conversationKgTopicColl,
+  chatKgTopicColl,
   zustandStorageColl,
 } from "~/db/tdb-collections";
 import { createChatToolsPanelStore } from "~/store/chat-tools-panel-store";
@@ -37,7 +37,7 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
     onToolCall: async ({ toolCall }) => {},
     onFinish: ({ message }) => {
       chatMessageColl.insert({
-        conversation_id: chatId,
+        chat_id: chatId,
         created_at: new Date(),
         ...message,
       });

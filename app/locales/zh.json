@@ -19,7 +19,8 @@
     "send": "发送",
     "noMessages": "暂无消息",
     "history": "历史记录",
-    "recent": "最近"
+    "recent": "最近",
+    "quoteFrom": "> 来自 {{kind}} 的引用:\n>\n> {{content}}"
   },
   "routes": {
     "files": "文件",
@@ -57,7 +58,19 @@
     "source": "来源",
     "clearFilter": "清除",
     "empty": "还没有题目，开始创建吧",
-    "noFiltered": "没有该来源的题目"
+    "noFiltered": "没有该来源的题目",
+    "yourAnswer": "你的回答",
+    "attemptN": "第{{n}}次回答",
+    "answerRecord": "答题记录",
+    "noAnswerRecord": "暂无答题记录",
+    "viewProblem": "查看题目",
+    "viewExplanation": "查看解析",
+    "pin": "固定",
+    "unpin": "取消固定",
+    "pinHint": "固定这道题目，方便随时查看",
+    "pinReplaceHint": "已固定了另一道题目，固定后将替换",
+    "aiFeedback": "AI 点评",
+    "explanation": "题目解析"
   },
   "settings": {
     "title": "设置",
@@ -81,6 +94,9 @@
     "answerCorrect": "回答正确",
     "answerWrong": "回答有误",
     "checkAnswerFailed": "检查失败",
-    "execFailed": "执行失败"
+    "execFailed": "执行失败",
+    "creatingExplanation": "正在生成解析...",
+    "explanationCreated": "解析已生成",
+    "createExplanationFailed": "生成解析失败"
   }
 }

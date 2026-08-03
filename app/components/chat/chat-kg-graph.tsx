@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { KnowledgeGraph } from "~/components/graph/knowledge-graph";
 import { useActiveChat } from "~/hooks/chat/active-chat";
 import {
-  conversationKgTopicColl,
+  chatKgTopicColl,
   kgTopicColl,
   kgEdgeColl,
 } from "~/db/tdb-collections";
@@ -22,9 +22,9 @@ const ChatKnowledgeGraph = () => {
   const { data: relations } = useLiveQuery(
     (q) =>
       q
-        .from({ conversationKgTopicColl })
-        .where(({ conversationKgTopicColl }) =>
-          eq(conversationKgTopicColl.conversation_id, chatId),
+        .from({ chatKgTopicColl })
+        .where(({ chatKgTopicColl }) =>
+          eq(chatKgTopicColl.chat_id, chatId),
         ),
     [chatId],
   );

@@ -1,45 +1,20 @@
-import { useLiveQuery, eq } from "@tanstack/react-db";
-import { FileQuestion } from "lucide-react";
+import { cn } from "~/lib/utils";
+import { FileQuestion, PinIcon, PinOffIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useActiveChat } from "~/hooks/chat/active-chat";
-import { problemColl, answerRecordColl } from "~/db/tdb-collections";
+import useChatProblemsManager from "~/hooks/chat/active-chat/manager/use-chat-problems-manager";
 import type { Problem as ProblemType } from "~/db/db-zod-schema";
-import { useMemo } from "react";
+import { scrollToProblem } from "~/components/math/scroll-utils";
+import { usePinnedProblems } from "~/store/pinned-problems-store";
 
 const ChatProblemsList = () => {
   const { t } = useTranslation();
   const { chatId } = useActiveChat();
 
-  const { data: problems } = useLiveQuery(
-    (q) =>
-      q
-        .from({ problemColl })
-        .where(({ problemColl: col }) => eq(col.chat_id, chatId))
-        .orderBy(({ problemColl: col }) => col.created_at, {
-          direction: "asc",
-        }),
-    [chatId],
-  );
-
-  const { data: answers } = useLiveQuery(
-    (q) =>
-      q
-        .from({ answerRecordColl })
-        .where(({ answerRecordColl: col }) => eq(col.conversation_id, chatId)),
-    [chatId],
-  );
-
-  // Map problem_id → latest answer correct status
-  const answerStatus = useMemo(() => {
-    const map = new Map<string, boolean>();
-    if (!answers) return map;
-    for (const a of answers) {
-      if (!map.has(a.problem_id)) {
-        map.set(a.problem_id, a.correct);
-      }
-    }
-    return map;
-  }, [answers]);
+  const { problems } = useChatProblemsManager(chatId);
+  const pinned = usePinnedProblems((s) => s.pinned);
+  const togglePin = usePinnedProblems((s) => s.toggle);
+  const pinnedId = pinned[chatId];
 
   if (!problems?.length) {
     return (
@@ -50,43 +25,51 @@ const ChatProblemsList = () => {
     );
   }
 
-  const scrollToProblem = (id: string) => {
-    const el = document.getElementById(`problem-${id}`);
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const viewportHeight = window.innerHeight;
-    if (
-      rect.top >= viewportHeight * 0.2 &&
-      rect.bottom <= viewportHeight * 0.8
-    ) {
-      return;
-    }
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
-  };
-
   return (
     <div className="flex flex-col">
       {(problems as ProblemType[]).map((p) => {
-        const status = answerStatus.get(p.id);
+        const status = "error";
         return (
-          <button
-            onClick={() => scrollToProblem(p.id)}
+          <div
             key={p.id}
-            className="flex items-center gap-2 px-2 py-1.5 text-xs text-left hover:bg-accent rounded-md transition-colors"
+            className="group flex items-center gap-2 px-2 py-1.5 text-xs rounded-md hover:bg-accent transition-colors"
           >
-            <span
-              className={`size-2 shrink-0 rounded-full ${
-                status === undefined
-                  ? "bg-muted-foreground/20"
-                  : status
-                    ? "bg-primary"
-                    : "bg-destructive"
-              }`}
-            />
-            <span className="truncate">
-              {p.description || p.content.slice(0, 40)}
-            </span>
-          </button>
+            <button
+              onClick={() => scrollToProblem(p.id)}
+              className="flex items-center gap-2 flex-1 min-w-0 text-left"
+            >
+              <span
+                className={`size-2 shrink-0 rounded-full ${
+                  status === undefined
+                    ? "bg-muted-foreground"
+                    : status
+                      ? "bg-primary"
+                      : "bg-destructive"
+                }`}
+              />
+              <span className="truncate">
+                {p.description || p.content.slice(0, 40)}
+              </span>
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                togglePin(chatId, p.id);
+              }}
+              className={cn(
+                "shrink-0 transition-opacity",
+                pinnedId === p.id
+                  ? "opacity-100"
+                  : "opacity-0 group-hover:opacity-100",
+              )}
+            >
+              {pinnedId === p.id ? (
+                <PinOffIcon className="size-3 text-primary" />
+              ) : (
+                <PinIcon className="size-3 text-muted-foreground hover:text-foreground" />
+              )}
+            </button>
+          </div>
         );
       })}
     </div>

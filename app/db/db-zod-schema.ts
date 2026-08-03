@@ -34,7 +34,7 @@ export type PracticeSession = z.infer<typeof PracticeSessionSchema>;
 export const AnswerRecordSchema = z.object({
   id: z.string().describe("Unique answer record ID"),
   problem_id: z.string().describe("Problem ID this answer belongs to"),
-  conversation_id: z.string().optional().describe("Conversation ID where this answer occurred"),
+  chat_id: z.string().optional().describe("Chat ID where this answer occurred"),
   user_answer: z.string().describe("Student's raw answer text"),
   correct: z.boolean().describe("Whether AI judged the answer as correct"),
   knowledge_points: z.array(z.string()).describe("Related knowledge point IDs"),
@@ -42,6 +42,30 @@ export const AnswerRecordSchema = z.object({
   created_at: z.date().describe("When the answer was recorded"),
 });
 export type AnswerRecord = z.infer<typeof AnswerRecordSchema>;
+
+export const AnswerAnalysisSchema = z.object({
+  id: z.string().describe("Unique analysis ID"),
+  answer_id: z.string().describe("FK to AnswerRecord"),
+  chat_id: z
+    .string()
+    .nullish()
+    .describe("FK to Conversation, for batch query by chat"),
+  content: z.string().describe("AI feedback/analysis on this answer"),
+  created_at: z.date(),
+});
+export type AnswerAnalysis = z.infer<typeof AnswerAnalysisSchema>;
+
+export const ProblemExplanationSchema = z.object({
+  id: z.string().describe("Unique explanation ID"),
+  problem_id: z.string().describe("FK to Problem"),
+  chat_id: z
+    .string()
+    .nullish()
+    .describe("FK to Conversation, for batch query by chat"),
+  content: z.string().describe("Standard solution/explanation for the problem"),
+  created_at: z.date(),
+});
+export type ProblemExplanation = z.infer<typeof ProblemExplanationSchema>;
 
 export const StudyNoteSchema = z.object({
   id: z.string(),
@@ -99,7 +123,7 @@ export const KnowledgeInteractionSchema = z.object({
     .object({
       correct: z.boolean().optional(),
       time_spent_ms: z.number().optional(),
-      conversation_id: z.string().optional(),
+      chat_id: z.string().optional(),
       ai_note: z.string().optional(),
     })
     .optional(),
@@ -321,7 +345,7 @@ export type Tag = z.infer<typeof TagSchema>;
 /** 对话-知识点关联 */
 export const ConversationKnowledgePointSchema = z.object({
   id: z.string(),
-  conversation_id: z.string(),
+  chat_id: z.string().nullish(),
   knowledge_point_id: z.string(),
   created_at: z.date(),
 });
@@ -330,13 +354,13 @@ export type ConversationKnowledgePoint = z.infer<
 >;
 
 /** 对话-知识图谱主题关联 */
-export const ConversationKgTopicSchema = z.object({
+export const ChatKgTopicSchema = z.object({
   id: z.string(),
-  conversation_id: z.string(),
+  chat_id: z.string().nullish(),
   topic_id: z.string(),
   created_at: z.date(),
 });
-export type ConversationKgTopic = z.infer<typeof ConversationKgTopicSchema>;
+export type ConversationKgTopic = z.infer<typeof ChatKgTopicSchema>;
 
 // ─── Provider / API config schemas ──────────────────────────────
 
@@ -370,7 +394,7 @@ export type Conversation = z.infer<typeof ConversationSchema>;
 
 export const ChatMessageSchema = z.object({
   id: z.string(),
-  conversation_id: z.string(),
+  chat_id: z.string().nullish(),
   role: z.enum(["user", "assistant", "system"]),
   parts: z.array(z.any()),
   metadata: z
@@ -434,7 +458,7 @@ export type Attachment = z.infer<typeof AttachmentSchema>;
 /** 工具运行时产生的数据（如绘图、笔记等），按 chatId 隔离 */
 export const ToolDataSchema = z.object({
   id: z.string(),
-  chat_id: z.string(),
+  chat_id: z.string().nullish(),
   kind: z.string().nullable().optional(),
   data: z.string().nullable().optional(),
   created_at: z.date(),
@@ -444,7 +468,7 @@ export type ToolData = z.infer<typeof ToolDataSchema>;
 
 export const ChatToolInstanceSchema = z.object({
   id: z.string(),
-  conversation_id: z.string(), // 关联到 conversation
+  chat_id: z.string().nullish(), // 关联到 conversation
   kind: z.string(), // "excalidraw" | "calculator" | "reference-viewer"
   title: z.string(), // tab 上显示的标题
   data: z.any(), // JSON — 工具自己的数据，按 kind 不同结构不同

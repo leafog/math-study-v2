@@ -21,6 +21,7 @@ import {
   useActiveChatToolsPanelStore,
 } from "~/hooks/chat/active-chat";
 import ChatPanelRight from "./chat-panel-right";
+import { ChatPinnedProblemBtn } from "./chat-pinned-problem-btn";
 import { Marker, MarkerContent, MarkerIcon } from "../ui/marker";
 import { Spinner } from "../ui/spinner";
 
@@ -50,7 +51,12 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
       <MessageScrollerProvider autoScroll>
         <ChatHeaderContainer className="shrink-0 border-b-2">
           <div className="min-w-0 flex-1">
-            <span className="block truncate">{currentConversation?.title}</span>
+            <div className="flex items-center gap-2">
+              <span className="block truncate">
+                {currentConversation?.title}
+              </span>
+              <ChatPinnedProblemBtn chatId={chatId!} />
+            </div>
           </div>
           <div className="gap-2 flex">
             <ChatMenuBtn />
@@ -60,7 +66,7 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
         <div className="grid grid-rows-1 content-between relative w-full grow overflow-hidden ">
           <div className="overflow-hidden p-0">
             <MessageScroller>
-              <MessageScrollerViewport className="flex flex-row ">
+              <MessageScrollerViewport className=" flex flex-row ">
                 <MessageScrollerContent className="min-w-0 w-full mx-auto max-w-3xl px-6 py-2">
                   {messages.map((message, i) => {
                     return (

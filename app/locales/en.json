@@ -19,7 +19,8 @@
     "send": "Send",
     "noMessages": "No messages yet",
     "history": "History",
-    "recent": "Recent"
+    "recent": "Recent",
+    "quoteFrom": "> Quote from {{kind}}:\n>\n> {{content}}"
   },
   "routes": {
     "files": "Files",
@@ -57,7 +58,19 @@
     "source": "Source",
     "clearFilter": "Clear",
     "empty": "No problems yet, start creating!",
-    "noFiltered": "No problems from this source yet"
+    "noFiltered": "No problems from this source yet",
+    "yourAnswer": "Your answer",
+    "attemptN": "Attempt {{n}}",
+    "answerRecord": "Answer Records",
+    "noAnswerRecord": "No answer records yet",
+    "viewProblem": "View Problem",
+    "viewExplanation": "View Explanation",
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "pinHint": "Pin this problem for quick access",
+    "pinReplaceHint": "Another problem is pinned. Pinning this will replace it.",
+    "aiFeedback": "AI Feedback",
+    "explanation": "Solution"
   },
   "settings": {
     "title": "Settings",
@@ -81,6 +94,9 @@
     "answerCorrect": "Correct",
     "answerWrong": "Incorrect",
     "checkAnswerFailed": "Check failed",
-    "execFailed": "Execution failed"
+    "execFailed": "Execution failed",
+    "creatingExplanation": "Generating explanation...",
+    "explanationCreated": "Explanation generated",
+    "createExplanationFailed": "Failed to generate explanation"
   }
 }

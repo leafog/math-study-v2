@@ -73,9 +73,14 @@ description_i18n 存放各语言描述，必须提供。
 - user_answer：学生原始回答文本
 - correct：判断是否正确（对照题目的标准答案或数学原理）
 - knowledge_points：题目关联的知识点 ID 列表
-- error_type：（如果错误）概念性错误/计算错误/粗心/不完整
+- analysis：对此回答的详细点评/反馈，指出对错原因和解题思路，帮助学生理解
 调用后给出简要点评，指出对错原因，帮助学生理解。
-`,
+
+### 11. 生成题目解析
+当需要为题目生成标准答案或解题思路时，调用 createExplanation 工具：
+- problem_id：对应题目的 ID
+- content：标准解法/解题思路，支持 Markdown 和 LaTeX 格式
+这让学生在不作答的情况下也能查看题目的标准解法。`,
     },
     "toolDesc.createTopic": {
       description: "createTopic 工具描述",
@@ -91,7 +96,11 @@ description_i18n 存放各语言描述，必须提供。
     },
     "toolDesc.checkAnswer": {
       description: "checkAnswer 工具描述",
-      template: "当学生回答题目后，用来检查回答是否正确，同时记录学生的回答到数据库",
+      template: "当学生回答题目后，用来检查回答是否正确，同时记录学生的回答和 AI 点评到数据库",
+    },
+    "toolDesc.createExplanation": {
+      description: "createExplanation 工具描述",
+      template: "为题目生成标准答案/解题思路，保存为题目解析，让学生无需作答也能查看",
     },
   },
 
@@ -166,9 +175,14 @@ After a student answers a problem, you **must** call checkAnswer to record and e
 - user_answer: The student's original answer text
 - correct: Whether the answer is correct (judge against the problem's expected solution)
 - knowledge_points: List of related knowledge point IDs
-- error_type: (If wrong) conceptual error / calculation error / careless / incomplete
+- analysis: Detailed feedback on this answer — explain why it's correct/incorrect and provide guidance
 After calling, give brief feedback explaining why the answer is correct or incorrect.
-`,
+
+### 11. Generate Problem Explanation
+When a problem needs a standard solution or explanation, call createExplanation:
+- problem_id: The problem's ID
+- content: Standard solution/approach in Markdown + LaTeX
+This lets students view the standard solution even without submitting an answer.`,
     },
     "toolDesc.createTopic": {
       description: "createTopic tool description",
@@ -184,7 +198,11 @@ After calling, give brief feedback explaining why the answer is correct or incor
     },
     "toolDesc.checkAnswer": {
       description: "checkAnswer tool description",
-      template: "When a student answers a problem, check if the answer is correct and record it in the database",
+      template: "When a student answers a problem, check if the answer is correct and record both the answer and AI feedback in the database",
+    },
+    "toolDesc.createExplanation": {
+      description: "createExplanation tool description",
+      template: "Generate a standard solution/explanation for a problem and save it so students can view it without submitting an answer",
     },
   },
 };

@@ -1,10 +1,14 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
-import { eq, useLiveInfiniteQuery } from "@tanstack/react-db";
+import { useLiveInfiniteQuery, useLiveQuery } from "@tanstack/react-db";
 import { useTranslation } from "react-i18next";
 import { FileQuestion } from "lucide-react";
-import Problem from "~/components/math/problem";
-import { cn } from "~/lib/utils";
-import { kgTopicColl, problemColl } from "~/db/tdb-collections";
+import {
+  problemColl,
+  answerRecordColl,
+  answerAnalysisColl,
+  problemExplanationColl,
+  kgTopicColl,
+} from "~/db/tdb-collections";
 import type { Problem as ProblemType } from "~/db/db-zod-schema";
 import {
   Container,
@@ -12,20 +16,18 @@ import {
   ContainerSticky,
   ContainerBody,
 } from "~/components/layout/Container";
-import useKgTopics from "~/hooks/use-kg-topics";
+import ProblemPreview from "~/components/math/problem-preview";
 
 const PAGE_SIZE = 20;
 
 const ProblemIndex = () => {
   const { t } = useTranslation();
-  const { idsToTopics } = useKgTopics();
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     useLiveInfiniteQuery(
       (q) =>
         q
           .from({ problemColl })
-
           .orderBy(({ problemColl: col }) => col.created_at, {
             direction: "desc",
           }),
@@ -33,6 +35,54 @@ const ProblemIndex = () => {
     );
 
   const problems = (data ?? []) as ProblemType[];
+
+  // Bulk queries for related data
+  const { data: allAnswers = [] } = useLiveQuery((q) =>
+    q.from({ answerRecordColl }),
+  );
+  const { data: allAnalyses = [] } = useLiveQuery((q) =>
+    q.from({ answerAnalysisColl }),
+  );
+  const { data: allExplanations = [] } = useLiveQuery((q) =>
+    q.from({ problemExplanationColl }),
+  );
+  const { data: allTopics = [] } = useLiveQuery((q) =>
+    q.from({ kgTopicColl }),
+  );
+
+  // Index related data by problem ID
+  const answersByProblem = useMemo(() => {
+    const map = new Map<string, typeof allAnswers>();
+    for (const a of allAnswers) {
+      const list = map.get(a.problem_id) ?? [];
+      list.push(a);
+      map.set(a.problem_id, list);
+    }
+    return map;
+  }, [allAnswers]);
+
+  const analysesByAnswer = useMemo(() => {
+    const map = new Map<string, (typeof allAnalyses)[0]>();
+    for (const a of allAnalyses) map.set(a.answer_id, a);
+    return map;
+  }, [allAnalyses]);
+
+  const explanationsByProblem = useMemo(() => {
+    const map = new Map<string, typeof allExplanations>();
+    for (const e of allExplanations) {
+      const list = map.get(e.problem_id) ?? [];
+      list.push(e);
+      map.set(e.problem_id, list);
+    }
+    return map;
+  }, [allExplanations]);
+
+  const topicMap = useMemo(() => {
+    const map = new Map<string, (typeof allTopics)[0]>();
+    for (const t of allTopics) map.set(t.id, t);
+    return map;
+  }, [allTopics]);
+
   const [filterSource, setFilterSource] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
@@ -116,13 +166,19 @@ const ProblemIndex = () => {
           <>
             <div className="px-6 py-5 flex flex-col gap-4">
               {filtered.map((p) => (
-                <Problem
+                <ProblemPreview
                   key={p.id}
-                  id={p.id}
-                  content={p.content}
-                  description={p.description}
-                  source={p.source}
-                  tags={idsToTopics(p.tags)}
+                  problem={p}
+                  answers={answersByProblem.get(p.id) ?? []}
+                  answerAnalyses={
+                    (answersByProblem.get(p.id) ?? [])
+                      .map((a) => analysesByAnswer.get(a.id))
+                      .filter(Boolean) as typeof allAnalyses
+                  }
+                  kgTopics={p.tags
+                    .map((id) => topicMap.get(id))
+                    .filter(Boolean) as typeof allTopics}
+                  problemExplanations={explanationsByProblem.get(p.id) ?? []}
                   className="m-0 hover:shadow-md transition-shadow duration-200"
                 />
               ))}
