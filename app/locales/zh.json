@@ -66,5 +66,21 @@
     "light": "浅色",
     "dark": "深色",
     "system": "跟随系统"
+  },
+  "toolCall": {
+    "creatingProblem": "正在出题...",
+    "createProblemFailed": "出题失败",
+    "recordingTopic": "正在记录知识点...",
+    "topicRecorded": "已记录",
+    "topicLinked": "已关联已有知识点",
+    "recordTopicFailed": "记录失败",
+    "buildingRelation": "正在建立关系...",
+    "relationBuilt": "关系已建立",
+    "buildRelationFailed": "关系建立失败",
+    "checkingAnswer": "正在检查回答...",
+    "answerCorrect": "回答正确",
+    "answerWrong": "回答有误",
+    "checkAnswerFailed": "检查失败",
+    "execFailed": "执行失败"
   }
 }

@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { createSelectors } from "./create-selectors";
 
 interface ChatIdState {
   chatId: string;
@@ -9,5 +10,5 @@ const chatIdStore = create<ChatIdState>((set) => ({
   chatId: "",
   setChatId: (chatId) => set({ chatId }),
 }));
-
-export { chatIdStore };
+const useChatId = createSelectors(chatIdStore);
+export { chatIdStore, useChatId };

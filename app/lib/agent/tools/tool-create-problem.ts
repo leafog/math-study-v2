@@ -3,11 +3,10 @@ import { problemColl } from "~/db/tdb-collections";
 import { ProblemSchema } from "~/db/db-zod-schema";
 import { genId } from "~/lib/id-utils";
 import { chatIdStore } from "~/store/chat-id-store";
-import z from "zod";
+import { getPrompt } from "../instructions";
 
 export const createProblem = tool({
-  description:
-    "创建一个数学题目并展示给学生。当需要出题、布置练习、或者对话中需要让学生尝试解题时，使用此工具。题目内容支持 Markdown 和 LaTeX 格式",
+  description: getPrompt("toolDesc.createProblem"),
   inputSchema: ProblemSchema.omit({
     id: true,
     created_at: true,

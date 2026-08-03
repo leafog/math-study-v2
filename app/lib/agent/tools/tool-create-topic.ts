@@ -11,6 +11,7 @@ import {
 } from "~/lib/similar";
 import { KgTopicSchema } from "~/db/db-zod-schema";
 import { chatIdStore } from "~/store/chat-id-store";
+import { getPrompt } from "../instructions";
 
 /** 首次使用时从 DB 加载已有知识库并初始化语义缓存 */
 let loading = false;
@@ -27,8 +28,7 @@ async function ensureCorpusReady(): Promise<void> {
 }
 
 export const createTopic = tool({
-  description:
-    "用来收集对话中出现的数学相关的topic，自动创建知识图谱中的知识点节点",
+  description: getPrompt("toolDesc.createTopic"),
   inputSchema: KgTopicSchema.omit({
     id: true,
     created_at: true,
@@ -39,8 +39,20 @@ export const createTopic = tool({
     console.log(chatId);
     // 确保知识库语义缓存就绪
     await ensureCorpusReady();
-    // 查重：先文本 exact match，再语义相似度
-    const match = findSimilarTopic(input.name, input.subject);
+
+    // 构建富文本查询：name + i18n 翻译 + 描述，让查询侧 embedding 与语料库同等丰富
+    const queryText = [
+      input.name,
+      input.i18n?.zh || input.i18n?.["zh-CN"],
+      input.i18n?.en || input.i18n?.["en-US"],
+      input.description,
+      input.description_i18n?.zh || input.description_i18n?.["zh-CN"],
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    // 查重：先文本 exact match，再 CJK 重叠，最后语义相似度
+    const match = findSimilarTopic(input.name, input.subject, { queryText });
 
     if (match) {
       // 关联已存在的知识点到当前会话

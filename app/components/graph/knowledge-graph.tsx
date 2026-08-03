@@ -18,11 +18,53 @@ interface GraphLink extends SimulationLinkDatum<GraphNode> {
 interface KnowledgeGraphProps {
   nodes: Array<{ id: string; name: string; subject: string }>;
   edges: Array<{ source: string; target: string; type: string }>;
-  filterSubjects?: string[];
-  selectedNodeId?: string;
-  onNodeSelect?: (
+  onNodeHover?: (
     node: { id: string; name: string; subject: string } | null,
   ) => void;
+}
+
+// ── Obsidian-style helpers ──
+
+/** Node radius based on connection count (3–8px, Obsidian-like) */
+function nodeRadius(degree: number): number {
+  return Math.max(3, Math.min(8, 3 + degree * 0.5));
+}
+
+/** Resolve link endpoint to a string id (handles pre/post-simulation types) */
+function linkEndpointId(endpoint: string | number | { id: string }): string {
+  return typeof endpoint === "object" ? endpoint.id : String(endpoint);
+}
+
+/** Build degree map from links */
+function buildDegreeMap(
+  nodeIds: Set<string>,
+  links: GraphLink[],
+): Map<string, number> {
+  const map = new Map<string, number>();
+  for (const id of nodeIds) map.set(id, 0);
+  for (const l of links) {
+    const s = linkEndpointId(l.source);
+    const t = linkEndpointId(l.target);
+    map.set(s, (map.get(s) ?? 0) + 1);
+    map.set(t, (map.get(t) ?? 0) + 1);
+  }
+  return map;
+}
+
+/** Build neighbor set for each node (for hover focus mode) */
+function buildNeighborMap(
+  nodeIds: Set<string>,
+  links: GraphLink[],
+): Map<string, Set<string>> {
+  const map = new Map<string, Set<string>>();
+  for (const id of nodeIds) map.set(id, new Set());
+  for (const l of links) {
+    const s = linkEndpointId(l.source);
+    const t = linkEndpointId(l.target);
+    map.get(s)!.add(t);
+    map.get(t)!.add(s);
+  }
+  return map;
 }
 
 // ── Component ──
@@ -30,19 +72,15 @@ interface KnowledgeGraphProps {
 export function KnowledgeGraph({
   nodes,
   edges,
-  filterSubjects,
-  selectedNodeId,
-  onNodeSelect,
+  onNodeHover,
 }: Readonly<KnowledgeGraphProps>) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const clickHandlerRef = useRef(onNodeSelect);
-  clickHandlerRef.current = onNodeSelect;
+  const hoverHandlerRef = useRef(onNodeHover);
+  hoverHandlerRef.current = onNodeHover;
 
   // ── Build / rebuild graph on data changes ──
   useEffect(() => {
     if (!containerRef.current || !nodes.length) return;
-    const color = d3.scaleOrdinal(d3.schemeCategory10);
-
     const container = containerRef.current;
     const width = container.clientWidth || 800;
     const height = container.clientHeight || 600;
@@ -53,9 +91,10 @@ export function KnowledgeGraph({
       .map((d) => ({ ...d, type: d.type as "prerequisite" | "unlocks" }));
     const nodesCopy: GraphNode[] = nodes.map((d) => ({ ...d }));
 
-    const hasFilter = filterSubjects && filterSubjects.length > 0;
+    const degreeMap = buildDegreeMap(nodeIds, links);
+    const neighborMap = buildNeighborMap(nodeIds, links);
 
-    // ── Simulation ──
+    // ── Simulation (Obsidian: strong charge, moderate link distance) ──
     const simulation = d3
       .forceSimulation<GraphNode>(nodesCopy)
       .force(
@@ -63,12 +102,12 @@ export function KnowledgeGraph({
         d3
           .forceLink<GraphNode, GraphLink>(links)
           .id((d) => d.id)
-          .distance(80),
+          .distance(60),
       )
-      .force("charge", d3.forceManyBody().strength(-200))
+      .force("charge", d3.forceManyBody().strength(-150))
       .force("center", d3.forceCenter(0, 0))
-      .force("x", d3.forceX())
-      .force("y", d3.forceY());
+      .force("x", d3.forceX().strength(0.05))
+      .force("y", d3.forceY().strength(0.05));
 
     // ── SVG ──
     const svg = d3
@@ -89,19 +128,15 @@ export function KnowledgeGraph({
         }),
     );
 
-    // ── Links ──
-    g.append("g")
+    // ── Links (Obsidian: very thin, very subtle) ──
+    const linkGroup = g.append("g");
+    const linkEls = linkGroup
       .selectAll<SVGLineElement, GraphLink>("line")
       .data(links)
       .join("line")
-      .attr("stroke", (d) =>
-        d.type === "prerequisite" ? "#94a3b8" : "#cbd5e1",
-      )
-      .attr("stroke-opacity", 0.6)
-      .attr("stroke-width", (d) => (d.type === "prerequisite" ? 1.5 : 1))
-      .attr("stroke-dasharray", (d) =>
-        d.type === "prerequisite" ? "none" : "4,3",
-      );
+      .attr("stroke", "var(--border)")
+      .attr("stroke-opacity", 0.45)
+      .attr("stroke-width", 1);
 
     // ── Nodes ──
     const nodeGroup = g
@@ -110,39 +145,71 @@ export function KnowledgeGraph({
       .data(nodesCopy)
       .join("g");
 
-    nodeGroup
+    // Circles
+    const circles = nodeGroup
       .append("circle")
-      .attr("r", 7)
-      .attr("fill", (d) => color(d.subject))
+      .attr("r", (d) => nodeRadius(degreeMap.get(d.id) ?? 0))
+      .attr("fill", "var(--muted-foreground)")
       .attr("stroke", "transparent")
-      .attr("stroke-width", 2.5)
-      .attr("opacity", (d) => {
-        if (!hasFilter) return 1;
-        return filterSubjects!.includes(d.subject) ? 1 : 0.15;
-      });
+      .attr("stroke-width", 2)
+      .attr("style", "cursor: pointer");
 
+    // Labels (always visible)
     nodeGroup
       .append("text")
       .text((d) => d.name)
       .attr("text-anchor", "middle")
-      .attr("dy", 18)
-      .attr("font-size", 7)
-      .attr("fill", "currentColor")
-      .attr("opacity", (d) => {
-        if (!hasFilter) return 0.85;
-        return filterSubjects!.includes(d.subject) ? 0.85 : 0.1;
-      });
+      .attr("dy", (d) => nodeRadius(degreeMap.get(d.id) ?? 0) + 10)
+      .attr("font-size", (d) =>
+        Math.max(0, 6 + nodeRadius(degreeMap.get(d.id) ?? 0) * 0.3),
+      )
+      .attr("fill", "var(--foreground)")
+      .attr("opacity", 0.7)
+      .attr("pointer-events", "none");
 
+    // Tooltips (fallback for title attribute)
     nodeGroup.append("title").text((d) => `${d.name} — ${d.subject}`);
 
-    // ── Click (uses ref for latest handler) ──
-    nodeGroup.on("click", function (this: SVGGElement, _event: MouseEvent) {
-      const d = d3.select<SVGGElement, GraphNode>(this).datum();
-      const handler = clickHandlerRef.current;
-      if (handler) {
-        handler(d.id === selectedNodeId ? null : d);
-      }
-    });
+    // ── Hover: Obsidian focus mode ──
+    nodeGroup
+      .on("mouseenter", function (this: SVGGElement) {
+        const hovered = d3.select<SVGGElement, GraphNode>(this).datum();
+        const neighbors = neighborMap.get(hovered.id) ?? new Set();
+        const neighborIds = new Set([hovered.id, ...neighbors]);
+
+        // Dim all nodes except hovered + neighbors
+        circles
+          .attr("opacity", (d) => (neighborIds.has(d.id) ? 1 : 0.12))
+          .attr("fill", (d) =>
+            d.id === hovered.id ? "var(--primary)" : "var(--muted-foreground)",
+          );
+
+        // Highlight connected links with primary color
+        linkEls
+          .attr("stroke", (d) => {
+            const s = linkEndpointId(d.source);
+            const t = linkEndpointId(d.target);
+            return s === hovered.id || t === hovered.id
+              ? "var(--primary)"
+              : "var(--border)";
+          })
+          .attr("stroke-opacity", (d) => {
+            const s = linkEndpointId(d.source);
+            const t = linkEndpointId(d.target);
+            return s === hovered.id || t === hovered.id ? 0.6 : 0.08;
+          });
+
+        const handler = hoverHandlerRef.current;
+        if (handler) handler(hovered);
+      })
+      .on("mouseleave", function () {
+        // Reset all
+        circles.attr("opacity", 1).attr("fill", "var(--muted-foreground)");
+        linkEls.attr("stroke", "var(--border)").attr("stroke-opacity", 0.45);
+
+        const handler = hoverHandlerRef.current;
+        if (handler) handler(null);
+      });
 
     // ── Drag ──
     nodeGroup.call(
@@ -166,7 +233,7 @@ export function KnowledgeGraph({
 
     // ── Tick ──
     simulation.on("tick", () => {
-      g.selectAll<SVGLineElement, GraphLink>("line")
+      linkEls
         .attr("x1", (d) => (d.source as GraphNode).x!)
         .attr("y1", (d) => (d.source as GraphNode).y!)
         .attr("x2", (d) => (d.target as GraphNode).x!)
@@ -177,7 +244,7 @@ export function KnowledgeGraph({
 
     container.append(svg.node()!);
 
-    // ── Store container for selection updates ──
+    // ── Store for resize ──
     (container as any).__kgSvg__ = svg;
     (container as any).__kgSimulation__ = simulation;
 
@@ -187,11 +254,9 @@ export function KnowledgeGraph({
       delete (container as any).__kgSvg__;
       delete (container as any).__kgSimulation__;
     };
-    // Only rebuild on data changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodes, edges, filterSubjects]);
+  }, [nodes, edges]);
 
-  // ── Resize: update SVG dimensions without rebuilding ──
+  // ── Resize ──
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -213,21 +278,6 @@ export function KnowledgeGraph({
     observer.observe(container);
     return () => observer.disconnect();
   }, []);
-
-  // ── Update selected node styling ──
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const svg = (containerRef.current as any).__kgSvg__ as
-      d3.Selection<SVGSVGElement, unknown, null, undefined> | undefined;
-    if (!svg) return;
-
-    svg
-      .selectAll<SVGCircleElement, GraphNode>("circle")
-      .attr("r", (d) => (d.id === selectedNodeId ? 10 : 7))
-      .attr("stroke", (d) =>
-        d.id === selectedNodeId ? "#fff" : "transparent",
-      );
-  }, [selectedNodeId]);
 
   return <div ref={containerRef} className="h-full w-full select-none" />;
 }

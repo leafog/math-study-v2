@@ -93,13 +93,8 @@ const Graph = () => {
   return (
     <div className="flex flex-1 min-h-0 relative">
       {/* Graph - full background */}
-      <div className="absolute inset-0 bg-red-50 ">
-        <KnowledgeGraph
-          nodes={filteredNodes}
-          edges={graphEdges}
-          selectedNodeId={selectedNode?.id}
-          onNodeSelect={handleNodeSelect}
-        />
+      <div className="absolute inset-0">
+        <KnowledgeGraph nodes={filteredNodes} edges={graphEdges} />
       </div>
     </div>
   );

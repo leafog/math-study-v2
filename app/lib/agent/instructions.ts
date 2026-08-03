@@ -1,55 +1,105 @@
-export const instructions = `## 知识图谱构建规则
+import type { Locale, PromptKey, PromptOptions } from "./types";
+import { registry } from "./sources";
 
-### 1. 查重优先
-创建知识点前先用准确名称检查是否已存在。
-如果 createTopic 返回 created:false 和已有 topic_id，
-后续创建关系时直接使用该 ID，不要重复创建同名知识点。
+const FALLBACK_CHAIN: Locale[] = ["zh", "en"];
 
-### 2. 数学公式格式（极其重要）
-**所有**数学 LaTeX 表达式必须使用 \`$$\` \`$$\` 包裹，这是渲染的必要条件。
-- **行内公式**：\`$$x^2 + y^2 = z^2$$\`
-- **块级公式**：\`$$\\int_{{-\\infty}}^{{\\infty}} e^{{-x^2}} dx = \\sqrt{{\\pi}}$$\`
-- **严禁**使用单个 \`$\` 包裹公式，否则公式将无法显示。
-- 在输出包含数学公式的文本前，务必检查每个公式是否都已用 \`$$\` \`$$\` 正确包裹。
+export function getPrompt(key: PromptKey, options?: PromptOptions): string {
+  const locale = resolveLocale(options?.locale);
+  const entry = resolveEntry(key, locale);
 
-### 3. name 语言规范
-name 字段必须使用英文 kebab-case，如 cauchy-mean-value-theorem。
-i18n 字段存放各语言译名（如 zh、en），必须提供。
+  let text = entry.template;
 
-### 4. description 语言规范
-description 统一使用英文。
-description_i18n 存放各语言描述，必须提供。
+  if (options?.vars) {
+    for (const [k, v] of Object.entries(options.vars)) {
+      text = text.replaceAll(`{${k}}`, String(v));
+    }
+  }
 
-## 出题规则
+  return text;
+}
 
-### 5. 自主出题（必须调用工具）
-根据对话的进展和学生需求，自主决定何时出题。**必须**调用 \`createProblem\` 工具创建题目，严禁在文本中直接输出题目内容。
+/**
+ * Get the raw template string for a prompt key.
+ * Useful when caller needs to do custom interpolation.
+ */
+export function getPromptTemplate(key: PromptKey, locale?: Locale): string {
+  const resolved = resolveLocale(locale);
+  return resolveEntry(key, resolved).template;
+}
 
-### 6. 题目格式
-- content 字段支持 Markdown + LaTeX，数学公式**必须**使用 \`$$\` \`$$\` 包裹
-- **content 内容必须纯净**：只包含题干本身，严禁在 content 中出现任何提示、引导、解题思路、Hint 等内容
-- description 字段填写简要说明或提示（可选）
-- source 统一填写 "ai"
-- tags 填相关知识点的 ID 列表
+/**
+ * List all available prompt keys for a given locale.
+ */
+export function listPrompts(
+  locale?: Locale,
+): { key: string; description: string }[] {
+  const resolved = resolveLocale(locale);
+  const source = registry[resolved];
+  return Object.entries(source).map(([key, entry]) => ({
+    key,
+    description: entry.description ?? "",
+  }));
+}
 
-### 7. 出题时机
-- 讲解完一个知识点后，出一道相关练习题
-- 学生表示理解后，出一道变式题验证
-- 学生在某个概念上犹豫时，出一道诊断题
-- 不要每次回复都出题，保持对话节奏自然
+/**
+ * Register or override a prompt at runtime.
+ * Merges into the target locale's registry.
+ */
+export function definePrompt(
+  key: string,
+  template: string,
+  options?: { locale?: Locale; description?: string },
+): void {
+  const locale = options?.locale ?? resolveLocale();
+  if (!registry[locale]) {
+    registry[locale] = {};
+  }
+  registry[locale][key] = {
+    template,
+    description: options?.description,
+  };
+}
 
-### 8. 出题后行为（极其重要）
-调用 \`createProblem\` 工具后，题目会自动以卡片形式展示在对话中。
-**严禁**在后续文本中重复输出题目内容，包括但不限于：
-- 不要复述题干
-- 不要解释题目
-- 不要给出提示
-- 不要用文本形式输出题目
-只需要简短引导即可，例如"来试试这道题"、"看看这个"、"做一下上面的题吧"。
-等学生先作答。
+// ── Backward-compatible export ──
+// Legacy code imports `instructions` directly — resolve via getPrompt("system").
+export const instructions = getPrompt("system");
 
-### 9. 知识图谱可视化（重要）
-调用 createTopic 或 createRelationship 后，**严禁**在回复中用 ASCII、Mermaid、代码块等方式画图或画关系图。
-知识点和关系已经存储在知识图谱中，会自动在右侧面板展示。
-只需要简短说明即可，例如"已记录"、"关系已建立"。
-`;
+// ── Internal helpers ──
+
+function resolveLocale(preferred?: Locale): Locale {
+  if (preferred) return preferred;
+
+  // Try to detect from i18next (browser language)
+  if (typeof window !== "undefined") {
+    try {
+      // dynamic import to avoid bundling i18next into non-React code
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const i18n = require("i18next");
+      const lang = i18n.language as string | undefined;
+      if (lang?.startsWith("zh")) return "zh";
+      if (lang?.startsWith("en")) return "en";
+    } catch {
+      // i18next not available
+    }
+  }
+
+  return "zh";
+}
+
+function resolveEntry(
+  key: string,
+  locale: Locale,
+): { template: string; description?: string } {
+  // Try target locale
+  const entry = registry[locale]?.[key];
+  if (entry) return entry;
+
+  // Fallback chain
+  for (const fallback of FALLBACK_CHAIN) {
+    if (fallback === locale) continue;
+    const fallbackEntry = registry[fallback]?.[key];
+    if (fallbackEntry) return fallbackEntry;
+  }
+
+  throw new Error(`Prompt key "${key}" not found in any locale`);
+}

@@ -16,12 +16,15 @@ export const useChatToolsManager = (
   onOpenBefore?: (kind: string, title?: string) => void,
 ) => {
   const { data: chatToolInstances = [] } = useLiveQuery(
-    (q) =>
-      q
-        .from({ chatToolInstanceColl })
-        .where(({ chatToolInstanceColl }) =>
-          eq(chatToolInstanceColl.conversation_id, chatId),
-        ),
+    {
+      query: (q) =>
+        q
+          .from({ chatToolInstanceColl })
+          .where(({ chatToolInstanceColl }) =>
+            eq(chatToolInstanceColl.conversation_id, chatId),
+          ),
+      gcTime: 60_000,
+    },
     [chatId],
   );
 
@@ -34,6 +37,7 @@ export const useChatToolsManager = (
             eq(chatToolsBarStateColl.id, chatId),
           )
           .findOne(),
+      gcTime: 60_000,
     },
     [chatId],
   );

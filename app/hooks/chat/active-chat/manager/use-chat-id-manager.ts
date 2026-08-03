@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router";
-import { eq, useLiveSuspenseQuery, useLiveQuery } from "@tanstack/react-db";
+import { eq, useLiveQuery } from "@tanstack/react-db";
 import { chatToolsBarStateColl, conversationColl } from "~/db/tdb-collections";
 import { genId } from "~/lib/id-utils";
 import { createTx } from "~/db/tx";
@@ -20,31 +20,42 @@ export const useChatIdManager = () => {
   const chatIdFromUrl = extractChatId(pathname);
   const hasChatIdInUrl = chatIdFromUrl !== null;
 
-  const { data: currentConversation } = useLiveQuery(
-    (q) =>
-      q
-        .from({ conversationColl })
-        .where(({ conversationColl }) => eq(conversationColl.id, chatIdFromUrl))
-        .findOne(),
-    [chatIdFromUrl],
-  );
+  const { data: currentConversation, isReady: conversationReady } =
+    useLiveQuery(
+      {
+        query: (q) =>
+          q
+            .from({ conversationColl })
+            .where(({ conversationColl }) =>
+              eq(conversationColl.id, chatIdFromUrl),
+            )
+            .findOne(),
+        gcTime: 60_000,
+      },
+      [chatIdFromUrl],
+    );
 
   const isNewChat = !hasChatIdInUrl && currentConversation === undefined;
 
+  // 等 conversation 查询就绪后再判断是否 404，避免异步初始化期间的误重定向
   useEffect(() => {
-    if (hasChatIdInUrl && currentConversation === undefined) {
+    if (
+      conversationReady &&
+      hasChatIdInUrl &&
+      currentConversation === undefined
+    ) {
       navigate("/", { replace: true });
     }
-  }, [hasChatIdInUrl, currentConversation, navigate]);
+  }, [conversationReady, hasChatIdInUrl, currentConversation, navigate]);
 
   const newChatIdRef = useRef(genId());
-  const prevPathnameRef = useRef(pathname);
 
-  if (isNewChat && prevPathnameRef.current !== pathname) {
-    newChatIdRef.current = genId();
-  }
-
-  prevPathnameRef.current = pathname;
+  // 新聊天时生成新 ID，移到 effect 避免 render 副作用
+  useEffect(() => {
+    if (isNewChat) {
+      newChatIdRef.current = genId();
+    }
+  }, [isNewChat]);
 
   const chatId = chatIdFromUrl ?? newChatIdRef.current;
   const setChatId = useStore(chatIdStore).setChatId;

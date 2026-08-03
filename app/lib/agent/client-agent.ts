@@ -3,6 +3,7 @@ import { DirectChatTransport, ToolLoopAgent } from "ai";
 import { createTopic } from "./tools/tool-create-topic";
 import { createRelationship } from "./tools/tool-create-relationship";
 import { createProblem } from "./tools/tool-create-problem";
+import { checkAnswer } from "./tools/tool-check-answer";
 import { instructions } from "./instructions";
 
 export const deepseek = createOpenAI({
@@ -26,11 +27,13 @@ export const agent = new ToolLoopAgent({
     createTopic: "approved",
     createRelationship: "approved",
     createProblem: "approved",
+    checkAnswer: "approved",
   },
   tools: {
     createTopic,
     createRelationship,
     createProblem,
+    checkAnswer,
   },
 });
 

@@ -32,14 +32,14 @@ export const PracticeSessionSchema = z.object({
 export type PracticeSession = z.infer<typeof PracticeSessionSchema>;
 
 export const AnswerRecordSchema = z.object({
-  id: z.string(),
-  problem_id: z.string(),
-  session_id: z.string().optional(),
-  user_answer: z.string(),
-  correct: z.boolean(),
-  knowledge_points: z.array(z.string()),
-  time_spent_ms: z.number(),
-  created_at: z.date(),
+  id: z.string().describe("Unique answer record ID"),
+  problem_id: z.string().describe("Problem ID this answer belongs to"),
+  conversation_id: z.string().optional().describe("Conversation ID where this answer occurred"),
+  user_answer: z.string().describe("Student's raw answer text"),
+  correct: z.boolean().describe("Whether AI judged the answer as correct"),
+  knowledge_points: z.array(z.string()).describe("Related knowledge point IDs"),
+  time_spent_ms: z.number().describe("Time spent answering in milliseconds"),
+  created_at: z.date().describe("When the answer was recorded"),
 });
 export type AnswerRecord = z.infer<typeof AnswerRecordSchema>;
 
@@ -124,8 +124,11 @@ export const KgTopicSchema = z.object({
     ),
   description_i18n: z
     .record(z.string(), z.string())
+    .refine((v) => v.zh && v.en, {
+      message: "description_i18n must include 'zh' and 'en' keys",
+    })
     .describe(
-      "MANDATORY: Localized descriptions keyed by language code. Always include 'zh' (Chinese) and 'en' (English). e.g. {zh:'柯西中值定理的详细解释', en:'Detailed explanation of Cauchy Mean Value Theorem'}",
+      "MANDATORY: Localized descriptions keyed by language code. Both 'zh' (Chinese) and 'en' (English) are required. e.g. {zh:'柯西中值定理的详细解释', en:'Detailed explanation of Cauchy Mean Value Theorem'}",
     ),
   topic_type: z
     .enum(["conceptual", "procedural", "representational", "language", "meta"])
@@ -138,6 +141,7 @@ export const KgTopicSchema = z.object({
   domain: z
     .string()
     .nullable()
+    .default(null)
     .describe(
       "Sub-domain within subject, e.g. 'Quadratic Equations'. Null if not yet classified",
     ),
@@ -151,8 +155,11 @@ export const KgTopicSchema = z.object({
     ),
   i18n: z
     .record(z.string(), z.string())
+    .refine((v) => v.zh && v.en, {
+      message: "i18n must include 'zh' and 'en' keys",
+    })
     .describe(
-      "MANDATORY: Localized display names keyed by language code. Always include 'zh' (Chinese) and 'en' (English). e.g. {zh:'柯西中值定理', en:'Cauchy Mean Value Theorem'}",
+      "MANDATORY: Localized display names keyed by language code. Both 'zh' (Chinese) and 'en' (English) are required. e.g. {zh:'柯西中值定理', en:'Cauchy Mean Value Theorem'}",
     ),
   evidence: z
     .string()
@@ -163,6 +170,7 @@ export const KgTopicSchema = z.object({
   assessment_prompt: z
     .string()
     .nullable()
+    .default(null)
     .describe(
       "AI prompt template for generating quiz questions. Use {{name}} as placeholder",
     ),
@@ -170,11 +178,13 @@ export const KgTopicSchema = z.object({
     .number()
     .int()
     .nullable()
+    .default(null)
     .describe("Minimum recommended age/grade. Null if not yet calibrated"),
   age_range_end: z
     .number()
     .int()
     .nullable()
+    .default(null)
     .describe("Maximum recommended age/grade. Null if not yet calibrated"),
   created_at: z.date(),
   updated_at: z.date(),

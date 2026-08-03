@@ -18,7 +18,7 @@ import { useBoolean } from "usehooks-ts";
 import { useClickAway } from "@uidotdev/usehooks";
 
 import { cn } from "~/lib/utils";
-import { withRef, withRefs } from "~/lib/ref-utils";
+import { withRef } from "~/lib/ref-utils";
 import "./math-live.css";
 import { Button } from "~/components/ui/button";
 import { useTheme } from "next-themes";
@@ -77,9 +77,6 @@ export const createInline = createReactInlineContentSpec(
       const { value, setFalse, setTrue } = useBoolean(true);
       const { theme } = useTheme();
 
-      const mathFieldRef = useClickAway(() => {
-        setTrue();
-      });
       const noLatex = props.inlineContent.props.latex.length === 0;
       useEffect(() => {
         if (noLatex) {
@@ -99,7 +96,8 @@ export const createInline = createReactInlineContentSpec(
           }}
           onBlurCapture={() => {
             setTrue();
-            if (noLatex) {
+            // mathLive 虚拟键盘打开时不删除（失焦可能是临时操作）
+            if (noLatex && !(window as any).mathVirtualKeyboard?.visible) {
               props.editor._tiptapEditor.commands.command(({ tr, state }) => {
                 const { from } = tr.selection;
                 const $pos = state.doc.resolve(from);
@@ -120,15 +118,15 @@ export const createInline = createReactInlineContentSpec(
               {
                 display: "inline",
                 backgroundColor: "var(--bn-colors-editor-background)",
-                "color-scheme": theme === "dark" ? "dark" : "light",
+                colorScheme: theme === "dark" ? "dark" : "light",
               } as any
             }
             ref={(el) => {
               if (el === null) {
                 return;
               }
+              props.contentRef(el);
               mathRef.current = el;
-              mathFieldRef.current = el;
               applyStyle(el);
             }}
             aria-multiline
@@ -143,7 +141,7 @@ export const createInline = createReactInlineContentSpec(
               });
             }}
           >
-            $${props.inlineContent.props.latex}$$
+            {props.inlineContent.props.latex}
           </math-field>
         </div>
       );
@@ -154,6 +152,7 @@ export const createInline = createReactInlineContentSpec(
     },
   },
 );
+
 export const createMath = createReactBlockSpec(
   {
     type: "math",
@@ -221,7 +220,7 @@ export const createMath = createReactBlockSpec(
               });
             }}
           >
-            $$ {props.block.props.latex} $$
+            {props.block.props.latex}
           </math-field>
         </div>
       );

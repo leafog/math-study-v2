@@ -66,5 +66,21 @@
     "light": "Light",
     "dark": "Dark",
     "system": "System"
+  },
+  "toolCall": {
+    "creatingProblem": "Creating problem...",
+    "createProblemFailed": "Failed to create problem",
+    "recordingTopic": "Recording topic...",
+    "topicRecorded": "Recorded",
+    "topicLinked": "Linked to existing topic",
+    "recordTopicFailed": "Failed to record",
+    "buildingRelation": "Building relation...",
+    "relationBuilt": "Relation established",
+    "buildRelationFailed": "Failed to build relation",
+    "checkingAnswer": "Checking answer...",
+    "answerCorrect": "Correct",
+    "answerWrong": "Incorrect",
+    "checkAnswerFailed": "Check failed",
+    "execFailed": "Execution failed"
   }
 }

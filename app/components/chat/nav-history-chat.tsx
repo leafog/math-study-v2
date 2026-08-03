@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useLiveInfiniteQuery } from "@tanstack/react-db";
@@ -22,36 +22,60 @@ const NavHistoryChat = () => {
         q
           .from({ conversationColl })
           .orderBy(
-            ({ conversationColl }) => conversationColl.updated_at,
+            ({ conversationColl }) => conversationColl.created_at,
             "desc",
           ),
       { pageSize: PAGE_SIZE },
       [],
     );
-
   const allChats = pages.flat();
   const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // 用 ref 存 fetchNextPage，避免 Observer 因回调引用变化而重建
+  const fetchNextPageRef = useRef(fetchNextPage);
+  fetchNextPageRef.current = fetchNextPage;
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
-
-    const root = sentinel.closest<HTMLElement>('[data-slot="sidebar-content"]');
+    const root = sentinel.closest<HTMLElement>(
+      '[data-slot="sidebar-content"]',
+    );
     if (!root) return;
-
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage();
+          fetchNextPageRef.current();
         }
       },
       { root, rootMargin: "200px" },
     );
-
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [hasNextPage, isFetchingNextPage]);
 
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const editInputRef = useRef<HTMLInputElement>(null);
+
+  // 自动聚焦编辑输入框
+  useEffect(() => {
+    if (editId) {
+      editInputRef.current?.focus();
+      editInputRef.current?.select();
+    }
+  }, [editId]);
+
+  const saveTitle = (id: string) => {
+    const trimmed = editTitle.trim();
+    if (trimmed) {
+      conversationColl.update(id, (draft) => {
+        draft.title = trimmed;
+        draft.updated_at = new Date();
+      });
+    }
+    setEditId(null);
+  };
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
       <SidebarGroupLabel>{t("chat.recent")}</SidebarGroupLabel>
@@ -61,10 +85,28 @@ const NavHistoryChat = () => {
             <SidebarMenuButton
               asChild
               isActive={pathname === `/chat/${chat.id}`}
+              onDoubleClick={(e) => {
+                setEditId(chat.id);
+                setEditTitle(chat.title);
+              }}
             >
-              <Link to={`/chat/${chat.id}`} className="truncate">
-                {chat.title}
-              </Link>
+              {editId === chat.id ? (
+                <input
+                  ref={editInputRef}
+                  defaultValue={chat.title}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") saveTitle(chat.id);
+                    if (e.key === "Escape") setEditId(null);
+                  }}
+                  onBlur={() => saveTitle(chat.id)}
+                  className="w-full truncate border-0 bg-transparent p-0 text-inherit shadow-none outline-none ring-0 focus-visible:ring-0"
+                />
+              ) : (
+                <Link to={`/chat/${chat.id}`} className="truncate">
+                  {chat.title}
+                </Link>
+              )}
             </SidebarMenuButton>
           </SidebarMenuItem>
         ))}

@@ -2,6 +2,7 @@ import { tool } from "ai";
 import { z } from "zod";
 import { genId } from "~/lib/id-utils";
 import { kgEdgeColl } from "~/db/tdb-collections";
+import { getPrompt } from "../instructions";
 
 const createRelationshipInputSchema = z.object({
   relationships: z
@@ -24,8 +25,7 @@ const createRelationshipInputSchema = z.object({
 });
 
 export const createRelationship = tool({
-  description:
-    "根据对话中提到的知识点上下文，创建知识点之间的前置依赖关系。比如对话中讨论了「分数」和「小数」的关系，就创建从「分数」到「小数」的边",
+  description: getPrompt("toolDesc.createRelationship"),
   inputSchema: createRelationshipInputSchema,
   execute: async (input) => {
     const now = new Date();

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useLiveQuery, useLiveSuspenseQuery, eq } from "@tanstack/react-db";
 import { useTranslation } from "react-i18next";
 import { KnowledgeGraph } from "~/components/graph/knowledge-graph";
