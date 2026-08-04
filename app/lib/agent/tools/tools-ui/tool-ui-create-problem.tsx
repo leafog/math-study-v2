@@ -9,6 +9,8 @@ import {
 import { ToolCallLabel } from "./_tool-call-label";
 import type { ToolMessageRendererProps } from "./types";
 import ProblemPreview from "~/components/math/problem-preview";
+import { useChatKgTopics, useChatProblems } from "~/hooks/chat/active-chat";
+import type { Problem } from "~/db/db-zod-schema";
 
 function CreateProblemRenderer({ part }: ToolMessageRendererProps) {
   if (part.state === "output-available") {
@@ -43,55 +45,32 @@ function CreateProblemRenderer({ part }: ToolMessageRendererProps) {
 function ConnectedProblemView({
   problemId,
   chatId,
-  tagIds,
 }: {
   problemId: string;
   chatId?: string;
   tagIds: string[];
 }) {
-  const { data: problem } = useLiveQuery(
-    (q) =>
-      q
-        .from({ problemColl })
-        .where(({ problemColl: col }) => eq(col.id, problemId))
-        .findOne(),
-    [problemId],
-  );
+  const {
+    problemsMap,
+    answerRecordsMap,
+    answerAnalysisesMap,
+    problemExplanationsMap,
+  } = useChatProblems();
+  const { kgTopicsMap } = useChatKgTopics();
 
-  const { data: answers = [] } = useLiveQuery(
-    (q) =>
-      q
-        .from({ answerRecordColl })
-        .where(({ answerRecordColl: col }) => eq(col.problem_id, problemId)),
-    [problemId],
-  );
+  const problem = problemsMap[problemId];
 
-  const { data: answerAnalyses = [] } = useLiveQuery((q) =>
-    q.from({ answerAnalysisColl }),
-  );
-
-  const { data: explanations = [] } = useLiveQuery(
-    (q) =>
-      q
-        .from({ problemExplanationColl })
-        .where(({ problemExplanationColl: col }) =>
-          eq(col.problem_id, problemId),
-        ),
-    [problemId],
-  );
-
-  const { data: allTopics = [] } = useLiveQuery((q) => q.from({ kgTopicColl }));
-  const kgTopics = allTopics.filter((t) => tagIds.includes(t.id));
-
+  const { registerRef } = useChatProblems();
   if (!problem) return null;
 
   return (
     <ProblemPreview
+      ref={registerRef(problem.id)}
       problem={problem}
-      answers={answers}
-      answerAnalyses={answerAnalyses}
-      kgTopics={kgTopics}
-      problemExplanations={explanations}
+      answers={answerRecordsMap[problemId] ?? []}
+      answerAnalyses={answerAnalysisesMap[problemId] ?? []}
+      kgTopics={(problem.tags ?? []).map((it) => kgTopicsMap[it])}
+      problemExplanations={problemExplanationsMap[problemId] ?? []}
       chatId={chatId}
     />
   );

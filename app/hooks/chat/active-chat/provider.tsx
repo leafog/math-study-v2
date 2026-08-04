@@ -15,11 +15,15 @@ import {
   ChatHelpersContext,
   ChatToolsPanelStoreContext,
   ChatToolsContext,
+  ChatProblemsContext,
+  ChatKgTopicsContext,
 } from "./context";
 import { useChatIdManager } from "./manager/use-chat-id-manager";
 import { useMessagesManager } from "./manager/use-messages-manager";
 import { useChatToolsManager } from "./manager/use-chat-tools-manager";
 import { useLiveSuspenseQuery, eq } from "@tanstack/react-db";
+import useChatProblemsManager from "./manager/use-chat-problems-manager";
+import useChatKgTopicsManager from "./manager/use-chat-kg-topics-manager";
 
 export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
   // const { chatId, isNewChat, createChat } = useChatIdManager();
@@ -56,12 +60,18 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
   };
   const chatToolsManager = useChatToolsManager(chatId, onOpenBefore);
 
+  const chatProblemState = useChatProblemsManager(chatId);
+  const chatKgTopicsState = useChatKgTopicsManager(chatId);
   return (
     <ActiveChatContext.Provider value={activeChatState}>
       <ChatHelpersContext.Provider value={chatHelpers}>
         <ChatToolsPanelStoreContext.Provider value={chatToolsPanelStore}>
           <ChatToolsContext.Provider value={chatToolsManager}>
-            {children}
+            <ChatProblemsContext.Provider value={chatProblemState}>
+              <ChatKgTopicsContext.Provider value={chatKgTopicsState}>
+                {children}
+              </ChatKgTopicsContext.Provider>
+            </ChatProblemsContext.Provider>
           </ChatToolsContext.Provider>
         </ChatToolsPanelStoreContext.Provider>
       </ChatHelpersContext.Provider>

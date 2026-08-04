@@ -6,6 +6,16 @@ import { genId } from "~/lib/id-utils";
 import { chatIdStore } from "~/store/chat-id-store";
 import { getPrompt } from "../instructions";
 
+/** Normalize math delimiters to $$...$$ (the only supported format) */
+const normalizeMath = (text: string) =>
+  text
+    .replaceAll("\\[", "$$")
+    .replaceAll("\\]", "$$")
+    .replaceAll("\\(", "$$")
+    .replaceAll("\\)", "$$")
+    .replaceAll("$", "$$")
+    .replaceAll("$$$$", "$$");
+
 export const checkAnswer = tool({
   description: getPrompt("toolDesc.checkAnswer"),
   inputSchema: AnswerRecordSchema.omit({
@@ -16,15 +26,22 @@ export const checkAnswer = tool({
     analysis: z
       .string()
       .optional()
-      .describe("AI feedback/analysis on this answer"),
+      .describe(
+        "AI feedback/analysis on this answer. " +
+          getPrompt("format.markdown") +
+          " " +
+          getPrompt("format.math"),
+      ),
   }),
 
   execute: async ({ analysis, ...input }) => {
     const chatId = chatIdStore.getState().chatId;
     const id = genId();
+    const user_answer = normalizeMath(input.user_answer);
     answerRecordColl.insert({
       ...input,
       id,
+      user_answer,
       chat_id: chatId,
       created_at: new Date(),
     });
@@ -32,6 +49,7 @@ export const checkAnswer = tool({
       answerAnalysisColl.insert({
         id: genId(),
         answer_id: id,
+        problem_id: input.problem_id,
         chat_id: chatId,
         content: analysis,
         created_at: new Date(),

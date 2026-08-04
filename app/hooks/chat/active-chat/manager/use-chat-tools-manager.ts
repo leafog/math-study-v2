@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { eq, useLiveQuery } from "@tanstack/react-db";
 import {
   chatToolInstanceColl,
@@ -63,15 +63,24 @@ export const useChatToolsManager = (
     },
     [chatId],
   );
-  const availableToolInstances = chatToolInstances.filter(({ kind }) =>
-    hasToolKind(kind),
+  const availableToolInstances = useMemo(
+    () => chatToolInstances.filter(({ kind }) => hasToolKind(kind)),
+    [chatToolInstances],
   );
-  const availableToolInstancesMap = keyBy(availableToolInstances, "id");
+  const availableToolInstancesMap = useMemo(
+    () => keyBy(availableToolInstances, "id"),
+    [availableToolInstances],
+  );
 
-  const tools = Array.from(tool_order ?? []).map(
-    (it) => availableToolInstancesMap[it],
+  const tools = useMemo(
+    () =>
+      Array.from(tool_order ?? []).map((it) => availableToolInstancesMap[it]),
+    [tool_order, availableToolInstancesMap],
   );
-  const mountedTools = tools.filter(({ id }) => mountedToolsIds.has(id));
+  const mountedTools = useMemo(
+    () => tools.filter(({ id }) => mountedToolsIds.has(id)),
+    [tools, mountedToolsIds],
+  );
 
   const open = useCallback(
     async (kind: string, title?: string) => {

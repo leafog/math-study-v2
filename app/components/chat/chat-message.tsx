@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import confetti from "canvas-confetti";
 import { kindToRenderer } from "~/lib/agent/tools/tools-ui";
+import { useChatProblems } from "~/hooks/chat/active-chat";
 
 export type MessageActionProps = ComponentProps<typeof Button> & {
   tooltip?: string;

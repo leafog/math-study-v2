@@ -4,4 +4,6 @@ export {
   useActiveChatHelpers,
   useActiveChatToolsPanelStore,
   useChatTools,
+  useChatProblems,
+  useChatKgTopics,
 } from "./hooks";

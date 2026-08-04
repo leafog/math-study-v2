@@ -5,6 +5,7 @@ import babel from "vite-plugin-babel";
 import wasm from "vite-plugin-wasm";
 
 export default defineConfig({
+  worker: { format: "es" },
   plugins: [
     tailwindcss(),
     reactRouter(),

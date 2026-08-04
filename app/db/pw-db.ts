@@ -189,9 +189,11 @@ export const AppSchema = new Schema(tables);
 
 export const db = new PowerSyncDatabase({
   database: {
-    dbFilename: "math-study.db",
+    dbFilename: "math-study-v2.db",
   },
   schema: AppSchema,
 });
 
-await db._initialize();
+export const initDb = async () => {
+  await db._initialize();
+};

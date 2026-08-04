@@ -4,6 +4,8 @@ import {
   ChatHelpersContext,
   ChatToolsPanelStoreContext,
   ChatToolsContext,
+  ChatProblemsContext,
+  ChatKgTopicsContext,
 } from "./context";
 
 export const useActiveChat = () => {
@@ -42,6 +44,26 @@ export const useChatTools = () => {
 
   if (!ctx) {
     throw new Error("useChatTools must be used within ActiveChatProvider");
+  }
+
+  return ctx;
+};
+
+export const useChatProblems = () => {
+  const ctx = useContext(ChatProblemsContext);
+
+  if (!ctx) {
+    throw new Error("useChatProblems must be used within ActiveChatProvider");
+  }
+
+  return ctx;
+};
+
+export const useChatKgTopics = () => {
+  const ctx = useContext(ChatKgTopicsContext);
+
+  if (!ctx) {
+    throw new Error("useChatKgTopics must be used within ActiveChatProvider");
   }
 
   return ctx;

@@ -3,11 +3,18 @@ const ANSWER_RECORD_OPEN_EVENT = "problem:open-answer-record";
 const PROBLEM_SCROLL_EVENT = "problem:scroll-to";
 
 /**
+ *  setTimeout(() => {
+      window.dispatchEvent(
+        new CustomEvent(PROBLEM_SCROLL_EVENT, { detail: problemId }),
+      );
+    }, 400);
  * Scroll to a problem element by ID.
  * Skips scrolling if the element is already within the central 60% of the viewport.
  */
-export function scrollToProblem(problemId: string): void {
+
+export function scrollToProblemWithOutEvent(problemId: string): void {
   const el = document.getElementById(`problem-${problemId}`);
+
   if (!el) return;
 
   const rect = el.getBoundingClientRect();
@@ -20,19 +27,20 @@ export function scrollToProblem(problemId: string): void {
   // sees the beginning; otherwise center it for a comfortable reading position.
   const block = rect.height > viewportHeight ? "start" : "center";
   el.scrollIntoView({ behavior: "smooth", block });
-
+}
+export function scrollToProblem(problemId: string): void {
+  scrollToProblemWithOutEvent(problemId);
   setTimeout(() => {
     window.dispatchEvent(
       new CustomEvent(PROBLEM_SCROLL_EVENT, { detail: problemId }),
     );
   }, 400);
 }
-
 /**
  * Scroll to a problem and request that its explanation panel be opened.
  */
 export function scrollToProblemAndOpenExplanation(problemId: string): void {
-  scrollToProblem(problemId);
+  scrollToProblemWithOutEvent(problemId);
   setTimeout(() => {
     window.dispatchEvent(
       new CustomEvent(EXPLANATION_OPEN_EVENT, { detail: problemId }),
@@ -44,7 +52,7 @@ export function scrollToProblemAndOpenExplanation(problemId: string): void {
  * Scroll to a problem and request that its answer records panel be opened.
  */
 export function scrollToProblemAndOpenAnswerRecords(problemId: string): void {
-  scrollToProblem(problemId);
+  scrollToProblemWithOutEvent(problemId);
   setTimeout(() => {
     window.dispatchEvent(
       new CustomEvent(ANSWER_RECORD_OPEN_EVENT, { detail: problemId }),

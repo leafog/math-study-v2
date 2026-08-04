@@ -1,10 +1,13 @@
 import { z } from "zod";
+import { getPrompt } from "~/lib/agent/instructions";
 
 // ─── Problem schemas ────────────────────────────────────────────
 
 export const ProblemSchema = z.object({
   id: z.string(),
-  content: z.string().describe("Problem body, supports Markdown + LaTeX"),
+  content: z
+    .string()
+    .describe("Problem body. " + getPrompt("format.markdown") + " " + getPrompt("format.math")),
   chat_id: z.string().nullish(),
   description: z
     .string()
@@ -35,7 +38,9 @@ export const AnswerRecordSchema = z.object({
   id: z.string().describe("Unique answer record ID"),
   problem_id: z.string().describe("Problem ID this answer belongs to"),
   chat_id: z.string().optional().describe("Chat ID where this answer occurred"),
-  user_answer: z.string().describe("Student's raw answer text"),
+  user_answer: z
+    .string()
+    .describe("Student's answer, normalized. " + " " + getPrompt("format.math")),
   correct: z.boolean().describe("Whether AI judged the answer as correct"),
   knowledge_points: z.array(z.string()).describe("Related knowledge point IDs"),
   time_spent_ms: z.number().describe("Time spent answering in milliseconds"),
@@ -46,11 +51,17 @@ export type AnswerRecord = z.infer<typeof AnswerRecordSchema>;
 export const AnswerAnalysisSchema = z.object({
   id: z.string().describe("Unique analysis ID"),
   answer_id: z.string().describe("FK to AnswerRecord"),
+  problem_id: z
+    .string()
+    .nullish()
+    .describe("FK to Problem, for batch query by problem"),
   chat_id: z
     .string()
     .nullish()
     .describe("FK to Conversation, for batch query by chat"),
-  content: z.string().describe("AI feedback/analysis on this answer"),
+  content: z
+    .string()
+    .describe("AI feedback/analysis on this answer. " + getPrompt("format.markdown") + " " + getPrompt("format.math")),
   created_at: z.date(),
 });
 export type AnswerAnalysis = z.infer<typeof AnswerAnalysisSchema>;
@@ -62,7 +73,9 @@ export const ProblemExplanationSchema = z.object({
     .string()
     .nullish()
     .describe("FK to Conversation, for batch query by chat"),
-  content: z.string().describe("Standard solution/explanation for the problem"),
+  content: z
+    .string()
+    .describe("Standard solution/explanation for the problem. " + getPrompt("format.markdown") + " " + getPrompt("format.math")),
   created_at: z.date(),
 });
 export type ProblemExplanation = z.infer<typeof ProblemExplanationSchema>;
