@@ -5,6 +5,7 @@ import { createRelationship } from "./tools/tool-create-relationship";
 import { createProblem } from "./tools/tool-create-problem";
 import { checkAnswer } from "./tools/tool-check-answer";
 import { createExplanation } from "./tools/tool-create-explanation";
+import { searchSimilarTopics } from "./tools/tool-search-similar-topics";
 import { instructions } from "./instructions";
 
 export const deepseek = createOpenAI({
@@ -30,6 +31,7 @@ export const agent = new ToolLoopAgent({
     createProblem: "approved",
     checkAnswer: "approved",
     createExplanation: "approved",
+    searchSimilarTopics: "approved",
   },
   tools: {
     createTopic,
@@ -37,6 +39,7 @@ export const agent = new ToolLoopAgent({
     createProblem,
     checkAnswer,
     createExplanation,
+    searchSimilarTopics,
   },
 });
 

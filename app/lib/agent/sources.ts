@@ -6,18 +6,16 @@ export const registry: Record<string, PromptRegistry> = {
       description: "系统指令（中文）",
       template: `## 知识图谱构建规则
 ### 1. 查重优先（强化版）
-创建知识点前，**务必先调用 createTopic 让系统自动检测是否重复**。
-系统会自动检查：
-- 精确同名（如 derivative vs derivative）
-- 中文近义词（如"导数"/"微分"/"求导"视为同一概念）
-- 英文近义词（如 derivative / differentiation 语义相近）
-- 语义相似度（跨语言 embedding 比对）
+创建知识点前，**务必先调用 searchSimilarTopics 搜索已有知识点**。
+系统会返回语义最相似的 5 个已有知识点（含名称、描述、相似度）。
 
 **重要规则**：
-- 如果 createTopic 返回 created:false 和已有 topic_id，**直接使用该 ID**，不要重复创建
-- 如果 createTopic 返回 created:true，说明系统确认这是一个新概念，可以放心使用
-- **宁可尝试创建让系统判定，不要自己判断是否重复**
-- 不确定时，先用不同名称尝试 createTopic，系统会告诉你是否重复
+- 创建任何知识点前，**必须先调用 searchSimilarTopics**
+- 根据返回的相似结果判断：
+  - similarity > 0.85 且语义完全一致 → 告知用户该知识点已存在，**不要重复创建**
+  - similarity > 0.7 但概念有区别 → 询问用户是否为同一知识点
+  - similarity < 0.7 或无结果 → 调用 createTopic 创建新知识点
+- 不确定时，向用户展示找到的相似知识点，让用户决定
 
 ### 2. 数学公式格式（极其重要）
 **所有**数学 LaTeX 表达式必须使用 \`$$\` \`$$\` 包裹，这是渲染的必要条件。
@@ -82,9 +80,13 @@ description_i18n 存放各语言描述，必须提供。
 - content：标准解法/解题思路，支持 Markdown 和 LaTeX 格式
 这让学生在不作答的情况下也能查看题目的标准解法。`,
     },
+    "toolDesc.searchSimilarTopics": {
+      description: "searchSimilarTopics 工具描述",
+      template: "创建知识点前，搜索知识库中语义最相似的已有知识点（返回 top-5）。根据相似度和语义内容判断是创建新知识点还是复用已有的。此工具必须在 createTopic 之前调用",
+    },
     "toolDesc.createTopic": {
       description: "createTopic 工具描述",
-      template: "用来收集对话中出现的数学相关的topic，自动创建知识图谱中的知识点节点",
+      template: "用来收集对话中出现的数学相关的topic，自动创建知识图谱中的知识点节点。调用前必须先用 searchSimilarTopics 查重",
     },
     "toolDesc.createProblem": {
       description: "createProblem 工具描述",
@@ -102,6 +104,14 @@ description_i18n 存放各语言描述，必须提供。
       description: "createExplanation 工具描述",
       template: "为题目生成标准答案/解题思路，保存为题目解析，让学生无需作答也能查看",
     },
+    "format.math": {
+      description: "数学公式格式约束",
+      template: "Math expressions MUST use $$...$$ delimiters. Inline: text $$formula$$ text. Block: separate lines \n$$\nformula\n$$\n. Never use $ $ or \\( \\).",
+    },
+    "format.markdown": {
+      description: "Markdown 格式约束",
+      template: "Use Markdown formatting for readability: headings, lists, bold, code blocks as appropriate. Do NOT output plain text walls.",
+    },
   },
 
   en: {
@@ -109,17 +119,16 @@ description_i18n 存放各语言描述，必须提供。
       description: "System instructions (English)",
       template: `## Knowledge Graph Construction Rules
 ### 1. Deduplication First (Enhanced)
-Before creating a knowledge point, **always call createTopic first** — the system will automatically detect duplicates via:
-- Exact name match (e.g., derivative vs derivative)
-- Chinese synonym detection (e.g., "导数"/"微分"/"求导" recognized as the same concept)
-- English synonym detection (e.g., derivative / differentiation)
-- Cross-language semantic similarity (embedding comparison)
+Before creating a knowledge point, **always call searchSimilarTopics first** to find existing similar topics.
+The system returns the top-5 semantically similar knowledge points (with name, description, similarity score).
 
 **Key rules**:
-- If createTopic returns created:false with an existing topic_id, **reuse that ID directly** — never create a duplicate
-- If createTopic returns created:true, the system has confirmed this is genuinely new — proceed with confidence
-- **Let the system decide; don't try to judge duplicates yourself**
-- When unsure, try createTopic with different name variations — the system will tell you if it's a duplicate
+- **Always call searchSimilarTopics before creating any topic**
+- Based on similarity results:
+  - similarity > 0.85 and semantically identical → inform the user the topic exists, **do NOT create a duplicate**
+  - similarity > 0.7 but conceptually distinct → ask the user whether it's the same topic
+  - similarity < 0.7 or no results → call createTopic to create the new topic
+- When uncertain, show the user the similar topics found and let them decide
 
 ### 2. Math Formula Format (Extremely Important)
 **All** mathematical LaTeX expressions MUST be wrapped in \`$$\` \`$$\` — this is required for rendering.
@@ -184,9 +193,13 @@ When a problem needs a standard solution or explanation, call createExplanation:
 - content: Standard solution/approach in Markdown + LaTeX
 This lets students view the standard solution even without submitting an answer.`,
     },
+    "toolDesc.searchSimilarTopics": {
+      description: "searchSimilarTopics tool description",
+      template: "Before creating a knowledge point, search the knowledge base for the most semantically similar existing topics (returns top-5). Based on similarity scores and semantic content, decide whether to create a new topic or reuse an existing one. This tool MUST be called before createTopic",
+    },
     "toolDesc.createTopic": {
       description: "createTopic tool description",
-      template: "Collect math topics from the conversation and automatically create knowledge graph nodes",
+      template: "Collect math topics from the conversation and automatically create knowledge graph nodes. Must call searchSimilarTopics first to check for duplicates",
     },
     "toolDesc.createProblem": {
       description: "createProblem tool description",
@@ -203,6 +216,14 @@ This lets students view the standard solution even without submitting an answer.
     "toolDesc.createExplanation": {
       description: "createExplanation tool description",
       template: "Generate a standard solution/explanation for a problem and save it so students can view it without submitting an answer",
+    },
+    "format.math": {
+      description: "Math format constraint",
+      template: "Math expressions MUST use $$...$$ delimiters. Inline: text $$formula$$ text. Block: separate lines \n$$\nformula\n$$\n. Never use $ $ or \\( \\).",
+    },
+    "format.markdown": {
+      description: "Markdown format constraint",
+      template: "Use Markdown formatting for readability: headings, lists, bold, code blocks as appropriate. Do NOT output plain text walls.",
     },
   },
 };
