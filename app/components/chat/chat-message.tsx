@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import confetti from "canvas-confetti";
 import { isToolPart, renderToolPart } from "~/lib/agent/tools/tools-ui";
-import { useChatProblems } from "~/hooks/chat/active-chat";
+import { useTranslation } from "react-i18next";
 import type { UIChatMessage } from "~/lib/agent/types";
 
 export type MessageActionProps = ComponentProps<typeof Button> & {
@@ -80,6 +80,7 @@ const PureChatMessage = memo(
     const isUser = message.role === "user";
     const align = isUser ? "end" : "start";
     const [_, copyToClipboard] = useCopyToClipboard();
+    const { t } = useTranslation();
 
     const textFromParts = useMemo(
       () =>
@@ -172,7 +173,20 @@ const PureChatMessage = memo(
                 <CopyIcon />
               </MessageAction>
               <span className="font-normal">
-                {JSON.stringify(message.metadata) + "0000nu"}
+                {message.metadata?.created_at
+                  ? t("chat.messageTime", {
+                      date: new Date(message.metadata.created_at),
+                      formatParams: {
+                        date: {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        },
+                      },
+                    })
+                  : null}
               </span>
             </MessageFooter>
           </MessageContent>

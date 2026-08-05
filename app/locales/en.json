@@ -20,7 +20,8 @@
     "noMessages": "No messages yet",
     "history": "History",
     "recent": "Recent",
-    "quoteFrom": "> Quote from {{kind}}:\n>\n> {{content}}"
+    "quoteFrom": "> Quote from {{kind}}:\n>\n> {{content}}",
+    "messageTime": "{{date, datetime}}"
   },
   "routes": {
     "files": "Files",

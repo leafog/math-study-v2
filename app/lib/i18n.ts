@@ -23,4 +23,9 @@ i18n
     },
   });
 
+// 注册 datetime formatter，配合 translation 中的 {{val, datetime}} 使用
+i18n.services.formatter?.add("datetime", (value, lng, options) => {
+  return new Intl.DateTimeFormat(lng, options).format(value as Date);
+});
+
 export default i18n;

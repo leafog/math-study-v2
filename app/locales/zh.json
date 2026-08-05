@@ -20,7 +20,8 @@
     "noMessages": "暂无消息",
     "history": "历史记录",
     "recent": "最近",
-    "quoteFrom": "> 来自 {{kind}} 的引用:\n>\n> {{content}}"
+    "quoteFrom": "> 来自 {{kind}} 的引用:\n>\n> {{content}}",
+    "messageTime": "{{date, datetime}}"
   },
   "routes": {
     "files": "文件",
