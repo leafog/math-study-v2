@@ -9,15 +9,15 @@ import {
 import { MessageResponse } from "../ai-elements/message";
 import { Bubble, BubbleContent } from "../ui/bubble";
 import { Message, MessageContent, MessageFooter } from "../ui/message";
-import type { UIMessage } from "ai";
 import { Button } from "../ui/button";
 import { CopyIcon, FileIcon } from "lucide-react";
 import { useCopyToClipboard } from "usehooks-ts";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import confetti from "canvas-confetti";
-import { kindToRenderer } from "~/lib/agent/tools/tools-ui";
+import { isToolPart, renderToolPart } from "~/lib/agent/tools/tools-ui";
 import { useChatProblems } from "~/hooks/chat/active-chat";
+import type { UIChatMessage } from "~/lib/agent/types";
 
 export type MessageActionProps = ComponentProps<typeof Button> & {
   tooltip?: string;
@@ -57,7 +57,7 @@ const PureChatMessage = memo(
     message,
     isAnimating = false,
   }: {
-    message: UIMessage;
+    message: UIChatMessage;
     isAnimating?: boolean;
   }) => {
     // Confetti when answer is correct (only for live messages, not history)
@@ -69,7 +69,7 @@ const PureChatMessage = memo(
         (p) =>
           p.type === "tool-checkAnswer" &&
           p.state === "output-available" &&
-          (p as { output?: { correct?: boolean } }).output?.correct,
+          p.output?.correct,
       );
       if (correct) {
         confettiFiredRef.current = true;
@@ -142,9 +142,8 @@ const PureChatMessage = memo(
             );
           }
           // ── Tool parts → registered renderers ──
-          const renderer = kindToRenderer(type);
-          if (renderer) {
-            return <renderer.Renderer key={key} part={part as any} />;
+          if (isToolPart(part)) {
+            return <div key={key}>{renderToolPart(part)}</div>;
           }
 
           return <div key={key}>{part.type}</div>;
@@ -161,7 +160,7 @@ const PureChatMessage = memo(
                 <MessageContent>{parts}</MessageContent>
               </BubbleContent>
             </Bubble>
-            <MessageFooter className="opacity-0 group-hover:opacity-100 transition-opacity">
+            <MessageFooter className="opacity-0 gap-2 group-hover:opacity-100 transition-opacity">
               <MessageAction
                 variant="ghost"
                 size="icon"
@@ -172,6 +171,9 @@ const PureChatMessage = memo(
               >
                 <CopyIcon />
               </MessageAction>
+              <span className="font-normal">
+                {JSON.stringify(message.metadata) + "0000nu"}
+              </span>
             </MessageFooter>
           </MessageContent>
         </Message>

@@ -4,10 +4,8 @@ import { combine, createJSONStorage, persist } from "zustand/middleware";
 
 import { createSelectors } from "./create-selectors";
 import { tanstackDbStorage } from "./tanstack-db-storage";
-import { hy } from "zod/v4/locales";
 
 type ChatToolsPanelState = {
-  _hydrated: boolean;
   toolsSize: PanelSize;
   chatSize: PanelSize;
   restoreChatPercentage: string;
@@ -26,7 +24,6 @@ type ChatToolsPanelAction = {
 };
 
 const chatToolsPanelStateDefault = {
-  _hydrated: false,
   toolsSize: { asPercentage: 0, inPixels: 0 },
   chatSize: { asPercentage: 0, inPixels: 0 },
   restoreChatPercentage: "50%",

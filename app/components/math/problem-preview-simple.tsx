@@ -78,7 +78,7 @@ export function ProblemPreviewSimple({
   const hasExplanation = explanations.length > 0;
 
   return (
-    <Card className="border-0 shadow-none">
+    <Card className="border-0 shadow-none bg-background">
       <CardHeader className="pb-2">
         {problem.description && (
           <CardDescription>{problem.description}</CardDescription>
@@ -133,7 +133,7 @@ export function ProblemPreviewSimple({
         </CardAction>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="max-h-48 overflow-y-auto text-sm">
+        <div className="max-h-48 overflow-y-auto  text-sm scrollbar-thin">
           <MessageResponse>{problem.content}</MessageResponse>
         </div>
       </CardContent>

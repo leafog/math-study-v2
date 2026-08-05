@@ -14,6 +14,7 @@ import {
   PromptInputTextarea,
   PromptInputTools,
   usePromptInputAttachments,
+  usePromptInputController,
   type PromptInputProps,
 } from "~/components/ai-elements/prompt-input";
 
@@ -36,7 +37,7 @@ import {
   useToolSelectionStore,
   type ToolSelectionItem,
 } from "./tools/store/tool-selection";
-import { filter, isEmpty } from "lodash-es";
+import { isEmpty } from "lodash-es";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import {
@@ -45,6 +46,10 @@ import {
   HoverCardContent,
 } from "../ui/hover-card";
 import { MessageResponse } from "../ai-elements/message";
+import { useEffect } from "react";
+import { useChatPromptInput } from "~/hooks/chat/active-chat/hooks";
+import { useChatPromptSuggestionStore } from "~/store/chat-prompt-suggestion-store";
+
 const DisplayAttachments = () => {
   const attachments = usePromptInputAttachments();
   if (attachments.files.length === 0) {
@@ -123,7 +128,7 @@ const DisplaySelectsMap = ({
   );
 };
 
-const ChatPromptInput = () => {
+const PruePromptInput = () => {
   const { t } = useTranslation();
   const { id, sendMessage, status } = useActiveChatHelpers();
   const { isNewChat, createChat } = useActiveChat();
@@ -145,7 +150,6 @@ const ChatPromptInput = () => {
       }),
     );
 
-    // 把工具选区拼到消息文本前面
     const selections = Object.values(selectsMap).filter(
       (it) => it.type === "markdown",
     );
@@ -153,7 +157,10 @@ const ChatPromptInput = () => {
       .map((it) => {
         const kindLabel = t(`tools.${it.kind}`, it.kind);
         const quotedContent = it.content.replaceAll("\n", "\n> ");
-        return t("chat.quoteFrom", { kind: kindLabel, content: quotedContent });
+        return t("chat.quoteFrom", {
+          kind: kindLabel,
+          content: quotedContent,
+        });
       })
       .join("\n\n");
 
@@ -174,34 +181,76 @@ const ChatPromptInput = () => {
       parts,
       created_at: new Date(),
     });
+    setTextInputValue("");
     sendMessage({ ...message, text: fullText });
   };
+  const { textInput, attachments } = usePromptInputController();
+  const textInputValue = useChatPromptInput().use.textInputValue();
+  const setTextInputValue = useChatPromptInput().use.setTextInputValue();
+  const pushToTextInputValue = useChatPromptInput().use.pushToTextInputValue();
+  const setPushToTextInputValue =
+    useChatPromptInput().use.setPushToTextInputValue();
+
+  const setSuggestions = useChatPromptSuggestionStore.use.setSuggestions();
+
+  useEffect(() => {
+    if (isNewChat) {
+      setSuggestions([]);
+    }
+  }, [isNewChat, setSuggestions]);
+
+  useEffect(() => {
+    if (pushToTextInputValue.length > 0) {
+      textInput.setInput(pushToTextInputValue);
+      setTextInputValue(pushToTextInputValue);
+      setPushToTextInputValue("");
+    }
+  }, [pushToTextInputValue]);
+
+  // 切换聊天时：从 Zustand 恢复草稿到 PromptInput（一次性，单向）
+  useEffect(() => {
+    textInput.setInput(textInputValue);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   return (
+    <PromptInput
+      globalDrop
+      multiple
+      onSubmit={onSubmit}
+      className="bg-background"
+    >
+      <PromptInputHeader>
+        <DisplayAttachments />
+        <DisplaySelectsMap selectsMap={selectsMap} />
+      </PromptInputHeader>
+      <PromptInputBody>
+        <PromptInputTextarea
+          onChange={(e) => {
+            setTextInputValue(e.currentTarget.value);
+            setSuggestions([]);
+          }}
+          className="min-w-0 scrollbar-thin"
+        />
+      </PromptInputBody>
+      <PromptInputFooter>
+        <PromptInputTools>
+          <PromptInputActionMenu>
+            <PromptInputActionMenuTrigger />
+            <PromptInputActionMenuContent>
+              <PromptInputActionAddAttachments />
+            </PromptInputActionMenuContent>
+          </PromptInputActionMenu>
+        </PromptInputTools>
+        <PromptInputSubmit status={status} />
+      </PromptInputFooter>
+    </PromptInput>
+  );
+};
+const ChatPromptInput = () => {
+  return (
     <PromptInputProvider>
-      <PromptInput globalDrop multiple onSubmit={onSubmit}>
-        <PromptInputHeader>
-          <DisplayAttachments />
-          <DisplaySelectsMap selectsMap={selectsMap} />
-        </PromptInputHeader>
-        <PromptInputBody>
-          <PromptInputTextarea
-            onChange={(e) => {}}
-            className="min-w-0 scrollbar-thin"
-          />
-        </PromptInputBody>
-        <PromptInputFooter>
-          <PromptInputTools>
-            <PromptInputActionMenu>
-              <PromptInputActionMenuTrigger />
-              <PromptInputActionMenuContent>
-                <PromptInputActionAddAttachments />
-              </PromptInputActionMenuContent>
-            </PromptInputActionMenu>
-          </PromptInputTools>
-          <PromptInputSubmit status={status} />
-        </PromptInputFooter>
-      </PromptInput>
+      <PruePromptInput />
     </PromptInputProvider>
   );
 };

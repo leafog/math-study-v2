@@ -22,6 +22,7 @@ export const checkAnswer = tool({
     id: true,
     created_at: true,
     chat_id: true,
+    time_spent_ms: true,
   }).extend({
     analysis: z
       .string()
@@ -44,6 +45,7 @@ export const checkAnswer = tool({
       user_answer,
       chat_id: chatId,
       created_at: new Date(),
+      time_spent_ms: 10086,
     });
     if (analysis) {
       answerAnalysisColl.insert({

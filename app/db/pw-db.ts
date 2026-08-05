@@ -189,7 +189,7 @@ export const AppSchema = new Schema(tables);
 
 export const db = new PowerSyncDatabase({
   database: {
-    dbFilename: "math-study-v2.db",
+    dbFilename: "math-study.db",
   },
   schema: AppSchema,
 });

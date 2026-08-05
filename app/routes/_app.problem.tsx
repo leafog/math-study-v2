@@ -1,13 +1,17 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
-import { useLiveInfiniteQuery, useLiveQuery } from "@tanstack/react-db";
+import {
+  inArray,
+  useLiveInfiniteQuery,
+  useLiveQuery,
+} from "@tanstack/react-db";
 import { useTranslation } from "react-i18next";
+import { groupBy } from "lodash-es";
 import { FileQuestion } from "lucide-react";
 import {
   problemColl,
   answerRecordColl,
   answerAnalysisColl,
   problemExplanationColl,
-  kgTopicColl,
 } from "~/db/tdb-collections";
 import type { Problem as ProblemType } from "~/db/db-zod-schema";
 import {
@@ -17,6 +21,7 @@ import {
   ContainerBody,
 } from "~/components/layout/Container";
 import ProblemPreview from "~/components/math/problem-preview";
+import { useChatKgTopics } from "~/hooks/chat/active-chat";
 
 const PAGE_SIZE = 20;
 
@@ -33,67 +38,60 @@ const ProblemIndex = () => {
           }),
       { pageSize: PAGE_SIZE },
     );
+  console.log(isLoading);
 
   const problems = (data ?? []) as ProblemType[];
+  const pids = useMemo(() => problems.map((it) => it.id), [problems]);
 
   // Bulk queries for related data
-  const { data: allAnswers = [] } = useLiveQuery((q) =>
-    q.from({ answerRecordColl }),
+  const { data: answerRecords = [] } = useLiveQuery(
+    (q) =>
+      q
+        .from({ answerRecordColl })
+        .where(({ answerRecordColl }) =>
+          inArray(answerRecordColl.problem_id, pids),
+        ),
+    [pids],
   );
-  const { data: allAnalyses = [] } = useLiveQuery((q) =>
-    q.from({ answerAnalysisColl }),
-  );
-  const { data: allExplanations = [] } = useLiveQuery((q) =>
-    q.from({ problemExplanationColl }),
-  );
-  const { data: allTopics = [] } = useLiveQuery((q) =>
-    q.from({ kgTopicColl }),
-  );
-
   // Index related data by problem ID
-  const answersByProblem = useMemo(() => {
-    const map = new Map<string, typeof allAnswers>();
-    for (const a of allAnswers) {
-      const list = map.get(a.problem_id) ?? [];
-      list.push(a);
-      map.set(a.problem_id, list);
-    }
-    return map;
-  }, [allAnswers]);
+  const answerRecordsMap = useMemo(
+    () => groupBy(answerRecords, (it) => it.problem_id),
+    [answerRecords],
+  );
 
-  const analysesByAnswer = useMemo(() => {
-    const map = new Map<string, (typeof allAnalyses)[0]>();
-    for (const a of allAnalyses) map.set(a.answer_id, a);
-    return map;
-  }, [allAnalyses]);
+  const { data: answerAnalysises = [] } = useLiveQuery(
+    (q) =>
+      q
+        .from({ answerAnalysisColl })
+        .where(({ answerAnalysisColl }) =>
+          inArray(answerAnalysisColl.problem_id, pids),
+        ),
+    [pids],
+  );
+  const answerAnalysisesMap = useMemo(
+    () => groupBy(answerAnalysises, (it) => it.problem_id),
+    [answerAnalysises],
+  );
 
-  const explanationsByProblem = useMemo(() => {
-    const map = new Map<string, typeof allExplanations>();
-    for (const e of allExplanations) {
-      const list = map.get(e.problem_id) ?? [];
-      list.push(e);
-      map.set(e.problem_id, list);
-    }
-    return map;
-  }, [allExplanations]);
+  const { data: problemExplanations = [] } = useLiveQuery(
+    (q) =>
+      q
+        .from({ problemExplanationColl })
+        .where(({ problemExplanationColl }) =>
+          inArray(problemExplanationColl.problem_id, pids),
+        ),
+    [pids],
+  );
 
-  const topicMap = useMemo(() => {
-    const map = new Map<string, (typeof allTopics)[0]>();
-    for (const t of allTopics) map.set(t.id, t);
-    return map;
-  }, [allTopics]);
+  const problemExplanationsMap = useMemo(
+    () => groupBy(problemExplanations, (it) => it.problem_id),
+    [problemExplanations],
+  );
 
-  const [filterSource, setFilterSource] = useState<string | null>(null);
+  const { kgTopicsMap } = useChatKgTopics();
 
   const filtered = useMemo(() => {
-    if (!filterSource) return problems;
-    return problems.filter((p) => p.source === filterSource);
-  }, [problems, filterSource]);
-
-  const sourceCounts = useMemo(() => {
-    const c: Record<string, number> = {};
-    for (const p of problems) c[p.source] = (c[p.source] ?? 0) + 1;
-    return c;
+    return problems;
   }, [problems]);
 
   // Infinite scroll
@@ -158,7 +156,7 @@ const ProblemIndex = () => {
                 <FileQuestion className="size-6" aria-hidden="true" />
               </div>
               <p className="text-sm">
-                {filterSource ? t("problem.noFiltered") : t("problem.empty")}
+                {/* { t("problem.noFiltered") t("problem.empty")} */}
               </p>
             </div>
           </div>
@@ -169,16 +167,10 @@ const ProblemIndex = () => {
                 <ProblemPreview
                   key={p.id}
                   problem={p}
-                  answers={answersByProblem.get(p.id) ?? []}
-                  answerAnalyses={
-                    (answersByProblem.get(p.id) ?? [])
-                      .map((a) => analysesByAnswer.get(a.id))
-                      .filter(Boolean) as typeof allAnalyses
-                  }
-                  kgTopics={p.tags
-                    .map((id) => topicMap.get(id))
-                    .filter(Boolean) as typeof allTopics}
-                  problemExplanations={explanationsByProblem.get(p.id) ?? []}
+                  answers={answerRecordsMap[p.id] ?? []}
+                  answerAnalyses={answerAnalysisesMap[p.id] ?? []}
+                  kgTopics={p.tags.map((id) => kgTopicsMap[id] ?? [])}
+                  problemExplanations={problemExplanationsMap[p.id] ?? []}
                   className="m-0 hover:shadow-md transition-shadow duration-200"
                 />
               ))}

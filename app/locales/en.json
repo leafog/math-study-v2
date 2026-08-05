@@ -80,6 +80,35 @@
     "dark": "Dark",
     "system": "System"
   },
+  "suggestion": {
+    "prev": {
+      "understand": "Understand",
+      "solve-problem": "Practice",
+      "knowledge-map": "Map",
+      "review": "Review"
+    },
+    "show": {
+      "understand.0": "Explain concept",
+      "understand.1": "Derivation",
+      "understand.2": "Examples",
+      "solve-problem.0": "Solve problem",
+      "solve-problem.1": "Practice set",
+      "solve-problem.2": "Check answer",
+      "knowledge-map.0": "Related topics",
+      "knowledge-map.1": "Map structure",
+      "knowledge-map.2": "Prerequisites",
+      "review.0": "Review material",
+      "review.1": "Key points",
+      "review.2": "Review quiz"
+    }
+  },
+  "welcome": {
+    "title": "What should we learn?",
+    "understand": "Understand a concept",
+    "practice": "Solve a problem",
+    "knowledgeMap": "My knowledge map",
+    "review": "Review concepts"
+  },
   "toolCall": {
     "creatingProblem": "Creating problem...",
     "createProblemFailed": "Failed to create problem",

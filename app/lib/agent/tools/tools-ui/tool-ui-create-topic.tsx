@@ -1,13 +1,15 @@
 import { useTranslation } from "react-i18next";
 import { ToolCallLabel } from "./_tool-call-label";
-import type { ToolMessageRendererProps } from "./types";
+import type { ToolRendererProps } from "./types";
 
-function CreateTopicRenderer({ part }: ToolMessageRendererProps) {
+export const CreateTopic = ({
+  part,
+}: ToolRendererProps<"tool-createTopic">) => {
   const { t } = useTranslation();
 
   const doneText =
     part.state === "output-available"
-      ? (part.output as { created?: boolean })?.created
+      ? part.output.success
         ? t("toolCall.topicRecorded")
         : t("toolCall.topicLinked")
       : undefined;
@@ -20,7 +22,4 @@ function CreateTopicRenderer({ part }: ToolMessageRendererProps) {
       errorKey="toolCall.recordTopicFailed"
     />
   );
-}
-
-export const kind = "tool-createTopic";
-export const Renderer = CreateTopicRenderer;
+};

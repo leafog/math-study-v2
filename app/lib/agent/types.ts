@@ -1,3 +1,6 @@
+import type { InferAgentUIMessage } from "ai";
+import type { agent } from "./client-agent";
+
 export type Locale = "zh" | "en";
 
 /** Known prompt keys — extend as needed */
@@ -14,3 +17,12 @@ export interface PromptEntry {
 }
 
 export type PromptRegistry = Record<string, PromptEntry>;
+
+// ─── Chat message types ────────────────────────────────────
+
+export type MessageMetadata = {
+  created_at: Date;
+};
+
+/** Agent-typed UI message, tools auto-inferred from agent */
+export type UIChatMessage = InferAgentUIMessage<typeof agent, MessageMetadata>;

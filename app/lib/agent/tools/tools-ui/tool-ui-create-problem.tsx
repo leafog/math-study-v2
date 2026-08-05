@@ -1,38 +1,22 @@
-import { useLiveQuery, eq } from "@tanstack/react-db";
-import {
-  problemColl,
-  answerRecordColl,
-  answerAnalysisColl,
-  problemExplanationColl,
-  kgTopicColl,
-} from "~/db/tdb-collections";
 import { ToolCallLabel } from "./_tool-call-label";
-import type { ToolMessageRendererProps } from "./types";
+import type { ToolRendererProps } from "./types";
 import ProblemPreview from "~/components/math/problem-preview";
 import { useChatKgTopics, useChatProblems } from "~/hooks/chat/active-chat";
-import type { Problem } from "~/db/db-zod-schema";
 
-function CreateProblemRenderer({ part }: ToolMessageRendererProps) {
+export const CreateProblem = ({
+  part,
+}: ToolRendererProps<"tool-createProblem">) => {
   if (part.state === "output-available") {
-    const r = part.output as {
-      id: string;
-      content: string;
-      description?: string | null;
-      source?: string;
-      chat_id?: string | null;
-      tags?: string[];
-    };
     return (
-      <div id={`problem-${r.id}`}>
+      <div id={`problem-${part.output.id}`}>
         <ConnectedProblemView
-          problemId={r.id}
-          chatId={r.chat_id ?? undefined}
-          tagIds={r.tags ?? []}
+          problemId={part.output.id}
+          chatId={part.output.chat_id ?? undefined}
+          tagIds={part.output.tags ?? []}
         />
       </div>
     );
   }
-
   return (
     <ToolCallLabel
       state={part.state}
@@ -40,16 +24,16 @@ function CreateProblemRenderer({ part }: ToolMessageRendererProps) {
       errorKey="toolCall.createProblemFailed"
     />
   );
-}
+};
 
 function ConnectedProblemView({
   problemId,
   chatId,
-}: {
+}: Readonly<{
   problemId: string;
   chatId?: string;
   tagIds: string[];
-}) {
+}>) {
   const {
     problemsMap,
     answerRecordsMap,
@@ -57,9 +41,7 @@ function ConnectedProblemView({
     problemExplanationsMap,
   } = useChatProblems();
   const { kgTopicsMap } = useChatKgTopics();
-
   const problem = problemsMap[problemId];
-
   const { registerRef } = useChatProblems();
   if (!problem) return null;
 
@@ -75,6 +57,3 @@ function ConnectedProblemView({
     />
   );
 }
-
-export const kind = "tool-createProblem";
-export const Renderer = CreateProblemRenderer;

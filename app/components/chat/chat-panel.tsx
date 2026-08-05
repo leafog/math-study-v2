@@ -21,23 +21,71 @@ import {
   useActiveChatToolsPanelStore,
 } from "~/hooks/chat/active-chat";
 import ChatPanelRight from "./chat-panel-right";
-import { ChatPinnedProblemBtn } from "./chat-pinned-problem-btn";
 import { Marker, MarkerContent, MarkerIcon } from "../ui/marker";
 import { Spinner } from "../ui/spinner";
+import { cn } from "~/lib/utils";
+import { type CSSProperties, type PropsWithChildren } from "react";
+import { useMeasure } from "@uidotdev/usehooks";
+import { usePinnedProblems } from "~/store/pinned-problems-store";
+import { ProblemPreviewSimple } from "../math/problem-preview-simple";
+import ChatWelCome from "./chat-welcome";
+import ChatPromptSuggestion from "./chat-prompt-suggestion";
+import { useChatPromptSuggestionStore } from "~/store/chat-prompt-suggestion-store";
 
 interface ChatPanelProps {
   panelRef: React.RefObject<PanelImperativeHandle | null>;
   chatId?: string;
 }
+const ChatInnerWrapper = ({
+  children,
+  ref,
+  style,
+  menuShow,
+  toolsShow,
+  className,
+  innerClassName,
+}: PropsWithChildren<{
+  ref?: React.RefCallback<HTMLDivElement>;
+  style?: CSSProperties;
+  menuShow: boolean;
+  toolsShow: boolean;
+  className: string;
+  innerClassName?: string;
+}>) => {
+  return (
+    <div
+      className={cn("flex flex-row absolute w-full z-40", className)}
+      ref={ref}
+      style={style}
+    >
+      <div
+        className={cn("min-w-0 w-full mx-auto max-w-3xl px-6", innerClassName)}
+      >
+        {children}
+      </div>
+      {menuShow && !toolsShow && (
+        <div className="sticky top-0 w-xs  max-h-full p-2"></div>
+      )}
+    </div>
+  );
+};
 
 const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
   const { messages, status } = useActiveChatHelpers();
-  const { currentConversation } = useActiveChat();
+  const { currentConversation, isNewChat } = useActiveChat();
   const onChatResize = useActiveChatToolsPanelStore().use.onChatResize();
 
+  const [promptInputDivRef, { height: promptInputDivHeight }] = useMeasure();
+
+  const [pinnedDivRef, { height: pinnedDivHeight }] = useMeasure();
   const toolsShow = useActiveChatToolsPanelStore().use.toolsShow();
   const menuShow = useActiveChatToolsPanelStore().use.menuShow();
   const isThinking = status === "submitted";
+  const pinned = usePinnedProblems.use.pinned();
+  const pinnedPid = chatId ? pinned[chatId] : undefined;
+  const showPinned = chatId && pinnedPid;
+  const hasSuggestions = useChatPromptSuggestionStore.use.hasSuggestions();
+  const showSuggestions = hasSuggestions && isNewChat;
 
   return (
     <ResizablePanel
@@ -46,16 +94,17 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
       minSize={"30%"}
       collapsible
       onResize={(size) => onChatResize(size)}
-      className="flex flex-col"
+      className="flex flex-col "
     >
       <MessageScrollerProvider autoScroll>
-        <ChatHeaderContainer className="shrink-0 border-b-2">
+        <ChatHeaderContainer
+          className={cn("shrink-0", isNewChat ? "" : "border-b-2")}
+        >
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <span className="block truncate">
                 {currentConversation?.title}
               </span>
-              <ChatPinnedProblemBtn chatId={chatId!} />
             </div>
           </div>
           <div className="gap-2 flex">
@@ -63,11 +112,25 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
             {!toolsShow && <ToolsToggleBtn />}
           </div>
         </ChatHeaderContainer>
-        <div className="grid grid-rows-1 content-between relative w-full grow overflow-hidden ">
+        <div className="grid grid-rows-1  relative w-full grow overflow-hidden ">
           <div className="overflow-hidden p-0">
+            {showPinned && (
+              <ChatInnerWrapper
+                className="top-2"
+                menuShow={menuShow}
+                ref={pinnedDivRef}
+                toolsShow={toolsShow}
+                innerClassName="px-4"
+              >
+                <ProblemPreviewSimple chatId={chatId} problemId={pinnedPid} />
+              </ChatInnerWrapper>
+            )}
             <MessageScroller>
-              <MessageScrollerViewport className=" flex flex-row ">
+              <MessageScrollerViewport className="flex flex-row ">
                 <MessageScrollerContent className="min-w-0 w-full mx-auto max-w-3xl px-6 py-2">
+                  {showPinned && (
+                    <div style={{ height: `${pinnedDivHeight}px` }}></div>
+                  )}
                   {messages.map((message, i) => {
                     return (
                       <ChatMessage
@@ -89,6 +152,7 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
                       </MarkerContent>
                     </Marker>
                   )}
+                  <div style={{ height: `${promptInputDivHeight}px` }}></div>
                 </MessageScrollerContent>
                 {menuShow && !toolsShow && (
                   <div className="sticky top-0 w-xs h-full p-2 overflow-hidden">
@@ -97,19 +161,45 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
                 )}
               </MessageScrollerViewport>
               <MessageScrollerButton
-                className={
-                  menuShow && !toolsShow ? "-translate-x-[calc(50%+10rem)]" : ""
-                }
+                className={cn(
+                  menuShow && !toolsShow
+                    ? "-translate-x-[calc(50%+10rem)]"
+                    : "",
+                )}
+                style={{
+                  bottom: `calc(1rem + ${promptInputDivHeight}px + 0.5rem)`,
+                }}
               />
             </MessageScroller>
-          </div>
-          <div className="flex flex-row ">
-            <div className="min-w-0 w-full mx-auto max-w-3xl px-6 py-2">
-              <ChatPromptInput />
-            </div>
-            {menuShow && !toolsShow && (
-              <div className="sticky top-0 w-xs  max-h-full p-2"></div>
+            {isNewChat && (
+              <ChatInnerWrapper
+                className={cn("-translate-y-1/2  top-[calc((100%-140px)/2)]")}
+                menuShow={menuShow}
+                toolsShow={toolsShow}
+              >
+                <ChatWelCome />
+              </ChatInnerWrapper>
             )}
+            {showSuggestions && (
+              <ChatInnerWrapper
+                className={`z-50 `}
+                style={{
+                  bottom: `calc(${promptInputDivHeight}px + 1rem + 2rem)`,
+                }}
+                menuShow={menuShow}
+                toolsShow={toolsShow}
+              >
+                <ChatPromptSuggestion />
+              </ChatInnerWrapper>
+            )}
+            <ChatInnerWrapper
+              ref={promptInputDivRef}
+              menuShow={menuShow}
+              toolsShow={toolsShow}
+              className="bottom-4"
+            >
+              <ChatPromptInput />
+            </ChatInnerWrapper>
           </div>
         </div>
       </MessageScrollerProvider>

@@ -1,15 +1,10 @@
 import { useMemo, type ReactNode } from "react";
 import { useChat } from "@ai-sdk/react";
 import { transport } from "~/lib/agent/client-agent";
-import { createTopic } from "~/lib/agent/tools/tool-create-topic";
 import { genId } from "~/lib/id-utils";
-import {
-  chatMessageColl,
-  chatKgTopicColl,
-  zustandStorageColl,
-} from "~/db/tdb-collections";
+import { chatMessageColl } from "~/db/tdb-collections";
 import { createChatToolsPanelStore } from "~/store/chat-tools-panel-store";
-import type { UIChatMessage } from "../types";
+import type { UIChatMessage } from "~/lib/agent/types";
 import {
   ActiveChatContext,
   ChatHelpersContext,
@@ -17,13 +12,14 @@ import {
   ChatToolsContext,
   ChatProblemsContext,
   ChatKgTopicsContext,
+  ChatPromptInputContext,
 } from "./context";
 import { useChatIdManager } from "./manager/use-chat-id-manager";
 import { useMessagesManager } from "./manager/use-messages-manager";
 import { useChatToolsManager } from "./manager/use-chat-tools-manager";
-import { useLiveSuspenseQuery, eq } from "@tanstack/react-db";
 import useChatProblemsManager from "./manager/use-chat-problems-manager";
 import useChatKgTopicsManager from "./manager/use-chat-kg-topics-manager";
+import useChatPromptInputManager from "./manager/use-chat-prompt-input-manager";
 
 export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
   // const { chatId, isNewChat, createChat } = useChatIdManager();
@@ -58,10 +54,12 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
       createChat(title ?? kind);
     }
   };
-  const chatToolsManager = useChatToolsManager(chatId, onOpenBefore);
 
+  const chatToolsManager = useChatToolsManager(chatId, onOpenBefore);
   const chatProblemState = useChatProblemsManager(chatId);
   const chatKgTopicsState = useChatKgTopicsManager(chatId);
+  const chatPromptInputStore = useChatPromptInputManager(isNewChat, chatId);
+
   return (
     <ActiveChatContext.Provider value={activeChatState}>
       <ChatHelpersContext.Provider value={chatHelpers}>
@@ -69,7 +67,9 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
           <ChatToolsContext.Provider value={chatToolsManager}>
             <ChatProblemsContext.Provider value={chatProblemState}>
               <ChatKgTopicsContext.Provider value={chatKgTopicsState}>
-                {children}
+                <ChatPromptInputContext.Provider value={chatPromptInputStore}>
+                  {children}
+                </ChatPromptInputContext.Provider>
               </ChatKgTopicsContext.Provider>
             </ChatProblemsContext.Provider>
           </ChatToolsContext.Provider>

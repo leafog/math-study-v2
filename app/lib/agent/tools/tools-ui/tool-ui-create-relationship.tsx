@@ -1,8 +1,10 @@
 import { useTranslation } from "react-i18next";
 import { ToolCallLabel } from "./_tool-call-label";
-import type { ToolMessageRendererProps } from "./types";
+import type { ToolRendererProps } from "./types";
 
-function CreateRelationshipRenderer({ part }: ToolMessageRendererProps) {
+export const CreateRelationship = ({
+  part,
+}: ToolRendererProps<"tool-createRelationship">) => {
   const { t } = useTranslation();
 
   return (
@@ -13,7 +15,4 @@ function CreateRelationshipRenderer({ part }: ToolMessageRendererProps) {
       errorKey="toolCall.buildRelationFailed"
     />
   );
-}
-
-export const kind = "tool-createRelationship";
-export const Renderer = CreateRelationshipRenderer;
+};

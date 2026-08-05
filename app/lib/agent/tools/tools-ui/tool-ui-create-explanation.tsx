@@ -3,17 +3,15 @@ import { CornerUpRight } from "lucide-react";
 import { ToolCallLabel } from "./_tool-call-label";
 import { scrollToProblemAndOpenExplanation } from "~/components/math/scroll-utils";
 import { Button } from "~/components/ui/button";
-import type { ToolMessageRendererProps } from "./types";
+import type { ToolRendererProps } from "./types";
 
-function CreateExplanationRenderer({
+export const CreateExplanation = ({
   part,
-}: Readonly<ToolMessageRendererProps>) {
+}: ToolRendererProps<"tool-createExplanation">) => {
   const { t } = useTranslation();
 
   const isDone = part.state === "output-available";
-  const problemId = isDone
-    ? (part as { input?: { problem_id?: string } }).input?.problem_id
-    : undefined;
+  const problemId = isDone ? part.input.problem_id : undefined;
 
   return (
     <div className="flex items-center gap-2">
@@ -36,7 +34,4 @@ function CreateExplanationRenderer({
       )}
     </div>
   );
-}
-
-export const kind = "tool-createExplanation";
-export const Renderer = CreateExplanationRenderer;
+};

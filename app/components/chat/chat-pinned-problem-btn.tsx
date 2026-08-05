@@ -13,6 +13,7 @@ import { useEffect } from "react";
 export function ChatPinnedProblemBtn({ chatId }: Readonly<{ chatId: string }>) {
   const { value, toggle, setTrue } = useBoolean(true);
   const pinnedId = usePinnedProblems((s) => s.pinned[chatId]);
+
   useEffect(() => {
     setTrue();
   }, [pinnedId]);

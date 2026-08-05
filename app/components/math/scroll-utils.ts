@@ -22,11 +22,7 @@ export function scrollToProblemWithOutEvent(problemId: string): void {
   if (rect.top >= viewportHeight * 0.2 && rect.bottom <= viewportHeight * 0.8) {
     return;
   }
-
-  // If the element is taller than the viewport, align to top so the user
-  // sees the beginning; otherwise center it for a comfortable reading position.
-  const block = rect.height > viewportHeight ? "start" : "center";
-  el.scrollIntoView({ behavior: "smooth", block });
+  el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 export function scrollToProblem(problemId: string): void {
   scrollToProblemWithOutEvent(problemId);

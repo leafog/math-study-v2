@@ -1,13 +1,13 @@
 import { useTranslation } from "react-i18next";
 import { ToolCallLabel } from "./_tool-call-label";
-import type { ToolMessageRendererProps } from "./types";
+import type { ToolRendererProps } from "./types";
 
-function CheckAnswerRenderer({ part }: ToolMessageRendererProps) {
+export const CheckAnswer = ({ part }: ToolRendererProps<"tool-checkAnswer">) => {
   const { t } = useTranslation();
 
   const doneText =
     part.state === "output-available"
-      ? (part.output as { correct?: boolean })?.correct
+      ? part.output.correct
         ? t("toolCall.answerCorrect")
         : t("toolCall.answerWrong")
       : undefined;
@@ -20,7 +20,4 @@ function CheckAnswerRenderer({ part }: ToolMessageRendererProps) {
       errorKey="toolCall.checkAnswerFailed"
     />
   );
-}
-
-export const kind = "tool-checkAnswer";
-export const Renderer = CheckAnswerRenderer;
+};

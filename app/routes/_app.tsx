@@ -14,17 +14,16 @@ import { cn } from "~/lib/utils";
 // 避免首次 AI 工具调用时冷启动延迟
 initWorkerApi();
 initDb();
-console.log("123");
 
 const AppLayout = () => {
   const { pathname } = useLocation();
 
-  // useLiveSuspenseQuery((q) => {
-  //   return q
-  //     .from({ zustandStorageColl })
-  //     .where(({ zustandStorageColl }) => eq(zustandStorageColl.id, "none"))
-  //     .findOne();
-  // }, []);
+  useLiveSuspenseQuery((q) => {
+    return q
+      .from({ zustandStorageColl })
+      .where(({ zustandStorageColl }) => eq(zustandStorageColl.id, "none"))
+      .findOne();
+  }, []);
 
   const hiddenRoutes = ["/library", "/graph", "/problem"];
   return (

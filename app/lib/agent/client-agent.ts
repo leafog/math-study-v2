@@ -43,4 +43,11 @@ export const agent = new ToolLoopAgent({
   },
 });
 
-export const transport = new DirectChatTransport({ agent });
+export const transport = new DirectChatTransport({
+  agent,
+  messageMetadata({ part }) {
+    if (part.type === "start") {
+      return { created_at: new Date() };
+    }
+  },
+});

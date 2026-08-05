@@ -6,6 +6,7 @@ import {
   ChatToolsContext,
   ChatProblemsContext,
   ChatKgTopicsContext,
+  ChatPromptInputContext,
 } from "./context";
 
 export const useActiveChat = () => {
@@ -64,6 +65,18 @@ export const useChatKgTopics = () => {
 
   if (!ctx) {
     throw new Error("useChatKgTopics must be used within ActiveChatProvider");
+  }
+
+  return ctx;
+};
+
+export const useChatPromptInput = () => {
+  const ctx = useContext(ChatPromptInputContext);
+
+  if (!ctx) {
+    throw new Error(
+      "useActiveChatPromptInputStore must be used within ActiveChatProvider",
+    );
   }
 
   return ctx;

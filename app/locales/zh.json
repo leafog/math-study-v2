@@ -80,6 +80,35 @@
     "dark": "深色",
     "system": "跟随系统"
   },
+  "suggestion": {
+    "prev": {
+      "understand": "理解",
+      "solve-problem": "练习",
+      "knowledge-map": "图谱",
+      "review": "复习"
+    },
+    "show": {
+      "understand.0": "解释概念",
+      "understand.1": "推导过程",
+      "understand.2": "举例说明",
+      "solve-problem.0": "帮我解题",
+      "solve-problem.1": "出练习题",
+      "solve-problem.2": "检查答案",
+      "knowledge-map.0": "关联知识",
+      "knowledge-map.1": "知识结构",
+      "knowledge-map.2": "前置知识",
+      "review.0": "复习内容",
+      "review.1": "总结重点",
+      "review.2": "复习检测"
+    }
+  },
+  "welcome": {
+    "title": "我们该学什么？",
+    "understand": "理解一个知识点",
+    "practice": "做一道题目",
+    "knowledgeMap": "我的知识地图",
+    "review": "回顾知识点"
+  },
   "toolCall": {
     "creatingProblem": "正在出题...",
     "createProblemFailed": "出题失败",

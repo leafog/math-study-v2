@@ -48,9 +48,7 @@ const ContainerBody = ({
   className,
   ...props
 }: React.ComponentProps<"div">) => {
-  return (
-    <div className={cn("flex-1 min-h-0 bg-red-50", className)} {...props} />
-  );
+  return <div className={cn("flex-1 min-h-0 ", className)} {...props} />;
 };
 
 export { Container, ContainerHeader, ContainerSticky, ContainerBody };

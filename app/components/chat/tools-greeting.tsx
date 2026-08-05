@@ -8,7 +8,7 @@ const ToolsGreeting = () => {
   const { open } = useChatTools();
   return (
     <div className="flex flex-1 size-full justify-center items-center">
-      <div className="flex flex-col min-w-xs max-w-lg w-full p-4 gap-2">
+      <div className="flex flex-col  max-w-lg w-full p-4 gap-2">
         {toolRegistry.map(({ kind, Icon }) => (
           <Button
             className="w-full justify-start"
