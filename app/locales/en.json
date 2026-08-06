@@ -21,7 +21,8 @@
     "history": "History",
     "recent": "Recent",
     "quoteFrom": "> Quote from {{kind}}:\n>\n> {{content}}",
-    "messageTime": "{{date, datetime}}"
+    "messageTime": "{{date, datetime}}",
+    "thinking": "Thinking..."
   },
   "routes": {
     "files": "Files",
@@ -35,7 +36,8 @@
     "subjects": "Subjects",
     "clear": "Clear",
     "dataSource": "Built from curriculum data",
-    "viewOnGitHub": "View on GitHub"
+    "viewOnGitHub": "View on GitHub",
+    "viewKnowledgeGraph": "View Knowledge Graph"
   },
   "tools": {
     "excalidraw": "Whiteboard",
@@ -79,7 +81,10 @@
     "theme": "Theme",
     "light": "Light",
     "dark": "Dark",
-    "system": "System"
+    "system": "System",
+    "general": "General",
+    "model": "Model",
+    "selectModel": "Search models..."
   },
   "suggestion": {
     "prev": {
@@ -89,9 +94,9 @@
       "review": "Review"
     },
     "show": {
-      "understand.0": "Explain concept",
-      "understand.1": "Derivation",
-      "understand.2": "Examples",
+      "understand.0": "Concept",
+      "understand.1": "Method",
+      "understand.2": "Theorem",
       "solve-problem.0": "Solve problem",
       "solve-problem.1": "Practice set",
       "solve-problem.2": "Check answer",
@@ -127,6 +132,9 @@
     "execFailed": "Execution failed",
     "creatingExplanation": "Generating explanation...",
     "explanationCreated": "Explanation generated",
-    "createExplanationFailed": "Failed to generate explanation"
+    "createExplanationFailed": "Failed to generate explanation",
+    "searchingSimilar": "Searching similar topics...",
+    "searchComplete": "Search complete",
+    "searchSimilarFailed": "Search failed"
   }
 }

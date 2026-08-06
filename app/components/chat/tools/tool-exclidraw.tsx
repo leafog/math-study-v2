@@ -19,7 +19,7 @@ import { useDebounceCallback } from "usehooks-ts";
 
 const Panel = ({ chatId, id, kind }: ToolPanelProps) => {
   const apiRef = useRef<ExcalidrawImperativeAPI>(null);
-  const { theme } = useTheme();
+  const { resolvedTheme } = useTheme();
   const [initialData, setInitialData] = useState();
 
   useEffect(() => {
@@ -55,7 +55,7 @@ const Panel = ({ chatId, id, kind }: ToolPanelProps) => {
   return (
     <div className="size-full">
       <Excalidraw
-        theme={theme === "dark" ? "dark" : "light"}
+        theme={resolvedTheme === "dark" ? "dark" : "light"}
         onChange={onChangeWithDelay}
         initialData={initialData}
 

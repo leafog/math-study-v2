@@ -5,7 +5,6 @@ import {
   useCreateBlockNote,
   useEditorChange,
   useEditorSelectionChange,
-  useSelectedBlocks,
 } from "@blocknote/react";
 
 import { filterSuggestionItems } from "@blocknote/core/extensions";
@@ -15,7 +14,7 @@ import { BlockNoteView } from "@blocknote/shadcn";
 import { useTranslation } from "react-i18next";
 import * as locales from "@blocknote/core/locales";
 import { useTheme } from "next-themes";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useDebounceCallback } from "usehooks-ts";
 import { and, eq, queryOnce } from "@tanstack/react-db";
 import { toolDataColl } from "~/db/tdb-collections";
@@ -36,7 +35,7 @@ const Panel = ({ chatId, kind, id }: ToolPanelProps) => {
     () => (locales as Record<string, any>)[lang],
     [lang],
   );
-  const { theme } = useTheme();
+  const { resolvedTheme } = useTheme();
   const editor = useCreateBlockNote({
     schema,
     dictionary,
@@ -104,7 +103,7 @@ const Panel = ({ chatId, kind, id }: ToolPanelProps) => {
       <BlockNoteView
         className="grow min-h-0 overflow-auto scrollbar-thin w-full"
         lang={i18n.language}
-        theme={theme === "dark" ? "dark" : "light"}
+        theme={resolvedTheme === "dark" ? "dark" : "light"}
         editor={editor}
 
         portalElements={{ default: document.body }}

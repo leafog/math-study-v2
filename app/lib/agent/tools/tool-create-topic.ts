@@ -2,7 +2,7 @@ import { tool } from "ai";
 import { kgTopicColl, chatKgTopicColl } from "~/db/tdb-collections";
 import { genId } from "~/lib/id-utils";
 
-import { KgTopicSchema } from "~/db/db-zod-schema";
+import { CreateTopicOutputSchema, KgTopicSchema } from "~/db/db-zod-schema";
 import { chatIdStore } from "~/store/chat-id-store";
 import { getPrompt } from "../instructions";
 import { addTopicVec } from "~/lib/similar";
@@ -38,10 +38,10 @@ export const createTopic = tool({
       });
     }
 
-    return {
+    return CreateTopicOutputSchema.parse({
       success: true,
       topic_id: topic.id,
       message: `已创建知识点: ${topic.name}`,
-    };
+    });
   },
 });

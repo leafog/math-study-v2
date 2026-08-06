@@ -2,11 +2,9 @@ import {
   ChartScatter,
   ChefHat,
   Files,
-  Languages,
-  Moon,
   Plus,
-  Sun,
   BadgeQuestionMark,
+  Settings,
 } from "lucide-react";
 import {
   Sidebar,
@@ -24,9 +22,9 @@ import {
 import { Button } from "../ui/button";
 import { cn } from "~/lib/utils";
 import { Link, useLocation } from "react-router";
-import { useTheme } from "next-themes";
 import { useTranslation } from "react-i18next";
 import NavHistoryChat from "./nav-history-chat";
+import SettingsDialog from "~/components/settings/settings-modal";
 
 type RouteItem = {
   path: string;
@@ -35,8 +33,7 @@ type RouteItem = {
 };
 
 const AppSidebar = () => {
-  const { t, i18n } = useTranslation();
-  const { theme, setTheme } = useTheme();
+  const { t } = useTranslation();
   const { state } = useSidebar();
   const { pathname } = useLocation();
   const isOpen = state === "expanded";
@@ -117,25 +114,12 @@ const AppSidebar = () => {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            >
-              <Sun className="hidden dark:block" />
-              <Moon className="block dark:hidden" />
-              <span>
-                {theme === "dark" ? t("settings.light") : t("settings.dark")}
-              </span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={() =>
-                i18n.changeLanguage(i18n.language === "zh" ? "en" : "zh")
-              }
-            >
-              <Languages />
-              <span>{i18n.language === "zh" ? "EN" : "中文"}</span>
-            </SidebarMenuButton>
+            <SettingsDialog>
+              <SidebarMenuButton>
+                <Settings />
+                <span>{t("settings.title")}</span>
+              </SidebarMenuButton>
+            </SettingsDialog>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

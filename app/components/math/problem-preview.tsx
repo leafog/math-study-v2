@@ -40,6 +40,7 @@ import { useBoolean } from "usehooks-ts";
 import type { ProblemFull, ProblemStateColor } from "./type";
 import { keyBy } from "lodash-es";
 import { motion, useAnimationControls } from "motion/react";
+import KgTopicInChatItem from "../graph/kg-topic-in-chat-item";
 
 export type ProblemPreviewHandle = {
   openExplanation: () => void;
@@ -178,6 +179,7 @@ const ProblemPreview = forwardRef<ProblemPreviewHandle, ProblemProps>(
 
           {answers.length > 0 && (
             <Collapsible
+              id={`problem-${id}-answers`}
               open={answerRecordOpen}
               onOpenChange={toggleAnswerRecord}
               className="rounded-md data-[state=open]:bg-muted"
@@ -243,6 +245,7 @@ const ProblemPreview = forwardRef<ProblemPreviewHandle, ProblemProps>(
 
           {problemExplanations && problemExplanations.length > 0 && (
             <Collapsible
+              id={`problem-${id}-explanation`}
               open={explanationOpen}
               onOpenChange={toggleExplanation}
               className="rounded-md data-[state=open]:bg-muted"
@@ -269,11 +272,9 @@ const ProblemPreview = forwardRef<ProblemPreviewHandle, ProblemProps>(
         </CardContent>
 
         {kgTopics.length > 0 && (
-          <CardFooter className="flex flex-wrap gap-1 pt-0 pb-3 pl-5">
+          <CardFooter className="flex flex-wrap gap-1 py-2 pl-5 items-center h-full">
             {kgTopics.map((topic) => (
-              <Badge key={topic.id} variant="secondary" className="text-xs">
-                {topic.i18n?.zh ?? topic.name}
-              </Badge>
+              <KgTopicInChatItem key={topic.id} id={topic.id} />
             ))}
           </CardFooter>
         )}

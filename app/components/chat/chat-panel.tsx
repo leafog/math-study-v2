@@ -80,13 +80,18 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
   const [pinnedDivRef, { height: pinnedDivHeight }] = useMeasure();
   const toolsShow = useActiveChatToolsPanelStore().use.toolsShow();
   const menuShow = useActiveChatToolsPanelStore().use.menuShow();
-  const isThinking = status === "submitted";
+
   const pinned = usePinnedProblems.use.pinned();
+
   const pinnedPid = chatId ? pinned[chatId] : undefined;
   const showPinned = chatId && pinnedPid;
   const hasSuggestions = useChatPromptSuggestionStore.use.hasSuggestions();
   const showSuggestions = hasSuggestions && isNewChat;
-
+  const messageScrollerViewportStype = pinnedDivHeight
+    ? {
+        scrollPaddingTop: showPinned ? pinnedDivHeight + 16 : 0,
+      }
+    : {};
   return (
     <ResizablePanel
       panelRef={panelRef}
@@ -122,11 +127,18 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
                 toolsShow={toolsShow}
                 innerClassName="px-4"
               >
-                <ProblemPreviewSimple chatId={chatId} problemId={pinnedPid} />
+                <ProblemPreviewSimple
+                  chatId={chatId}
+                  problemId={pinnedPid}
+                  pinnedDivHeight={pinnedDivHeight}
+                />
               </ChatInnerWrapper>
             )}
             <MessageScroller>
-              <MessageScrollerViewport className="flex flex-row ">
+              <MessageScrollerViewport
+                className="flex flex-row"
+                style={messageScrollerViewportStype}
+              >
                 <MessageScrollerContent className="min-w-0 w-full mx-auto max-w-3xl px-6 py-2">
                   {showPinned && (
                     <div style={{ height: `${pinnedDivHeight}px` }}></div>
@@ -142,20 +154,11 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
                       />
                     );
                   })}
-                  {isThinking && (
-                    <Marker role="status">
-                      <MarkerIcon>
-                        <Spinner />
-                      </MarkerIcon>
-                      <MarkerContent className="shimmer">
-                        Thinking...
-                      </MarkerContent>
-                    </Marker>
-                  )}
+
                   <div style={{ height: `${promptInputDivHeight}px` }}></div>
                 </MessageScrollerContent>
                 {menuShow && !toolsShow && (
-                  <div className="sticky top-0 w-xs h-full p-2 overflow-hidden">
+                  <div className="sticky top-0 w-xs h-full  p-2 overflow-hidden">
                     <ChatPanelRight />
                   </div>
                 )}

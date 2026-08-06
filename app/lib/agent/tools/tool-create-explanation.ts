@@ -4,6 +4,7 @@ import { problemExplanationColl } from "~/db/tdb-collections";
 import { genId } from "~/lib/id-utils";
 import { chatIdStore } from "~/store/chat-id-store";
 import { getPrompt } from "../instructions";
+import { CreateExplanationOutputSchema } from "~/db/db-zod-schema";
 
 export const createExplanation = tool({
   description: getPrompt("toolDesc.createExplanation"),
@@ -23,10 +24,10 @@ export const createExplanation = tool({
       chat_id: chatId,
       created_at: new Date(),
     });
-    return {
+    return CreateExplanationOutputSchema.parse({
       success: true,
       explanation_id: id,
       message: "题目解析已保存",
-    };
+    });
   },
 });

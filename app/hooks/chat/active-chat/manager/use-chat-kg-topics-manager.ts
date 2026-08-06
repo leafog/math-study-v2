@@ -76,6 +76,12 @@ const useChatKgTopicsManager = (chatId: string) => {
     () => keyBy(allTopics, (it) => it.id),
     [allTopics],
   );
+  const kgTopicDisplayName = (kgTopic: KgTopic) => {
+    return topicDisplayName(kgTopic, lang);
+  };
+  const getKgTopicById = (id: string | undefined): KgTopic | undefined => {
+    return id ? kgTopicsMap[id] : undefined;
+  };
 
   return {
     graphNodes,
@@ -83,6 +89,8 @@ const useChatKgTopicsManager = (chatId: string) => {
     chatGraphNodes,
     chatGraphEdges,
     kgTopicsMap,
+    kgTopicDisplayName,
+    getKgTopicById,
   };
 };
 

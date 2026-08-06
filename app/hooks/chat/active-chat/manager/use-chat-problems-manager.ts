@@ -1,15 +1,10 @@
 import { useLiveQuery, eq } from "@tanstack/react-db";
 import { keyBy, groupBy } from "lodash-es";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import {
   toStateColor,
   type ProblemPreviewHandle,
 } from "~/components/math/problem-preview";
-import {
-  onOpenExplanation,
-  onOpenAnswerRecords,
-  onScrollToProblem,
-} from "~/components/math/scroll-utils";
 import type { ProblemStateColor } from "~/components/math/type";
 import {
   problemColl,
@@ -17,6 +12,7 @@ import {
   problemExplanationColl,
   answerAnalysisColl,
 } from "~/db/tdb-collections";
+import { useEvent } from "~/event/use-event";
 
 const useChatProblemsManager = (chatId: string) => {
   const { data: problems } = useLiveQuery(
@@ -29,10 +25,7 @@ const useChatProblemsManager = (chatId: string) => {
         }),
     [chatId],
   );
-  const problemsMap = useMemo(
-    () => keyBy(problems, (it) => it.id),
-    [problems],
-  );
+  const problemsMap = useMemo(() => keyBy(problems, (it) => it.id), [problems]);
 
   const { data: answerRecords } = useLiveQuery(
     (q) =>
@@ -87,22 +80,27 @@ const useChatProblemsManager = (chatId: string) => {
     [],
   );
 
-  useEffect(() => {
-    const u1 = onOpenExplanation((pid) =>
-      refs.current.get(pid)?.openExplanation(),
-    );
-    const u2 = onOpenAnswerRecords((pid) =>
-      refs.current.get(pid)?.openAnswerRecord(),
-    );
-    const u3 = onScrollToProblem((pid) => {
-      refs.current.get(pid)?.highlight();
-    });
-    return () => {
-      u1();
-      u2();
-      u3();
-    };
-  }, []);
+  useEvent("problem:open-explanation", (pid) => {
+    refs.current.get(pid)?.openExplanation();
+  });
+  useEvent("problem:open-answer-record", (pid) => {
+    refs.current.get(pid)?.openAnswerRecord();
+  });
+  useEvent("problem:scroll-to", (pid) => {
+    refs.current.get(pid)?.highlight();
+  });
+  const problemHasanswers = useCallback(
+    (pid: string) => {
+      return (answerRecordsMap[pid] ?? []).length > 0;
+    },
+    [answerRecordsMap],
+  );
+  const problemHasExplanations = useCallback(
+    (pid: string) => {
+      return (problemExplanationsMap[pid] ?? []).length > 0;
+    },
+    [problemExplanationsMap],
+  );
 
   return {
     problems,
@@ -112,6 +110,8 @@ const useChatProblemsManager = (chatId: string) => {
     problemExplanationsMap,
     toStateColorByPid,
     registerRef,
+    problemHasanswers,
+    problemHasExplanations,
   };
 };
 

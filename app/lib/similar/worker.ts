@@ -44,17 +44,7 @@ db.version(1).stores({
 });
 
 function buildEmbedText(topic: OmitKgTopic): string {
-  const parts: string[] = [];
-
-  const enName = topic.i18n?.en || topic.i18n?.["en-US"];
-  parts.push(enName || topic.name);
-
-  const enDesc =
-    topic.description_i18n?.en || topic.description_i18n?.["en-US"];
-  const desc = enDesc || topic.description;
-  if (desc) parts.push(desc);
-
-  return parts.join(" ");
+  return topic.name;
 }
 
 const api: EmbedWorkerApi = {

@@ -49,6 +49,7 @@ import { MessageResponse } from "../ai-elements/message";
 import { useEffect } from "react";
 import { useChatPromptInput } from "~/hooks/chat/active-chat/hooks";
 import { useChatPromptSuggestionStore } from "~/store/chat-prompt-suggestion-store";
+import { useEvent } from "~/event/use-event";
 
 const DisplayAttachments = () => {
   const attachments = usePromptInputAttachments();
@@ -184,12 +185,9 @@ const PruePromptInput = () => {
     setTextInputValue("");
     sendMessage({ ...message, text: fullText });
   };
-  const { textInput, attachments } = usePromptInputController();
+  const { textInput } = usePromptInputController();
   const textInputValue = useChatPromptInput().use.textInputValue();
   const setTextInputValue = useChatPromptInput().use.setTextInputValue();
-  const pushToTextInputValue = useChatPromptInput().use.pushToTextInputValue();
-  const setPushToTextInputValue =
-    useChatPromptInput().use.setPushToTextInputValue();
 
   const setSuggestions = useChatPromptSuggestionStore.use.setSuggestions();
 
@@ -199,14 +197,9 @@ const PruePromptInput = () => {
     }
   }, [isNewChat, setSuggestions]);
 
-  useEffect(() => {
-    if (pushToTextInputValue.length > 0) {
-      textInput.setInput(pushToTextInputValue);
-      setTextInputValue(pushToTextInputValue);
-      setPushToTextInputValue("");
-    }
-  }, [pushToTextInputValue]);
-
+  useEvent("push-prompt-input", (prompt) => {
+    textInput.setInput(prompt);
+  });
   // 切换聊天时：从 Zustand 恢复草稿到 PromptInput（一次性，单向）
   useEffect(() => {
     textInput.setInput(textInputValue);

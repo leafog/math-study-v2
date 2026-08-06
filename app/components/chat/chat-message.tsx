@@ -7,6 +7,11 @@ import {
   useRef,
 } from "react";
 import { MessageResponse } from "../ai-elements/message";
+import {
+  Reasoning,
+  ReasoningContent,
+  ReasoningTrigger,
+} from "../ai-elements/reasoning";
 import { Bubble, BubbleContent } from "../ui/bubble";
 import { Message, MessageContent, MessageFooter } from "../ui/message";
 import { Button } from "../ui/button";
@@ -18,6 +23,9 @@ import confetti from "canvas-confetti";
 import { isToolPart, renderToolPart } from "~/lib/agent/tools/tools-ui";
 import { useTranslation } from "react-i18next";
 import type { UIChatMessage } from "~/lib/agent/types";
+import { formatMessageTime } from "~/lib/date-utils";
+import { Marker, MarkerContent, MarkerIcon } from "../ui/marker";
+import { Spinner } from "../ui/spinner";
 
 export type MessageActionProps = ComponentProps<typeof Button> & {
   tooltip?: string;
@@ -101,56 +109,76 @@ const PureChatMessage = memo(
       toast.success("Copied to clipboard!", { position: "top-center" });
     }, [textFromParts, copyToClipboard]);
 
+    const reasoningText = useMemo(
+      () =>
+        message.parts
+          .filter((part) => part.type === "reasoning")
+          .map((part: any) => part.text)
+          .join("\n"),
+      [message.parts],
+    );
+
     const parts = useMemo(
       () =>
-        message.parts.map((part, i) => {
-          const { type } = part;
-          const key = `message-${message.id}-part-${i}`;
-          if (type === "reasoning") {
-            return <div key={key}>reasoning</div>;
-          }
-          if (type === "text") {
-            return (
-              <MessageResponse
-                key={key}
-                isAnimating={isAnimating}
-                caret="block"
-              >
-                {part.text}
-              </MessageResponse>
-            );
-          }
-          if (type === "file") {
-            const isImage = part.mediaType.startsWith("image/");
-            return (
-              <div key={key} className="mb-2 last:mb-0">
-                {isImage ? (
-                  <img
-                    src={part.url}
-                    alt={part.filename ?? ""}
-                    className="max-h-48 w-auto rounded-lg object-cover border"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2 text-sm">
-                    <FileIcon className="size-4 shrink-0 text-muted-foreground" />
-                    <span className="truncate text-muted-foreground">
-                      {part.filename ?? "file"}
-                    </span>
-                  </div>
-                )}
-              </div>
-            );
-          }
-          // ── Tool parts → registered renderers ──
-          if (isToolPart(part)) {
-            return <div key={key}>{renderToolPart(part)}</div>;
-          }
+        message.parts
+          .filter(
+            (part) => part.type !== "reasoning" && part.type !== "step-start",
+          )
+          .map((part, i) => {
+            const { type } = part;
+            const key = `message-${message.id}-part-${i}`;
+            if (type === "text") {
+              return (
+                <MessageResponse
+                  key={key}
+                  isAnimating={isAnimating}
+                  caret="block"
+                >
+                  {part.text}
+                </MessageResponse>
+              );
+            }
+            if (type === "file") {
+              const isImage = part.mediaType.startsWith("image/");
+              return (
+                <div key={key} className="mb-2 last:mb-0">
+                  {isImage ? (
+                    <img
+                      src={part.url}
+                      alt={part.filename ?? ""}
+                      className="max-h-48 w-auto rounded-lg object-cover border"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2 text-sm">
+                      <FileIcon className="size-4 shrink-0 text-muted-foreground" />
+                      <span className="truncate text-muted-foreground">
+                        {part.filename ?? "file"}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+            }
+            // ── Tool parts → registered renderers ──
+            if (isToolPart(part)) {
+              return <div key={key}>{renderToolPart(part)}</div>;
+            }
 
-          return <div key={key}>{part.type}</div>;
-        }),
+            return null;
+          }),
       [message.parts, message.id, isAnimating],
     );
+
+    const hasContent = message.parts?.some(
+      (part) =>
+        (part.type === "text" && (part.text?.trim().length ?? 0) > 0) ||
+        (part.type === "reasoning" &&
+          "text" in part &&
+          ((part as { text: string }).text?.trim().length ?? 0) > 0) ||
+        part.type.startsWith("tool-"),
+    );
+    const isThinking = isAnimating && !isUser && !hasContent;
 
     return (
       <div className="group">
@@ -158,7 +186,24 @@ const PureChatMessage = memo(
           <MessageContent>
             <Bubble variant={isUser ? "muted" : "ghost"} className="max-w-full">
               <BubbleContent className="typeset typeset-chat">
-                <MessageContent>{parts}</MessageContent>
+                {reasoningText && (
+                  <Reasoning isStreaming={isAnimating}>
+                    <ReasoningTrigger />
+                    <ReasoningContent>{reasoningText}</ReasoningContent>
+                  </Reasoning>
+                )}
+                {isThinking ? (
+                  <Marker role="status">
+                    <MarkerIcon>
+                      <Spinner />
+                    </MarkerIcon>
+                    <MarkerContent className="shimmer">
+                      {t("chat.thinking")}
+                    </MarkerContent>
+                  </Marker>
+                ) : (
+                  <MessageContent>{parts}</MessageContent>
+                )}
               </BubbleContent>
             </Bubble>
             <MessageFooter className="opacity-0 gap-2 group-hover:opacity-100 transition-opacity">
@@ -172,22 +217,9 @@ const PureChatMessage = memo(
               >
                 <CopyIcon />
               </MessageAction>
-              <span className="font-normal">
-                {message.metadata?.created_at
-                  ? t("chat.messageTime", {
-                      date: new Date(message.metadata.created_at),
-                      formatParams: {
-                        date: {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        },
-                      },
-                    })
-                  : null}
-              </span>
+              {message.metadata?.created_at && (
+                <span>{formatMessageTime(message.metadata.created_at, t)}</span>
+              )}
             </MessageFooter>
           </MessageContent>
         </Message>

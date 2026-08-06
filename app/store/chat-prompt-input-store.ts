@@ -6,25 +6,23 @@ import { tanstackDbStorage } from "./tanstack-db-storage";
 
 type ChatPromptInputState = {
   textInputValue: string;
-  pushToTextInputValue: string;
+  // pushToTextInputValue: string;
 };
 
 type ChatPromptInputAction = {
   setTextInputValue: (input: string) => void;
   clearTextInput: () => void;
-  setPushToTextInputValue: (input: string) => void;
+  // setPushToTextInputValue: (input: string) => void;
   reset: () => void;
 };
 
 const chatPromptInputStateDefault: ChatPromptInputState = {
   textInputValue: "",
-  pushToTextInputValue: "",
 };
 
 const chatPromptInputStoreCreator = (init: ChatPromptInputState) =>
   combine<ChatPromptInputState, ChatPromptInputAction>({ ...init }, (set) => ({
     setTextInputValue: (input) => set({ textInputValue: input }),
-    setPushToTextInputValue: (input) => set({ pushToTextInputValue: input }),
     clearTextInput: () => set({ textInputValue: "" }),
     reset: () => set(chatPromptInputStateDefault),
   }));

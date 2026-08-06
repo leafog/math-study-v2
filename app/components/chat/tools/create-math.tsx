@@ -75,7 +75,7 @@ export const createInline = createReactInlineContentSpec(
     render: (props) => {
       const mathRef = useRef<MathfieldElement & EventTarget>(null);
       const { value, setFalse, setTrue } = useBoolean(true);
-      const { theme } = useTheme();
+      const { resolvedTheme } = useTheme();
 
       const noLatex = props.inlineContent.props.latex.length === 0;
       useEffect(() => {
@@ -118,7 +118,7 @@ export const createInline = createReactInlineContentSpec(
               {
                 display: "inline",
                 backgroundColor: "var(--bn-colors-editor-background)",
-                colorScheme: theme === "dark" ? "dark" : "light",
+                colorScheme: resolvedTheme === "dark" ? "dark" : "light",
               } as any
             }
             ref={(el) => {

@@ -5,6 +5,8 @@ import { useActiveChatToolsPanelStore } from "~/hooks/chat/active-chat";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import ChatMenuInfo from "./chat-menu-info";
 import { useClickAway } from "@uidotdev/usehooks";
+import { useEvent } from "~/event/use-event";
+import { bus } from "~/event/event-bus";
 
 const ChatMenuBtn = () => {
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -13,6 +15,27 @@ const ChatMenuBtn = () => {
   const toolsShow = useActiveChatToolsPanelStore().use.toolsShow();
   const ref = useClickAway<HTMLDivElement>(() => {
     setPopoverOpen(false);
+  });
+
+  useEvent("topic:in-chat-view-topic", (id) => {
+    console.log("---");
+    if (toolsShow) {
+      if (popoverOpen) {
+        return;
+      }
+      setPopoverOpen(true);
+      setTimeout(() => {
+        bus.emit("topic:in-chat-view-topic", id);
+      }, 200);
+    } else {
+      if (menuShow) {
+        return;
+      }
+      menuShowToggle();
+      setTimeout(() => {
+        bus.emit("topic:in-chat-view-topic", id);
+      }, 200);
+    }
   });
 
   return toolsShow ? (
@@ -26,9 +49,9 @@ const ChatMenuBtn = () => {
           <Menu />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" asChild>
+      <PopoverContent align="end" className="w-xs" asChild>
         <div ref={ref} style={{ display: "contents" }}>
-          <ChatMenuInfo />
+          <ChatMenuInfo className="w-xs" />
         </div>
       </PopoverContent>
     </Popover>

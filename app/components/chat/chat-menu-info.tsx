@@ -11,10 +11,11 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "../ui/accordion";
+import { cn } from "~/lib/utils";
 
-const ChatMenuInfo = () => {
+const ChatMenuInfo = ({ className }: { className?: string }) => {
   return (
-    <Card className="w-72 p-0">
+    <Card className={cn("w-full  p-0", className)}>
       <CardContent className="px-2">
         <Accordion type="multiple" defaultValue={["graph", "problems"]}>
           <AccordionItem value="graph">

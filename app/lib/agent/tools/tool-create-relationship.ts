@@ -3,6 +3,7 @@ import { z } from "zod";
 import { genId } from "~/lib/id-utils";
 import { kgEdgeColl } from "~/db/tdb-collections";
 import { getPrompt } from "../instructions";
+import { CreateRelationshipOutputSchema } from "~/db/db-zod-schema";
 
 const createRelationshipInputSchema = z.object({
   relationships: z
@@ -49,10 +50,10 @@ export const createRelationship = tool({
       });
     }
 
-    return {
+    return CreateRelationshipOutputSchema.parse({
       success: true,
       created,
       message: `已创建 ${created.length} 条知识点关系`,
-    };
+    });
   },
 });

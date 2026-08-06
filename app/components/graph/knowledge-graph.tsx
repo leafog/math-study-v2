@@ -1,6 +1,6 @@
 import * as d3 from "d3";
 import type { SimulationNodeDatum, SimulationLinkDatum } from "d3-force";
-import { useEffect, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 
 // ── Types ──
 interface GraphNode extends SimulationNodeDatum {
@@ -13,8 +13,6 @@ interface GraphLink extends SimulationLinkDatum<GraphNode> {
   type: "prerequisite" | "unlocks";
 }
 
-// ── Props ──
-
 interface KnowledgeGraphProps {
   nodes: Array<{ id: string; name: string; subject: string }>;
   edges: Array<{ source: string; target: string; type: string }>;
@@ -23,19 +21,20 @@ interface KnowledgeGraphProps {
   ) => void;
 }
 
-// ── Obsidian-style helpers ──
+export interface KnowledgeGraphHandle {
+  focusNode: (topicId: string) => void;
+}
 
-/** Node radius based on connection count (3–8px, Obsidian-like) */
+// ── Helpers ──
+
 function nodeRadius(degree: number): number {
   return Math.max(3, Math.min(8, 3 + degree * 0.5));
 }
 
-/** Resolve link endpoint to a string id (handles pre/post-simulation types) */
 function linkEndpointId(endpoint: string | number | { id: string }): string {
   return typeof endpoint === "object" ? endpoint.id : String(endpoint);
 }
 
-/** Build degree map from links */
 function buildDegreeMap(
   nodeIds: Set<string>,
   links: GraphLink[],
@@ -51,7 +50,6 @@ function buildDegreeMap(
   return map;
 }
 
-/** Build neighbor set for each node (for hover focus mode) */
 function buildNeighborMap(
   nodeIds: Set<string>,
   links: GraphLink[],
@@ -69,22 +67,108 @@ function buildNeighborMap(
 
 // ── Component ──
 
-export function KnowledgeGraph({
-  nodes,
-  edges,
-  onNodeHover,
-}: Readonly<KnowledgeGraphProps>) {
+export const KnowledgeGraph = forwardRef<
+  KnowledgeGraphHandle,
+  KnowledgeGraphProps
+>(function KnowledgeGraph(
+  { nodes, edges, onNodeHover }: Readonly<KnowledgeGraphProps>,
+  ref,
+) {
   const containerRef = useRef<HTMLDivElement>(null);
   const hoverHandlerRef = useRef(onNodeHover);
   hoverHandlerRef.current = onNodeHover;
 
-  // ── Build / rebuild graph on data changes ──
-  useEffect(() => {
-    if (!containerRef.current || !nodes.length) return;
-    const container = containerRef.current;
-    const width = container.clientWidth || 800;
-    const height = container.clientHeight || 600;
+  // Persistent D3 infrastructure (created once, updated on data change)
+  const svgSelRef =
+    useRef<d3.Selection<SVGSVGElement, undefined, null, undefined>>(null);
+  const gRef =
+    useRef<d3.Selection<SVGGElement, undefined, null, undefined>>(null);
+  const simulationRef = useRef<d3.Simulation<GraphNode, GraphLink>>(null);
+  const zoomRef = useRef<d3.ZoomBehavior<SVGSVGElement, undefined>>(null);
 
+  // Imperative-access selections (rebound each data update)
+  const circlesRef =
+    useRef<d3.Selection<SVGCircleElement, GraphNode, SVGGElement, unknown>>(
+      null,
+    );
+  const linkElsRef =
+    useRef<d3.Selection<SVGLineElement, GraphLink, SVGGElement, unknown>>(null);
+
+  // Fast lookup for focusNode
+  const nodeIndexRef = useRef<Map<string, GraphNode>>(new Map());
+  const neighborMapRef = useRef<Map<string, Set<string>>>(null);
+
+  // ── Init: create SVG + zoom + simulation once ──
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const w = container.clientWidth || 800;
+    const h = container.clientHeight || 600;
+
+    const svg = d3
+      .create("svg")
+      .attr("width", w)
+      .attr("height", h)
+      .attr("viewBox", [-w / 2, -h / 2, w, h])
+      .attr("style", "max-width: 100%; height: auto;");
+
+    const g = svg.append("g");
+
+    const zoomBehavior = d3
+      .zoom<SVGSVGElement, undefined>()
+      .scaleExtent([0.1, 4])
+      .on("zoom", (event: d3.D3ZoomEvent<SVGSVGElement, undefined>) => {
+        g.attr("transform", event.transform.toString());
+      });
+    svg.call(zoomBehavior);
+
+    // Empty containers, populated later by the data effect
+    g.append("g").attr("class", "links");
+    g.append("g").attr("class", "nodes");
+
+    const simulation = d3
+      .forceSimulation<GraphNode>([])
+      .force(
+        "link",
+        d3
+          .forceLink<GraphNode, GraphLink>([])
+          .id((d) => d.id)
+          .distance(60),
+      )
+      .force("charge", d3.forceManyBody().strength(-150))
+      .force("center", d3.forceCenter(0, 0))
+      .force("x", d3.forceX().strength(0.05))
+      .force("y", d3.forceY().strength(0.05))
+      .stop();
+
+    container.append(svg.node()!);
+
+    svgSelRef.current = svg;
+    gRef.current = g;
+    zoomRef.current = zoomBehavior;
+    simulationRef.current = simulation;
+
+    return () => {
+      simulation.stop();
+      svg.remove();
+      svgSelRef.current = null;
+      gRef.current = null;
+      zoomRef.current = null;
+      simulationRef.current = null;
+      circlesRef.current = null;
+      linkElsRef.current = null;
+      nodeIndexRef.current.clear();
+    };
+  }, []);
+
+  // ── Data: enter/update/exit nodes & edges ──
+  useEffect(() => {
+    const simulation = simulationRef.current;
+    const g = gRef.current;
+    if (!simulation || !g) return;
+
+    // ── Build data maps ──
     const nodeIds = new Set(nodes.map((n) => n.id));
     const links: GraphLink[] = edges
       .filter((d) => nodeIds.has(d.source) && nodeIds.has(d.target))
@@ -93,98 +177,102 @@ export function KnowledgeGraph({
 
     const degreeMap = buildDegreeMap(nodeIds, links);
     const neighborMap = buildNeighborMap(nodeIds, links);
+    neighborMapRef.current = neighborMap;
 
-    // ── Simulation (Obsidian: strong charge, moderate link distance) ──
-    const simulation = d3
-      .forceSimulation<GraphNode>(nodesCopy)
-      .force(
-        "link",
-        d3
-          .forceLink<GraphNode, GraphLink>(links)
-          .id((d) => d.id)
-          .distance(60),
-      )
-      .force("charge", d3.forceManyBody().strength(-150))
-      .force("center", d3.forceCenter(0, 0))
-      .force("x", d3.forceX().strength(0.05))
-      .force("y", d3.forceY().strength(0.05));
+    // Update node index for O(1) imperative lookup
+    const nodeIndex = nodeIndexRef.current;
+    nodeIndex.clear();
+    for (const n of nodesCopy) nodeIndex.set(n.id, n);
 
-    // ── SVG ──
-    const svg = d3
-      .create("svg")
-      .attr("width", width)
-      .attr("height", height)
-      .attr("viewBox", [-width / 2, -height / 2, width, height])
-      .attr("style", "max-width: 100%; height: auto;");
+    // ── Clear existing tick handler before rebinding ──
+    simulation.on("tick", null).stop();
 
-    // ── Zoom ──
-    const g = svg.append("g");
-    svg.call(
-      d3
-        .zoom<SVGSVGElement, undefined>()
-        .scaleExtent([0.1, 4])
-        .on("zoom", (event: d3.D3ZoomEvent<SVGSVGElement, undefined>) => {
-          g.attr("transform", event.transform.toString());
-        }),
-    );
+    // ── Empty graph: clear containers ──
+    const linkContainer = g.select<SVGGElement>(".links")!;
+    const nodeContainer = g.select<SVGGElement>(".nodes")!;
 
-    // ── Links (Obsidian: very thin, very subtle) ──
-    const linkGroup = g.append("g");
-    const linkEls = linkGroup
+    if (!nodes.length) {
+      linkContainer.selectAll("line").remove();
+      nodeContainer.selectAll("g").remove();
+      circlesRef.current = null;
+      linkElsRef.current = null;
+      return;
+    }
+
+    // ── Join links (keyed by source-target pair) ──
+    const linkEls = linkContainer
       .selectAll<SVGLineElement, GraphLink>("line")
-      .data(links)
+      .data(
+        links,
+        (d) => `${linkEndpointId(d.source)}-${linkEndpointId(d.target)}`,
+      )
       .join("line")
       .attr("stroke", "var(--border)")
       .attr("stroke-opacity", 0.45)
       .attr("stroke-width", 1);
 
-    // ── Nodes ──
-    const nodeGroup = g
-      .append("g")
+    // ── Join node groups (keyed by id, preserves children) ──
+    const nodeGroups = nodeContainer
       .selectAll<SVGGElement, GraphNode>("g")
-      .data(nodesCopy)
+      .data(nodesCopy, (d) => d.id)
       .join("g");
 
-    // Circles
-    const circles = nodeGroup
-      .append("circle")
-      .attr("r", (d) => nodeRadius(degreeMap.get(d.id) ?? 0))
-      .attr("fill", "var(--muted-foreground)")
-      .attr("stroke", "transparent")
-      .attr("stroke-width", 2)
-      .attr("style", "cursor: pointer");
+    // Setup circles + labels + tooltips for entering nodes only
+    nodeGroups.each(function (d) {
+      const sel = d3.select(this);
+      if (sel.select("circle").size()) return; // already initialized
+      sel
+        .append("circle")
+        .attr("r", nodeRadius(degreeMap.get(d.id) ?? 0))
+        .attr("fill", "var(--muted-foreground)")
+        .attr("stroke", "transparent")
+        .attr("stroke-width", 2)
+        .attr("style", "cursor: pointer");
+      sel
+        .append("text")
+        .text(d.name)
+        .attr("text-anchor", "middle")
+        .attr("dy", nodeRadius(degreeMap.get(d.id) ?? 0) + 10)
+        .attr(
+          "font-size",
+          Math.max(0, 6 + nodeRadius(degreeMap.get(d.id) ?? 0) * 0.3),
+        )
+        .attr("fill", "var(--foreground)")
+        .attr("opacity", 0.7)
+        .attr("pointer-events", "none");
+      sel.append("title").text(`${d.name} — ${d.subject}`);
+    });
 
-    // Labels (always visible)
-    nodeGroup
-      .append("text")
-      .text((d) => d.name)
-      .attr("text-anchor", "middle")
-      .attr("dy", (d) => nodeRadius(degreeMap.get(d.id) ?? 0) + 10)
-      .attr("font-size", (d) =>
-        Math.max(0, 6 + nodeRadius(degreeMap.get(d.id) ?? 0) * 0.3),
-      )
-      .attr("fill", "var(--foreground)")
-      .attr("opacity", 0.7)
-      .attr("pointer-events", "none");
+    // Flat circle selection (for tick, hover, imperative API)
+    const circles = nodeGroups.select<SVGCircleElement>("circle");
 
-    // Tooltips (fallback for title attribute)
-    nodeGroup.append("title").text((d) => `${d.name} — ${d.subject}`);
+    // ── Tick ──
+    simulation.on("tick", () => {
+      linkEls
+        .attr("x1", (d) => (d.source as GraphNode).x!)
+        .attr("y1", (d) => (d.source as GraphNode).y!)
+        .attr("x2", (d) => (d.target as GraphNode).x!)
+        .attr("y2", (d) => (d.target as GraphNode).y!);
+      nodeGroups.attr("transform", (d) => `translate(${d.x!},${d.y!})`);
+    });
 
-    // ── Hover: Obsidian focus mode ──
-    nodeGroup
+    // ── Hover: focus mode ──
+    nodeGroups
       .on("mouseenter", function (this: SVGGElement) {
         const hovered = d3.select<SVGGElement, GraphNode>(this).datum();
         const neighbors = neighborMap.get(hovered.id) ?? new Set();
         const neighborIds = new Set([hovered.id, ...neighbors]);
 
-        // Dim all nodes except hovered + neighbors
         circles
           .attr("opacity", (d) => (neighborIds.has(d.id) ? 1 : 0.12))
           .attr("fill", (d) =>
             d.id === hovered.id ? "var(--primary)" : "var(--muted-foreground)",
           );
 
-        // Highlight connected links with primary color
+        nodeGroups
+          .selectAll<SVGTextElement, GraphNode>("text")
+          .attr("opacity", (d) => (neighborIds.has(d.id) ? 0.7 : 0.1));
+
         linkEls
           .attr("stroke", (d) => {
             const s = linkEndpointId(d.source);
@@ -199,20 +287,19 @@ export function KnowledgeGraph({
             return s === hovered.id || t === hovered.id ? 0.6 : 0.08;
           });
 
-        const handler = hoverHandlerRef.current;
-        if (handler) handler(hovered);
+        hoverHandlerRef.current?.(hovered);
       })
       .on("mouseleave", function () {
-        // Reset all
         circles.attr("opacity", 1).attr("fill", "var(--muted-foreground)");
+        nodeGroups
+          .selectAll<SVGTextElement, GraphNode>("text")
+          .attr("opacity", 0.7);
         linkEls.attr("stroke", "var(--border)").attr("stroke-opacity", 0.45);
-
-        const handler = hoverHandlerRef.current;
-        if (handler) handler(null);
+        hoverHandlerRef.current?.(null);
       });
 
     // ── Drag ──
-    nodeGroup.call(
+    nodeGroups.call(
       d3
         .drag<SVGGElement, GraphNode>()
         .on("start", (event, d) => {
@@ -231,53 +318,107 @@ export function KnowledgeGraph({
         }),
     );
 
-    // ── Tick ──
-    simulation.on("tick", () => {
-      linkEls
-        .attr("x1", (d) => (d.source as GraphNode).x!)
-        .attr("y1", (d) => (d.source as GraphNode).y!)
-        .attr("x2", (d) => (d.target as GraphNode).x!)
-        .attr("y2", (d) => (d.target as GraphNode).y!);
+    // ── Update simulation data & restart ──
+    simulation.nodes(nodesCopy);
+    (simulation.force("link") as d3.ForceLink<GraphNode, GraphLink>).links(
+      links,
+    );
+    simulation.alpha(1).restart();
 
-      nodeGroup.attr("transform", (d) => `translate(${d.x!},${d.y!})`);
-    });
-
-    container.append(svg.node()!);
-
-    // ── Store for resize ──
-    (container as any).__kgSvg__ = svg;
-    (container as any).__kgSimulation__ = simulation;
-
-    return () => {
-      simulation.stop();
-      svg.remove();
-      delete (container as any).__kgSvg__;
-      delete (container as any).__kgSimulation__;
-    };
+    // Store selections for imperative access
+    circlesRef.current = circles;
+    linkElsRef.current = linkEls;
   }, [nodes, edges]);
 
-  // ── Resize ──
+  // ── Resize (throttled via rAF) ──
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
+    let raf = 0;
     const observer = new ResizeObserver(() => {
-      const svg = (container as any).__kgSvg__ as
-        d3.Selection<SVGSVGElement, unknown, null, undefined> | undefined;
-      if (!svg) return;
-
-      const w = container.clientWidth || 800;
-      const h = container.clientHeight || 600;
-
-      svg
-        .attr("width", w)
-        .attr("height", h)
-        .attr("viewBox", [-w / 2, -h / 2, w, h]);
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const svg = svgSelRef.current;
+        if (!svg || !container) return;
+        const w = container.clientWidth || 800;
+        const h = container.clientHeight || 600;
+        svg
+          .attr("width", w)
+          .attr("height", h)
+          .attr("viewBox", [-w / 2, -h / 2, w, h]);
+      });
     });
 
     observer.observe(container);
-    return () => observer.disconnect();
+    return () => {
+      cancelAnimationFrame(raf);
+      observer.disconnect();
+    };
   }, []);
 
+  // ── Imperative API: focus a node by topic ID ──
+  useImperativeHandle(
+    ref,
+    () => ({
+      focusNode(topicId: string) {
+        const svg = svgSelRef.current;
+        const zoom = zoomRef.current;
+        const circles = circlesRef.current;
+        if (!svg || !zoom || !circles) return;
+
+        // O(1) lookup via index
+        const nodeData = nodeIndexRef.current.get(topicId);
+        if (!nodeData || nodeData.x == null || nodeData.y == null) return;
+
+        // viewBox is [-w/2, -h/2, w, h], so (0,0) = screen center
+        const scale = 1.2;
+        const transform = d3.zoomIdentity
+          .translate(-nodeData.x * scale, -nodeData.y * scale)
+          .scale(scale);
+
+        svg.transition().duration(750).call(zoom.transform, transform);
+
+        const targetCircle = circles.filter((d) => d.id === topicId);
+        if (targetCircle.empty()) return;
+
+        const origR = Number.parseFloat(targetCircle.attr("r"));
+        targetCircle.interrupt();
+
+        let count = 0;
+        const maxPulses = 2;
+
+        function doPulse() {
+          if (count >= maxPulses) {
+            targetCircle!
+              .transition()
+              .duration(300)
+              .attr("r", origR)
+              .attr("fill", "var(--muted-foreground)")
+              .attr("stroke", "transparent");
+            return;
+          }
+          targetCircle!
+            .attr("fill", "var(--primary)")
+            .attr("stroke", "var(--primary)")
+            .attr("stroke-opacity", 0.4)
+            .transition()
+            .duration(400)
+            .attr("r", origR * 2.2)
+            .transition()
+            .duration(400)
+            .attr("r", origR)
+            .on("end", () => {
+              count++;
+              doPulse();
+            });
+        }
+
+        doPulse();
+      },
+    }),
+    [],
+  );
+
   return <div ref={containerRef} className="h-full w-full select-none" />;
-}
+});

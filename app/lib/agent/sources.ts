@@ -132,16 +132,16 @@ description_i18n 存放各语言描述，必须提供。
         "为题目生成标准答案/解题思路，保存为题目解析，让学生无需作答也能查看",
     },
     "suggestion.understand.0": {
-      description: "理解建议 — 解释概念",
-      template: "帮我解释一下这个概念",
+      description: "理解建议 — 概念",
+      template: "帮我理解一个概念。先问我想理解什么概念。",
     },
     "suggestion.understand.1": {
-      description: "理解建议 — 推导过程",
-      template: "这个定理的推导过程是怎样的",
+      description: "理解建议 — 方法",
+      template: "帮我理解一个方法。先问我想理解什么方法。",
     },
     "suggestion.understand.2": {
-      description: "理解建议 — 举例说明",
-      template: "用简单的例子说明这个公式",
+      description: "理解建议 — 定理",
+      template: "帮我理解一个定理。先问我想理解什么定理。",
     },
     "suggestion.solve-problem.0": {
       description: "练习建议 — 解题",
@@ -322,16 +322,16 @@ This lets students view the standard solution even without submitting an answer.
         "Generate a standard solution/explanation for a problem and save it so students can view it without submitting an answer",
     },
     "suggestion.understand.0": {
-      description: "Understand suggestion — explain concept",
-      template: "Help me understand this concept",
+      description: "Understand suggestion — concept",
+      template: "Help me understand a concept. First ask me what concept I want to learn.",
     },
     "suggestion.understand.1": {
-      description: "Understand suggestion — derivation",
-      template: " How is this theorem derived",
+      description: "Understand suggestion — method",
+      template: "Help me understand a method. First ask me what method I want to learn.",
     },
     "suggestion.understand.2": {
-      description: "Understand suggestion — examples",
-      template: " Explain this formula with simple examples",
+      description: "Understand suggestion — theorem",
+      template: "Help me understand a theorem. First ask me what theorem I want to learn.",
     },
     "suggestion.solve-problem.0": {
       description: "Practice suggestion — solve",

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { useMeasure } from "@uidotdev/usehooks";
 import { cn } from "~/lib/utils";
 import { useChatPromptInput } from "~/hooks/chat/active-chat/hooks";
+import { bus } from "~/event/event-bus";
 
 interface WelcomeAction {
   id: keyof typeof chatIconMap;
@@ -111,9 +112,6 @@ const ChatWelCome = () => {
 
   const setSuggestions = useChatPromptSuggestionStore.use.setSuggestions();
 
-  const setPushToTextInputValue =
-    useChatPromptInput().use.setPushToTextInputValue();
-
   return (
     <div ref={ref} className="flex flex-col gap-8 items-center">
       <div>
@@ -139,9 +137,7 @@ const ChatWelCome = () => {
               }}
               onClick={() => {
                 const items = suggestionMap[action.id] ?? [];
-
-                setPushToTextInputValue(t(items[0].prevKey));
-
+                bus.emit("push-prompt-input", t(items[0].prevKey));
                 setSuggestions(
                   items.map((item) => ({
                     icon: action.id,

@@ -1,6 +1,6 @@
 import { tool } from "ai";
 import { problemColl } from "~/db/tdb-collections";
-import { ProblemSchema } from "~/db/db-zod-schema";
+import { CreateProblemOutputSchema, ProblemSchema } from "~/db/db-zod-schema";
 import { genId } from "~/lib/id-utils";
 import { chatIdStore } from "~/store/chat-id-store";
 import { getPrompt } from "../instructions";
@@ -25,7 +25,12 @@ export const createProblem = tool({
       updated_at: now,
     };
     problemColl.insert(problem);
+    console.log(problem.tags);
 
-    return { ...input, id: pid, chat_id: chatId };
+    return CreateProblemOutputSchema.parse({
+      ...input,
+      id: pid,
+      chat_id: chatId,
+    });
   },
 });

@@ -1,6 +1,6 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { AnswerRecordSchema } from "~/db/db-zod-schema";
+import { AnswerRecordSchema, CheckAnswerOutputSchema } from "~/db/db-zod-schema";
 import { answerRecordColl, answerAnalysisColl } from "~/db/tdb-collections";
 import { genId } from "~/lib/id-utils";
 import { chatIdStore } from "~/store/chat-id-store";
@@ -57,11 +57,11 @@ export const checkAnswer = tool({
         created_at: new Date(),
       });
     }
-    return {
+    return CheckAnswerOutputSchema.parse({
       success: true,
       answer_id: id,
       correct: input.correct,
       message: input.correct ? "回答正确，已记录" : "回答有误，已记录",
-    };
+    });
   },
 });

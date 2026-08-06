@@ -59,7 +59,7 @@ export const useChatIdManager = () => {
 
   const chatId = chatIdFromUrl ?? newChatIdRef.current;
   const setChatId = useStore(chatIdStore).setChatId;
-  // 同步 chatId 到外部 store，非 React 环境也可读取
+
   useEffect(() => {
     setChatId(chatId);
   }, [chatId]);

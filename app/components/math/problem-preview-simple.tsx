@@ -1,10 +1,4 @@
-import {
-  ArrowUpRight,
-  BadgeQuestionMark,
-  Clock,
-  MessageSquareText,
-  PinOffIcon,
-} from "lucide-react";
+import { BadgeQuestionMark, Clock, PinOffIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useLiveQuery, eq } from "@tanstack/react-db";
 import { Button } from "~/components/ui/button";
@@ -36,11 +30,13 @@ import { usePinnedProblems } from "~/store/pinned-problems-store";
 export interface ProblemPreviewProps {
   problemId: string;
   chatId: string;
+  pinnedDivHeight: number | null;
 }
 
 export function ProblemPreviewSimple({
   problemId,
   chatId,
+  pinnedDivHeight,
 }: Readonly<ProblemPreviewProps>) {
   const { t } = useTranslation();
   const togglePin = usePinnedProblems((s) => s.toggle);

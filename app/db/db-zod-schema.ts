@@ -7,7 +7,12 @@ export const ProblemSchema = z.object({
   id: z.string(),
   content: z
     .string()
-    .describe("Problem body. " + getPrompt("format.markdown") + " " + getPrompt("format.math")),
+    .describe(
+      "Problem body. " +
+        getPrompt("format.markdown") +
+        " " +
+        getPrompt("format.math"),
+    ),
   chat_id: z.string().nullish(),
   description: z
     .string()
@@ -40,7 +45,13 @@ export const AnswerRecordSchema = z.object({
   chat_id: z.string().optional().describe("Chat ID where this answer occurred"),
   user_answer: z
     .string()
-    .describe("Student's answer, normalized. " + " " + getPrompt("format.math")),
+    .describe(
+      "Student's answer, reformatted into standard LaTeX. " +
+        "Preserve the student's original answer content exactly — do NOT change values, expressions, or intent. " +
+        "Only normalize the formatting: convert plain-text math into proper LaTeX " +
+        String.raw`(e.g. 'x^2' → 'x^{2}', '1/2' → '\frac{1}{2}', 'sqrt(x)' → '\sqrt{x}'). ` +
+        getPrompt("format.math"),
+    ),
   correct: z.boolean().describe("Whether AI judged the answer as correct"),
   knowledge_points: z.array(z.string()).describe("Related knowledge point IDs"),
   time_spent_ms: z.number().describe("Time spent answering in milliseconds"),
@@ -61,7 +72,12 @@ export const AnswerAnalysisSchema = z.object({
     .describe("FK to Conversation, for batch query by chat"),
   content: z
     .string()
-    .describe("AI feedback/analysis on this answer. " + getPrompt("format.markdown") + " " + getPrompt("format.math")),
+    .describe(
+      "AI feedback/analysis on this answer. " +
+        getPrompt("format.markdown") +
+        " " +
+        getPrompt("format.math"),
+    ),
   created_at: z.date(),
 });
 export type AnswerAnalysis = z.infer<typeof AnswerAnalysisSchema>;
@@ -75,7 +91,12 @@ export const ProblemExplanationSchema = z.object({
     .describe("FK to Conversation, for batch query by chat"),
   content: z
     .string()
-    .describe("Standard solution/explanation for the problem. " + getPrompt("format.markdown") + " " + getPrompt("format.math")),
+    .describe(
+      "Standard solution/explanation for the problem. " +
+        getPrompt("format.markdown") +
+        " " +
+        getPrompt("format.math"),
+    ),
   created_at: z.date(),
 });
 export type ProblemExplanation = z.infer<typeof ProblemExplanationSchema>;
@@ -498,6 +519,76 @@ export const ChatToolsBarStateSchema = z.object({
 });
 
 export type ChatToolsBarState = z.infer<typeof ChatToolsBarStateSchema>;
+
+// ─── Tool output schemas ─────────────────────────────────────────
+// Runtime validation for tool execute() return values
+
+export const CreateTopicOutputSchema = z.object({
+  success: z.boolean(),
+  topic_id: z.string(),
+  message: z.string(),
+});
+export type CreateTopicOutput = z.infer<typeof CreateTopicOutputSchema>;
+
+export const CreateProblemOutputSchema = z.object({
+  id: z.string(),
+  content: z.string(),
+  chat_id: z.string().nullish(),
+  description: z.string().optional(),
+  tags: z.array(z.string()),
+  source: z.enum(["photo", "latex", "batch", "ai", "manual"]),
+});
+export type CreateProblemOutput = z.infer<typeof CreateProblemOutputSchema>;
+
+export const CreateRelationshipOutputSchema = z.object({
+  success: z.boolean(),
+  created: z.array(
+    z.object({
+      id: z.string(),
+      prerequisite_id: z.string(),
+      topic_id: z.string(),
+      strength: z.enum(["hard", "soft"]),
+    }),
+  ),
+  message: z.string(),
+});
+export type CreateRelationshipOutput = z.infer<
+  typeof CreateRelationshipOutputSchema
+>;
+
+export const CreateExplanationOutputSchema = z.object({
+  success: z.boolean(),
+  explanation_id: z.string(),
+  message: z.string(),
+});
+export type CreateExplanationOutput = z.infer<
+  typeof CreateExplanationOutputSchema
+>;
+
+export const CheckAnswerOutputSchema = z.object({
+  success: z.boolean(),
+  answer_id: z.string(),
+  correct: z.boolean(),
+  message: z.string(),
+});
+export type CheckAnswerOutput = z.infer<typeof CheckAnswerOutputSchema>;
+
+export const SearchSimilarTopicsOutputSchema = z.object({
+  matches: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      subject: z.string().optional(),
+      description: z.string().optional(),
+      i18n: z.record(z.string(), z.string()).optional(),
+      similarity: z.number(),
+    }),
+  ),
+  message: z.string(),
+});
+export type SearchSimilarTopicsOutput = z.infer<
+  typeof SearchSimilarTopicsOutputSchema
+>;
 
 // ─── Zustand persist ────────────────────────────────────────────
 

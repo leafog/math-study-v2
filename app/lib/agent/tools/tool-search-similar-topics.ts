@@ -3,7 +3,7 @@ import { z } from "zod";
 import { kgTopicColl } from "~/db/tdb-collections";
 import { inArray, queryOnce } from "@tanstack/react-db";
 import { getPrompt } from "../instructions";
-import { KgTopicSchema } from "../../../db/db-zod-schema";
+import { KgTopicSchema, SearchSimilarTopicsOutputSchema } from "../../../db/db-zod-schema";
 import { findSimilar } from "~/lib/similar";
 import { keyBy } from "lodash-es";
 
@@ -20,7 +20,7 @@ export const searchSimilarTopics = tool({
     console.log(results);
 
     if (results.length === 0) {
-      return { matches: [], message: "未找到相似知识点，可以放心创建" };
+      return SearchSimilarTopicsOutputSchema.parse({ matches: [], message: "未找到相似知识点，可以放心创建" });
     }
 
     // 取完整 topic 数据
@@ -49,12 +49,12 @@ export const searchSimilarTopics = tool({
       })
       .filter(Boolean);
 
-    return {
+    return SearchSimilarTopicsOutputSchema.parse({
       matches,
       message:
         matches.length > 0
           ? `找到 ${matches.length} 个相似知识点，请判断是否需要创建新知识点`
           : "未找到相似知识点，可以放心创建",
-    };
+    });
   },
 });

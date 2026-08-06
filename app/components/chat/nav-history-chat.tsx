@@ -38,9 +38,7 @@ const NavHistoryChat = () => {
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
-    const root = sentinel.closest<HTMLElement>(
-      '[data-slot="sidebar-content"]',
-    );
+    const root = sentinel.closest<HTMLElement>('[data-slot="sidebar-content"]');
     if (!root) return;
     const observer = new IntersectionObserver(
       (entries) => {

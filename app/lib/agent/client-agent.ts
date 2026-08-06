@@ -9,6 +9,9 @@ import { searchSimilarTopics } from "./tools/tool-search-similar-topics";
 import { instructions } from "./instructions";
 
 export const deepseek = createOpenAI({
+  // apiKey: "ollama",
+  // baseURL: "http://localhost:11434/v1",
+  // name: "minicpm-v4.6",
   // apiKey: "tp-cjzn3llnl6biwgkqtk37kboaq6yvjf3t62wekap4a5ttllnq",
   // baseURL: "https://token-plan-cn.xiaomimimo.com/v1",
   // name: "mimo",
@@ -24,6 +27,7 @@ export const agent = new ToolLoopAgent({
   id: "deepseek/deepseek-v4-flash",
   model: deepseeks,
   instructions,
+  reasoning: "medium", // provider-default | none | minimal | low | medium | high | xhigh
 
   toolApproval: {
     createTopic: "approved",

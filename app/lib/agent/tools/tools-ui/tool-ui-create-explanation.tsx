@@ -25,7 +25,6 @@ export const CreateExplanation = ({
         <Button
           variant="ghost"
           size="xs"
-          className="text-xs text-muted-foreground hover:text-foreground"
           onClick={() => scrollToProblemAndOpenExplanation(problemId)}
         >
           <CornerUpRight className="size-3 mr-1" />
