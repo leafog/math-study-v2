@@ -97,7 +97,7 @@ const Panel = ({ chatId, kind, id }: ToolPanelProps) => {
 
   return (
     <div
-      className=" grid  grid-cols-1 content-between flex-1 min-h-0 bg-red"
+      className="grid  grid-cols-1 content-between flex-1 min-h-0"
       ref={keyboardRef}
     >
       <BlockNoteView
@@ -105,7 +105,6 @@ const Panel = ({ chatId, kind, id }: ToolPanelProps) => {
         lang={i18n.language}
         theme={resolvedTheme === "dark" ? "dark" : "light"}
         editor={editor}
-
         portalElements={{ default: document.body }}
       >
         <SuggestionMenuController

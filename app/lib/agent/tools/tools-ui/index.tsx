@@ -7,6 +7,7 @@ import { CreateTopic } from "./tool-ui-create-topic";
 import { CreateRelationship } from "./tool-ui-create-relationship";
 import { CreateExplanation } from "./tool-ui-create-explanation";
 import { SearchSimilarTopics } from "./tool-ui-search-similar-topics";
+import { GetKnowledgeGraph } from "./tool-ui-get-knowledge-graph";
 
 type ToolKind = keyof ToolPartRenderMap;
 
@@ -17,6 +18,7 @@ const renderMap = {
   "tool-createRelationship": CreateRelationship,
   "tool-createExplanation": CreateExplanation,
   "tool-searchSimilarTopics": SearchSimilarTopics,
+  "tool-getKnowledgeGraph": GetKnowledgeGraph,
   "dynamic-tool": undefined,
 } satisfies ToolPartRenderMap;
 
@@ -30,8 +32,8 @@ export function isToolPart(part: { type: string }): part is AgentToolPart {
 
 export function renderToolPart(part: AgentToolPart): ReactNode {
   // Widened lookup avoids TS union-complexity error when tools grow
-  const R = (renderMap as Record<string, ComponentType<{ part: unknown }> | undefined>)[
-    part.type
-  ];
+  const R = (
+    renderMap as Record<string, ComponentType<{ part: unknown }> | undefined>
+  )[part.type];
   return R ? <R part={part} /> : null;
 }

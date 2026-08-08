@@ -6,6 +6,7 @@ import { createProblem } from "./tools/tool-create-problem";
 import { checkAnswer } from "./tools/tool-check-answer";
 import { createExplanation } from "./tools/tool-create-explanation";
 import { searchSimilarTopics } from "./tools/tool-search-similar-topics";
+import { getKnowledgeGraph } from "./tools/tool-get-knowledge-graph";
 import { instructions } from "./instructions";
 
 export const deepseek = createOpenAI({
@@ -18,6 +19,10 @@ export const deepseek = createOpenAI({
   apiKey: "",
   baseURL: "https://api.deepseek.com",
   name: "deepseek",
+  // apiKey:
+  //   "sk-sp-H.DMIXPE.UZqI.MEYCIQDhpXxIagDn9gCmL1YJTASQf2M_m6gAfCsEEPq7xXd2WAIhAOQ7zMT8NF6GCtitl53BgTatNNlZJ2oVJMRlze8fKiZV",
+  // baseURL: "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1",
+  // name: "deepseek",
 });
 export const deepseeks = deepseek.chat("deepseek-v4-flash");
 
@@ -36,6 +41,7 @@ export const agent = new ToolLoopAgent({
     checkAnswer: "approved",
     createExplanation: "approved",
     searchSimilarTopics: "approved",
+    getKnowledgeGraph: "approved",
   },
   tools: {
     createTopic,
@@ -44,6 +50,7 @@ export const agent = new ToolLoopAgent({
     checkAnswer,
     createExplanation,
     searchSimilarTopics,
+    getKnowledgeGraph,
   },
 });
 

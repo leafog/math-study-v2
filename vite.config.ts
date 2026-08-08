@@ -12,7 +12,7 @@ export default defineConfig({
     wasm(),
     babel({
       filter: /\.[jt]sx?$/,
-      exclude: /node_modules/, // 👈 关键：跳过 node_modules
+      exclude: /node_modules/,
       babelConfig: {
         presets: ["@babel/preset-typescript"],
         plugins: [["babel-plugin-react-compiler", { target: "19" }]],

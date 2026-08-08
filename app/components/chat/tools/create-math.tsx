@@ -168,7 +168,7 @@ export const createMath = createReactBlockSpec(
     render: (props) => {
       const mathRef = useRef<MathfieldElement & EventTarget>(null);
       const { value, setFalse, setTrue } = useBoolean(true);
-      const { theme } = useTheme();
+      const { resolvedTheme } = useTheme();
       const mathFieldRef = useClickAway(() => {
         setTrue();
       });
@@ -198,7 +198,7 @@ export const createMath = createReactBlockSpec(
             placeholder="\text{Enter a formula}"
             style={
               {
-                "color-scheme": theme === "dark" ? "dark" : "light",
+                colorSchema: resolvedTheme === "dark" ? "dark" : "light",
                 backgroundColor: "var(--bn-colors-editor-background)",
               } as any
             }

@@ -199,6 +199,7 @@ const PruePromptInput = () => {
 
   useEvent("push-prompt-input", (prompt) => {
     textInput.setInput(prompt);
+    setTextInputValue(prompt);
   });
   // 切换聊天时：从 Zustand 恢复草稿到 PromptInput（一次性，单向）
   useEffect(() => {

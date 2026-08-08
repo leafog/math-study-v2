@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import type { PanelImperativeHandle } from "react-resizable-panels";
 import { ResizablePanel } from "../ui/resizable";
 import ChatHeaderContainer from "./chat-header-container";
@@ -15,6 +14,7 @@ import { kindToTool } from "./tools";
 import { cn } from "~/lib/utils";
 import { chatToolInstanceColl } from "~/db/tdb-collections";
 import type { ToolPanelProps } from "~/components/chat/tools/types";
+import { useDebounceCallback } from "usehooks-ts";
 
 interface ToolsPanelProps {
   panelRef: React.RefObject<PanelImperativeHandle | null>;
@@ -51,6 +51,8 @@ const ToolPanelContent = ({
 };
 const ToolsPanel = ({ panelRef }: ToolsPanelProps) => {
   const onToolsResize = useActiveChatToolsPanelStore().use.onToolsResize();
+  const onChatResizeDebounce = useDebounceCallback(onToolsResize, 300);
+
   const toolsShow = useActiveChatToolsPanelStore().use.toolsShow();
   const { hasTools, activeId, mountedTools } = useChatTools();
   const { chatId } = useActiveChat();
@@ -61,7 +63,7 @@ const ToolsPanel = ({ panelRef }: ToolsPanelProps) => {
       defaultSize={"0%"}
       minSize={"30%"}
       collapsible
-      onResize={(size) => onToolsResize(size)}
+      onResize={(size) => onChatResizeDebounce(size)}
       className="flex flex-col w-full "
     >
       <ChatHeaderContainer>

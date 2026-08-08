@@ -243,6 +243,10 @@ export const KnowledgeGraph = forwardRef<
       sel.append("title").text(`${d.name} — ${d.subject}`);
     });
 
+    // Update text & title on every data change (e.g. language switch)
+    nodeGroups.select("text").text((d) => d.name);
+    nodeGroups.select("title").text((d) => `${d.name} — ${d.subject}`);
+
     // Flat circle selection (for tick, hover, imperative API)
     const circles = nodeGroups.select<SVGCircleElement>("circle");
 

@@ -135,6 +135,9 @@
     "createExplanationFailed": "Failed to generate explanation",
     "searchingSimilar": "Searching similar topics...",
     "searchComplete": "Search complete",
-    "searchSimilarFailed": "Search failed"
+    "searchSimilarFailed": "Search failed",
+    "fetchingGraph": "Fetching knowledge graph...",
+    "graphFetched": "Knowledge graph fetched",
+    "fetchGraphFailed": "Failed to fetch knowledge graph"
   }
 }

@@ -17,6 +17,7 @@ export function ChatPinnedProblemBtn({ chatId }: Readonly<{ chatId: string }>) {
   useEffect(() => {
     setTrue();
   }, [pinnedId]);
+
   if (!pinnedId) return null;
   return (
     <Popover open={value}>
@@ -33,7 +34,11 @@ export function ChatPinnedProblemBtn({ chatId }: Readonly<{ chatId: string }>) {
           e.preventDefault();
         }}
       >
-        <ProblemPreviewSimple problemId={pinnedId} chatId={chatId} />
+        <ProblemPreviewSimple
+          problemId={pinnedId}
+          chatId={chatId}
+          pinnedDivHeight={null}
+        />
       </PopoverContent>
     </Popover>
   );

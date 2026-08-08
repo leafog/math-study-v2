@@ -3,18 +3,9 @@ import { z } from "zod";
 import { AnswerRecordSchema, CheckAnswerOutputSchema } from "~/db/db-zod-schema";
 import { answerRecordColl, answerAnalysisColl } from "~/db/tdb-collections";
 import { genId } from "~/lib/id-utils";
+import { normalizeMathDelimiters } from "~/lib/utils";
 import { chatIdStore } from "~/store/chat-id-store";
 import { getPrompt } from "../instructions";
-
-/** Normalize math delimiters to $$...$$ (the only supported format) */
-const normalizeMath = (text: string) =>
-  text
-    .replaceAll("\\[", "$$")
-    .replaceAll("\\]", "$$")
-    .replaceAll("\\(", "$$")
-    .replaceAll("\\)", "$$")
-    .replaceAll("$", "$$")
-    .replaceAll("$$$$", "$$");
 
 export const checkAnswer = tool({
   description: getPrompt("toolDesc.checkAnswer"),
@@ -38,7 +29,10 @@ export const checkAnswer = tool({
   execute: async ({ analysis, ...input }) => {
     const chatId = chatIdStore.getState().chatId;
     const id = genId();
-    const user_answer = normalizeMath(input.user_answer);
+    const user_answer = normalizeMathDelimiters(input.user_answer);
+    const normalizedAnalysis = analysis
+      ? normalizeMathDelimiters(analysis)
+      : undefined;
     answerRecordColl.insert({
       ...input,
       id,
@@ -47,13 +41,13 @@ export const checkAnswer = tool({
       created_at: new Date(),
       time_spent_ms: 10086,
     });
-    if (analysis) {
+    if (normalizedAnalysis) {
       answerAnalysisColl.insert({
         id: genId(),
         answer_id: id,
         problem_id: input.problem_id,
         chat_id: chatId,
-        content: analysis,
+        content: normalizedAnalysis,
         created_at: new Date(),
       });
     }

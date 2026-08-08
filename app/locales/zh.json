@@ -135,6 +135,9 @@
     "createExplanationFailed": "生成解析失败",
     "searchingSimilar": "正在搜索相似知识点...",
     "searchComplete": "搜索完成",
-    "searchSimilarFailed": "搜索失败"
+    "searchSimilarFailed": "搜索失败",
+    "fetchingGraph": "正在获取知识图谱...",
+    "graphFetched": "知识图谱已获取",
+    "fetchGraphFailed": "获取知识图谱失败"
   }
 }

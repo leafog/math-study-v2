@@ -118,70 +118,30 @@ const PureChatMessage = memo(
       [message.parts],
     );
 
-    const parts = useMemo(
+    const filteredParts = useMemo(
       () =>
-        message.parts
-          .filter(
-            (part) => part.type !== "reasoning" && part.type !== "step-start",
-          )
-          .map((part, i) => {
-            const { type } = part;
-            const key = `message-${message.id}-part-${i}`;
-            if (type === "text") {
-              return (
-                <MessageResponse
-                  key={key}
-                  isAnimating={isAnimating}
-                  caret="block"
-                >
-                  {part.text}
-                </MessageResponse>
-              );
-            }
-            if (type === "file") {
-              const isImage = part.mediaType.startsWith("image/");
-              return (
-                <div key={key} className="mb-2 last:mb-0">
-                  {isImage ? (
-                    <img
-                      src={part.url}
-                      alt={part.filename ?? ""}
-                      className="max-h-48 w-auto rounded-lg object-cover border"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2 text-sm">
-                      <FileIcon className="size-4 shrink-0 text-muted-foreground" />
-                      <span className="truncate text-muted-foreground">
-                        {part.filename ?? "file"}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              );
-            }
-            // ── Tool parts → registered renderers ──
-            if (isToolPart(part)) {
-              return <div key={key}>{renderToolPart(part)}</div>;
-            }
-
-            return null;
-          }),
-      [message.parts, message.id, isAnimating],
+        message.parts.filter(
+          (part) => part.type !== "reasoning" && part.type !== "step-start",
+        ),
+      [message.parts],
     );
 
-    const hasContent = message.parts?.some(
-      (part) =>
-        (part.type === "text" && (part.text?.trim().length ?? 0) > 0) ||
-        (part.type === "reasoning" &&
-          "text" in part &&
-          ((part as { text: string }).text?.trim().length ?? 0) > 0) ||
-        part.type.startsWith("tool-"),
+    const hasContent = useMemo(
+      () =>
+        message.parts?.some(
+          (part) =>
+            (part.type === "text" && (part.text?.trim().length ?? 0) > 0) ||
+            (part.type === "reasoning" &&
+              "text" in part &&
+              ((part as { text: string }).text?.trim().length ?? 0) > 0) ||
+            part.type.startsWith("tool-"),
+        ),
+      [message.parts],
     );
     const isThinking = isAnimating && !isUser && !hasContent;
 
     return (
-      <div className="group">
+      <div className="group ">
         <Message align={align}>
           <MessageContent>
             <Bubble variant={isUser ? "muted" : "ghost"} className="max-w-full">
@@ -202,7 +162,49 @@ const PureChatMessage = memo(
                     </MarkerContent>
                   </Marker>
                 ) : (
-                  <MessageContent>{parts}</MessageContent>
+                  <>
+                    {filteredParts.map((part, i) => {
+                      const key = `message-${message.id}-part-${i}`;
+                      if (part.type === "text") {
+                        return (
+                          <MessageContent key={key}>
+                            <MessageResponse
+                              isAnimating={isAnimating}
+                              caret="block"
+                            >
+                              {part.text}
+                            </MessageResponse>
+                          </MessageContent>
+                        );
+                      }
+                      if (part.type === "file") {
+                        const isImage = part.mediaType.startsWith("image/");
+                        return (
+                          <div key={key} className="mb-2 last:mb-0">
+                            {isImage ? (
+                              <img
+                                src={part.url}
+                                alt={part.filename ?? ""}
+                                className="max-h-48 w-auto rounded-lg object-cover border"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2 text-sm">
+                                <FileIcon className="size-4 shrink-0 text-muted-foreground" />
+                                <span className="truncate text-muted-foreground">
+                                  {part.filename ?? "file"}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }
+                      if (isToolPart(part)) {
+                        return <div key={key}>{renderToolPart(part)}</div>;
+                      }
+                      return null;
+                    })}
+                  </>
                 )}
               </BubbleContent>
             </Bubble>

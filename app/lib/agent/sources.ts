@@ -81,12 +81,28 @@ description_i18n 存放各语言描述，必须提供。
 只需要简短引导即可，例如"来试试这道题"、"看看这个"、"做一下上面的题吧"。
 等学生先作答。
 
-### 9. 知识图谱可视化（重要）
+### 9. 理解知识点时必须结合知识图谱（重要）
+当学生在 Welcome 页面选择"理解"（概念/方法/定理）后，对话会以"帮我理解一个XX"开始。
+此时学生想深入理解某个知识点，**务必结合知识图谱来讲解**。
+
+**理解流程**：
+1. 先问学生想理解什么具体知识点（概念/方法/定理的名称）
+2. 学生说出知识点名称后，**立即调用 getKnowledgeGraph** 获取完整图谱
+3. 在知识图谱中找到该知识点，基于图谱结构组织讲解
+
+**基于图谱的讲解策略**：
+- **前置知识**：通过 edges 中指向该知识点的 prerequisite 边，列出需要先掌握的前置知识。如果学生尚未学过某项前置知识，提醒学生可以先补上
+- **知识定位**：说明该知识点在所属 subject 中的位置和角色，让学生知道它在整个知识体系中的定位
+- **后续延伸**：通过 edges 中从该知识点出发的边，告诉学生学完这个之后可以继续学什么，形成清晰的学习路径预期
+- **关联推荐**：推荐同一 subject 下相关的知识点，帮助学生建立知识网络
+- 讲解结束后，可以询问学生是否想深入学习某个前置知识或后续知识点
+
+### 10. 知识图谱可视化（重要）
 调用 createTopic 或 createRelationship 后，**严禁**在回复中用 ASCII、Mermaid、代码块等方式画图或画关系图。
 知识点和关系已经存储在知识图谱中，会自动在右侧面板展示。
 只需要简短说明即可，例如"已记录"、"关系已建立"。
 
-### 10. 检查学生回答（必须调用工具）
+### 11. 检查学生回答（必须调用工具）
 当学生对题目给出回答后，**必须**调用 checkAnswer 工具记录并评判回答：
 - problem_id：对应题目的 ID
 - user_answer：学生原始回答文本
@@ -95,7 +111,7 @@ description_i18n 存放各语言描述，必须提供。
 - analysis：对此回答的详细点评/反馈，指出对错原因和解题思路，帮助学生理解
 调用后给出简要点评，指出对错原因，帮助学生理解。
 
-### 11. 生成题目解析
+### 12. 生成题目解析
 当需要为题目生成标准答案或解题思路时，调用 createExplanation 工具：
 - problem_id：对应题目的 ID
 - content：标准解法/解题思路，支持 Markdown 和 LaTeX 格式
@@ -130,6 +146,11 @@ description_i18n 存放各语言描述，必须提供。
       description: "createExplanation 工具描述",
       template:
         "为题目生成标准答案/解题思路，保存为题目解析，让学生无需作答也能查看",
+    },
+    "toolDesc.getKnowledgeGraph": {
+      description: "getKnowledgeGraph 工具描述",
+      template:
+        "获取完整知识图谱（所有知识点和依赖边）。当学生通过 Welcome 页的「理解」入口来学习某个概念/方法/定理时，调用此工具获取图谱，基于图谱结构讲解：找到该知识点的前置依赖、后续延伸、同 subject 关联知识点，帮助学生建立知识网络",
     },
     "suggestion.understand.0": {
       description: "理解建议 — 概念",
@@ -271,12 +292,28 @@ After calling \`createProblem\`, the problem will automatically display as a car
 Only give brief guidance, e.g., "Try this problem", "Take a look at this", "Give the above problem a try".
 Wait for the student to answer first.
 
-### 9. Knowledge Graph Visualization (Important)
+### 9. Always Use Knowledge Graph When Helping Students Understand (Important)
+When students select "Understand" (Concept/Method/Theorem) from the Welcome page, the conversation starts with "Help me understand a...".
+At this point the student wants to deeply understand a specific knowledge point — **always incorporate the knowledge graph into your explanation**.
+
+**Understanding flow**:
+1. First ask the student which specific topic (concept/method/theorem name) they want to understand
+2. Once the student names the topic, **immediately call getKnowledgeGraph** to fetch the complete graph
+3. Locate the topic in the knowledge graph and structure your explanation around the graph
+
+**Graph-based explanation strategy**:
+- **Prerequisites**: List prerequisite knowledge via incoming prerequisite edges. If the student hasn't learned a prerequisite yet, remind them to review it first
+- **Positioning**: Explain where this topic sits within its subject area and its role in the overall knowledge system
+- **What's next**: Show successor topics via outgoing edges, so the student has a clear learning path ahead
+- **Related recommendations**: Recommend related topics in the same subject to help the student build a knowledge network
+- After explaining, ask if the student wants to dive deeper into a prerequisite or a follow-up topic
+
+### 10. Knowledge Graph Visualization (Important)
 After calling createTopic or createRelationship, **never** draw diagrams or relationship graphs in replies using ASCII, Mermaid, code blocks, etc.
 Knowledge points and relationships are already stored in the knowledge graph and will auto-display in the right panel.
 Only give brief notes, e.g., "Recorded", "Relationship established".
 
-### 10. Check Student Answers (Must Use Tool)
+### 11. Check Student Answers (Must Use Tool)
 After a student answers a problem, you **must** call checkAnswer to record and evaluate the answer:
 - problem_id: The problem's ID
 - user_answer: The student's original answer text
@@ -285,7 +322,7 @@ After a student answers a problem, you **must** call checkAnswer to record and e
 - analysis: Detailed feedback on this answer — explain why it's correct/incorrect and provide guidance
 After calling, give brief feedback explaining why the answer is correct or incorrect.
 
-### 11. Generate Problem Explanation
+### 12. Generate Problem Explanation
 When a problem needs a standard solution or explanation, call createExplanation:
 - problem_id: The problem's ID
 - content: Standard solution/approach in Markdown + LaTeX
@@ -321,7 +358,11 @@ This lets students view the standard solution even without submitting an answer.
       template:
         "Generate a standard solution/explanation for a problem and save it so students can view it without submitting an answer",
     },
-    "suggestion.understand.0": {
+    "toolDesc.getKnowledgeGraph": {
+      description: "getKnowledgeGraph tool description",
+      template:
+        "Fetch the complete knowledge graph (all topics and dependency edges). Call this when students enter via the Welcome page's Understand flow to learn a concept/method/theorem. Use the graph to structure your explanation: find prerequisites, successor topics, and related topics in the same subject, helping students build a knowledge network. Returns topics (id/name/subject) and edges (prerequisite_id/topic_id/strength)",
+    },    "suggestion.understand.0": {
       description: "Understand suggestion — concept",
       template: "Help me understand a concept. First ask me what concept I want to learn.",
     },

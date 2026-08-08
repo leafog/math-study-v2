@@ -1,9 +1,10 @@
-import type { PanelImperativeHandle } from "react-resizable-panels";
+import type { PanelImperativeHandle, PanelSize } from "react-resizable-panels";
 import { ResizablePanel } from "../ui/resizable";
 import {
   MessageScroller,
   MessageScrollerButton,
   MessageScrollerContent,
+  MessageScrollerItem,
   MessageScrollerProvider,
   MessageScrollerViewport,
 } from "../ui/message-scroller";
@@ -24,13 +25,14 @@ import ChatPanelRight from "./chat-panel-right";
 import { Marker, MarkerContent, MarkerIcon } from "../ui/marker";
 import { Spinner } from "../ui/spinner";
 import { cn } from "~/lib/utils";
-import { type CSSProperties, type PropsWithChildren } from "react";
-import { useMeasure } from "@uidotdev/usehooks";
+import { useDeferredValue, type CSSProperties, type PropsWithChildren } from "react";
+import { useDebounce, useMeasure } from "@uidotdev/usehooks";
 import { usePinnedProblems } from "~/store/pinned-problems-store";
 import { ProblemPreviewSimple } from "../math/problem-preview-simple";
 import ChatWelCome from "./chat-welcome";
 import ChatPromptSuggestion from "./chat-prompt-suggestion";
 import { useChatPromptSuggestionStore } from "~/store/chat-prompt-suggestion-store";
+import { useDebounceCallback } from "usehooks-ts";
 
 interface ChatPanelProps {
   panelRef: React.RefObject<PanelImperativeHandle | null>;
@@ -72,8 +74,14 @@ const ChatInnerWrapper = ({
 
 const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
   const { messages, status } = useActiveChatHelpers();
+  const isStreaming = status === "streaming";
+  // 流式期间用 useDeferredValue 降级渲染优先级，不阻塞用户交互
+  const displayMessages =
+    useDeferredValue(isStreaming ? messages : null) ?? messages;
   const { currentConversation, isNewChat } = useActiveChat();
   const onChatResize = useActiveChatToolsPanelStore().use.onChatResize();
+
+  const onChatResizeDebounce = useDebounceCallback(onChatResize, 300);
 
   const [promptInputDivRef, { height: promptInputDivHeight }] = useMeasure();
 
@@ -98,7 +106,7 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
       defaultSize={"100%"}
       minSize={"30%"}
       collapsible
-      onResize={(size) => onChatResize(size)}
+      onResize={(size) => onChatResizeDebounce(size)}
       className="flex flex-col "
     >
       <MessageScrollerProvider autoScroll>
@@ -143,15 +151,15 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
                   {showPinned && (
                     <div style={{ height: `${pinnedDivHeight}px` }}></div>
                   )}
-                  {messages.map((message, i) => {
+                  {displayMessages.map((message, i) => {
+                    const isLast = i === displayMessages.length - 1;
                     return (
-                      <ChatMessage
-                        message={message}
-                        key={message.id}
-                        isAnimating={
-                          status === "streaming" && i === messages.length - 1
-                        }
-                      />
+                      <MessageScrollerItem key={message.id} scrollAnchor={isLast}>
+                        <ChatMessage
+                          message={message}
+                          isAnimating={status === "streaming" && isLast}
+                        />
+                      </MessageScrollerItem>
                     );
                   })}
 

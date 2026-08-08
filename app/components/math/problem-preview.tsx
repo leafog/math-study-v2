@@ -11,7 +11,7 @@ import {
   CardHeader,
 } from "../ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
-import { cn } from "~/lib/utils";
+import { cn, normalizeMathDelimiters } from "~/lib/utils";
 import { Badge } from "../ui/badge";
 import type { AnswerRecord } from "~/db/db-zod-schema";
 import {
@@ -220,7 +220,7 @@ const ProblemPreview = forwardRef<ProblemPreviewHandle, ProblemProps>(
                                 {t("problem.aiFeedback")}
                               </p>
                               <MessageResponse>
-                                {analysis.content}
+                                {normalizeMathDelimiters(analysis.content)}
                               </MessageResponse>
                             </HoverCardContent>
                           </HoverCard>
@@ -233,7 +233,9 @@ const ProblemPreview = forwardRef<ProblemPreviewHandle, ProblemProps>(
                           />
                         )}
                         <div className="min-w-0 flex-1">
-                          <MessageResponse>{it.user_answer}</MessageResponse>
+                          <MessageResponse>
+                            {normalizeMathDelimiters(it.user_answer)}
+                          </MessageResponse>
                         </div>
                       </div>
                     </div>
@@ -263,7 +265,9 @@ const ProblemPreview = forwardRef<ProblemPreviewHandle, ProblemProps>(
                 {problemExplanations.map((exp, i) => (
                   <div key={exp.id}>
                     {i > 0 && <Separator className="my-2" />}
-                    <MessageResponse>{exp.content}</MessageResponse>
+                    <MessageResponse>
+                      {normalizeMathDelimiters(exp.content)}
+                    </MessageResponse>
                   </div>
                 ))}
               </CollapsibleContent>
