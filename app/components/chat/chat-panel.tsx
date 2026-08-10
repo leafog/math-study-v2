@@ -20,12 +20,17 @@ import {
   useActiveChat,
   useActiveChatHelpers,
   useActiveChatToolsPanelStore,
+  useChatAgent,
 } from "~/hooks/chat/active-chat";
 import ChatPanelRight from "./chat-panel-right";
 import { Marker, MarkerContent, MarkerIcon } from "../ui/marker";
 import { Spinner } from "../ui/spinner";
 import { cn } from "~/lib/utils";
-import { useDeferredValue, type CSSProperties, type PropsWithChildren } from "react";
+import {
+  useDeferredValue,
+  type CSSProperties,
+  type PropsWithChildren,
+} from "react";
 import { useDebounce, useMeasure } from "@uidotdev/usehooks";
 import { usePinnedProblems } from "~/store/pinned-problems-store";
 import { ProblemPreviewSimple } from "../math/problem-preview-simple";
@@ -100,6 +105,7 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
         scrollPaddingTop: showPinned ? pinnedDivHeight + 16 : 0,
       }
     : {};
+  const { settings } = useChatAgent();
   return (
     <ResizablePanel
       panelRef={panelRef}
@@ -154,7 +160,10 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
                   {displayMessages.map((message, i) => {
                     const isLast = i === displayMessages.length - 1;
                     return (
-                      <MessageScrollerItem key={message.id} scrollAnchor={isLast}>
+                      <MessageScrollerItem
+                        key={message.id}
+                        scrollAnchor={isLast}
+                      >
                         <ChatMessage
                           message={message}
                           isAnimating={status === "streaming" && isLast}

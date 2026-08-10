@@ -24,7 +24,6 @@ import { cn } from "~/lib/utils";
 import { Link, useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
 import NavHistoryChat from "./nav-history-chat";
-import SettingsDialog from "~/components/settings/settings-modal";
 
 type RouteItem = {
   path: string;
@@ -114,12 +113,12 @@ const AppSidebar = () => {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SettingsDialog>
-              <SidebarMenuButton>
+            <SidebarMenuButton asChild>
+              <Link to="/settings">
                 <Settings />
                 <span>{t("settings.title")}</span>
-              </SidebarMenuButton>
-            </SettingsDialog>
+              </Link>
+            </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

@@ -1,14 +1,13 @@
-import { ComputeEngine, executeCortex } from "@cortex-js/compute-engine/cortex";
 import { useEffect } from "react";
-import { MathfieldElement } from "mathlive";
+import { useChat, fetchServerSentEvents } from "@tanstack/ai-react";
 
-const ce = new ComputeEngine();
 const D = () => {
-  const { value, diagnostics } = executeCortex(ce, "1 + 2");
-
+  const { messages, sendMessage, isLoading, error } = useChat({
+    connection: fetchServerSentEvents("/api/chat"),
+  });
   useEffect(() => {
-    console.log(value, diagnostics);
-  }, [value]);
+    console.log(window);
+  });
   return (
     <div className="w-full">
       <math-field read-only={true}>e=m^2c</math-field>

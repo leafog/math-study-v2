@@ -180,4 +180,5 @@ export const {
   toolDataColl,
   answerAnalysisColl,
   problemExplanationColl,
+  settingModelConfigColl,
 } = colls;

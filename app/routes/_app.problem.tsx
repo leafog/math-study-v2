@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-db";
 import { useTranslation } from "react-i18next";
 import { groupBy } from "lodash-es";
-import { FileQuestion } from "lucide-react";
+import { FileQuestion, Loader2 } from "lucide-react";
 import {
   problemColl,
   answerRecordColl,
@@ -20,6 +20,13 @@ import {
   ContainerSticky,
   ContainerBody,
 } from "~/components/layout/Container";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "~/components/ui/empty";
 import ProblemPreview from "~/components/math/problem-preview";
 import { useChatKgTopics } from "~/hooks/chat/active-chat";
 
@@ -114,14 +121,14 @@ const ProblemIndex = () => {
   if (isLoading) {
     return (
       <Container>
-        <div className="flex flex-1 items-center justify-center">
-          <div className="flex flex-col items-center gap-3">
-            <div className="size-8 animate-spin rounded-full border-2 border-muted-foreground/20 border-t-muted-foreground" />
-            <p className="text-sm text-muted-foreground">
-              {t("common.loading")}
-            </p>
-          </div>
-        </div>
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <Loader2 className="animate-spin" />
+            </EmptyMedia>
+            <EmptyTitle>{t("common.loading")}</EmptyTitle>
+          </EmptyHeader>
+        </Empty>
       </Container>
     );
   }
@@ -150,16 +157,15 @@ const ProblemIndex = () => {
       </ContainerSticky>
       <ContainerBody>
         {filtered.length === 0 ? (
-          <div className="flex flex-1 items-center justify-center">
-            <div className="flex flex-col items-center gap-4 text-muted-foreground">
-              <div className="rounded-full bg-muted p-4">
-                <FileQuestion className="size-6" aria-hidden="true" />
-              </div>
-              <p className="text-sm">
-                {/* { t("problem.noFiltered") t("problem.empty")} */}
-              </p>
-            </div>
-          </div>
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <FileQuestion />
+              </EmptyMedia>
+              <EmptyTitle>{t("problem.title")}</EmptyTitle>
+              <EmptyDescription>{t("problem.empty")}</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         ) : (
           <>
             <div className="px-6 py-5 flex flex-col gap-4">

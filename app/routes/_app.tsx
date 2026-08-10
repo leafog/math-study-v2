@@ -25,7 +25,7 @@ const AppLayout = () => {
       .findOne();
   }, []);
 
-  const hiddenRoutes = ["/library", "/graph", "/problem"];
+  const hiddenRoutes = ["/library", "/graph", "/problem", "/settings"];
   return (
     <SidebarProvider>
       <AppSidebar />

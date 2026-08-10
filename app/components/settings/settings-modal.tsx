@@ -30,7 +30,13 @@ import {
   ModelSelectorLogo,
   ModelSelectorName,
 } from "~/components/ai-elements/model-selector";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import {
+  Item,
+  ItemContent,
+  ItemTitle,
+  ItemActions,
+} from "~/components/ui/item";
+import ModelConfig from "./model-config";
 
 type SettingsDialogProps = Readonly<{
   children: React.ReactNode;
@@ -64,7 +70,7 @@ export function SettingsDialog({ children }: SettingsDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-3xl" showCloseButton={true}>
+      <DialogContent className="sm:max-w-4xl" showCloseButton={true}>
         <DialogHeader>
           <DialogTitle>{t("settings.title")}</DialogTitle>
         </DialogHeader>
@@ -85,76 +91,51 @@ export function SettingsDialog({ children }: SettingsDialogProps) {
 
             <TabsContent
               value="general"
-              className="px-6 py-4 space-y-4 overflow-y-auto"
+              className="px-6 py-1  overflow-y-auto space-y-4"
             >
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t("settings.theme")}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex gap-2">
-                    {THEME_OPTIONS.map(({ value, icon: Icon, label }) => (
-                      <Button
-                        key={value}
-                        variant={theme === value ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setTheme(value)}
-                      >
-                        <Icon className="size-4" />
-                        {t(label)}
-                      </Button>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+              <Item variant="outline" size="sm">
+                <ItemContent>
+                  <ItemTitle>{t("settings.theme")}</ItemTitle>
+                </ItemContent>
+                <ItemActions>
+                  {THEME_OPTIONS.map(({ value, icon: Icon, label }) => (
+                    <Button
+                      key={value}
+                      variant={theme === value ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setTheme(value)}
+                    >
+                      <Icon className="size-4" />
+                      {t(label)}
+                    </Button>
+                  ))}
+                </ItemActions>
+              </Item>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t("settings.language")}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex gap-2">
-                    {LANGUAGE_OPTIONS.map(({ value, label }) => (
-                      <Button
-                        key={value}
-                        variant={
-                          i18n.language === value ? "default" : "outline"
-                        }
-                        size="sm"
-                        onClick={() => i18n.changeLanguage(value)}
-                      >
-                        {label}
-                      </Button>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+              <Item variant="outline" size="sm">
+                <ItemContent>
+                  <ItemTitle>{t("settings.language")}</ItemTitle>
+                </ItemContent>
+                <ItemActions>
+                  {LANGUAGE_OPTIONS.map(({ value, label }) => (
+                    <Button
+                      key={value}
+                      variant={i18n.language === value ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => i18n.changeLanguage(value)}
+                    >
+                      {label}
+                    </Button>
+                  ))}
+                </ItemActions>
+              </Item>
             </TabsContent>
 
-            <TabsContent value="model" className="flex-1 p-0 overflow-hidden">
-              <Command className="h-full rounded-none border-none">
-                <ModelSelectorInput placeholder={t("settings.selectModel")} />
-                <ModelSelectorList>
-                  <ModelSelectorEmpty>No models found.</ModelSelectorEmpty>
-                  <ModelSelectorGroup heading="DeepSeek">
-                    {MODELS.map((model) => (
-                      <ModelSelectorItem
-                        key={model.id}
-                        onSelect={() => setSelectedModel(model.id)}
-                        className={
-                          selectedModel === model.id ? "bg-accent" : ""
-                        }
-                      >
-                        <ModelSelectorLogo provider={model.provider} />
-                        <ModelSelectorName>{model.name}</ModelSelectorName>
-                        {selectedModel === model.id && (
-                          <Check className="ml-auto size-4" />
-                        )}
-                      </ModelSelectorItem>
-                    ))}
-                  </ModelSelectorGroup>
-                </ModelSelectorList>
-              </Command>
+            <TabsContent
+              value="model"
+              className="px-6 py-1  overflow-y-auto space-y-4"
+            >
+              <ModelConfig />
             </TabsContent>
           </Tabs>
         </div>

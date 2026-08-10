@@ -84,7 +84,37 @@
     "system": "System",
     "general": "General",
     "model": "Model",
-    "selectModel": "Search models..."
+    "modelDesc": "Configure AI providers and their models. Keys are stored only on this computer.",
+    "configuredModels": "Configured Models",
+    "noConfiguredModels": "No models configured yet. Add one from the providers below.",
+    "availableProviders": "Available Providers",
+    "enable": "Enable",
+    "configured": "Configured",
+    "notConfigured": "Not configured",
+    "selectModel": "Search models...",
+    "provider": {
+      "title": "Models",
+      "desc": "Providers and the models offered in the composer's picker. Keys are stored only on this computer.",
+      "configName": "Config Name",
+      "configNamePlaceholder": "e.g. Personal, Work",
+      "configNameDesc": "Give this config a name to distinguish multiple API keys.",
+      "apiKeyLabel": "{{name}} API Key",
+      "apiKeyPlaceholder": "sk-...",
+      "noKeyYet": "No key yet?",
+      "createOne": "Create one at",
+      "customEndpoint": "Custom Endpoint",
+      "baseUrl": "Base URL",
+      "baseUrlDesc": "Override the default API endpoint.",
+      "models": "Models",
+      "modelsDesc": "Select the models you want to enable.",
+      "addCustomModel": "Add custom model…",
+      "errors": {
+        "configNameRequired": "Please enter a config name",
+        "configNameDuplicate": "This name is already in use",
+        "apiKeyRequired": "Please enter your API key",
+        "modelAlreadyExists": "This model already exists"
+      }
+    }
   },
   "suggestion": {
     "prev": {

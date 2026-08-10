@@ -11,6 +11,7 @@ import {
   Reasoning,
   ReasoningContent,
   ReasoningTrigger,
+  useReasoning,
 } from "../ai-elements/reasoning";
 import { Bubble, BubbleContent } from "../ui/bubble";
 import { Message, MessageContent, MessageFooter } from "../ui/message";
@@ -141,14 +142,14 @@ const PureChatMessage = memo(
     const isThinking = isAnimating && !isUser && !hasContent;
 
     return (
-      <div className="group ">
+      <div className="group">
         <Message align={align}>
           <MessageContent>
             <Bubble variant={isUser ? "muted" : "ghost"} className="max-w-full">
               <BubbleContent className="typeset typeset-chat">
                 {reasoningText && (
-                  <Reasoning isStreaming={isAnimating}>
-                    <ReasoningTrigger />
+                  <Reasoning isStreaming={isAnimating} className="w-full">
+                    <ReasoningTrigger className="[&>p]:m-0" />
                     <ReasoningContent>{reasoningText}</ReasoningContent>
                   </Reasoning>
                 )}

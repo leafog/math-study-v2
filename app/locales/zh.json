@@ -84,7 +84,37 @@
     "system": "跟随系统",
     "general": "通用设置",
     "model": "模型",
-    "selectModel": "搜索模型..."
+    "modelDesc": "配置 AI 服务商及其模型。密钥仅存储在此计算机上。",
+    "configuredModels": "已配置的模型",
+    "noConfiguredModels": "暂无已配置的模型，从下方服务商中添加。",
+    "availableProviders": "可添加的服务商",
+    "enable": "启用",
+    "configured": "已配置",
+    "notConfigured": "未配置",
+    "selectModel": "搜索模型...",
+    "provider": {
+      "title": "模型",
+      "desc": "服务商及其提供的模型。密钥仅存储在此计算机上。",
+      "configName": "配置名称",
+      "configNamePlaceholder": "例如：个人账号、公司账号",
+      "configNameDesc": "给这个配置起个名字，方便区分多个 API Key。",
+      "apiKeyLabel": "{{name}} API Key",
+      "apiKeyPlaceholder": "sk-...",
+      "noKeyYet": "还没有 Key？去",
+      "createOne": "创建一个",
+      "customEndpoint": "自定义终端",
+      "baseUrl": "Base URL",
+      "baseUrlDesc": "覆盖默认的 API 终端地址。",
+      "models": "模型",
+      "modelsDesc": "选择要启用的模型。",
+      "addCustomModel": "添加自定义模型…",
+      "errors": {
+        "configNameRequired": "请输入配置名称",
+        "configNameDuplicate": "该名称已被使用",
+        "apiKeyRequired": "请输入 API Key",
+        "modelAlreadyExists": "该模型已存在"
+      }
+    }
   },
   "suggestion": {
     "prev": {

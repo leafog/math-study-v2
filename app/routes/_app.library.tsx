@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useLiveInfiniteQuery } from "@tanstack/react-db";
 import { useTranslation } from "react-i18next";
 import { attachmentColl } from "~/db/tdb-collections";
-import { FileIcon, ImageIcon, FolderOpen } from "lucide-react";
+import { FileIcon, ImageIcon, FolderOpen, Loader2 } from "lucide-react";
 import { fileStore } from "~/db/indexdb-file-storage";
 import {
   Container,
@@ -10,6 +10,13 @@ import {
   ContainerBody,
   ContainerSticky,
 } from "~/components/layout/Container";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "~/components/ui/empty";
 import { Input } from "~/components/ui/input";
 
 const PAGE_SIZE = 20;
@@ -111,65 +118,64 @@ const Library = () => {
   if (isLoading) {
     return (
       <Container>
-        <div className="flex flex-1 items-center justify-center">
-          <div className="flex flex-col items-center gap-3">
-            <div className="size-8 animate-spin rounded-full border-2 border-muted-foreground/20 border-t-muted-foreground" />
-            <p className="text-sm text-muted-foreground">
-              {t("common.loading")}
-            </p>
-          </div>
-        </div>
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <Loader2 className="animate-spin" />
+            </EmptyMedia>
+            <EmptyTitle>{t("common.loading")}</EmptyTitle>
+          </EmptyHeader>
+        </Empty>
       </Container>
     );
   }
 
   return (
-    <div className="w-full">
-      <Container>
-        <ContainerHeader className="h-20 mt-10">
-          <div className="flex h-full justify-between items-center align-middle">
-            <div className="text-3xl     font-mono">资料库</div>
-            <div>
-              <Input />
-            </div>
+    <Container>
+      <ContainerHeader className="h-20 mt-10">
+        <div className="flex h-full justify-between items-center align-middle">
+          <div className="text-3xl font-mono">资料库</div>
+          <div>
+            <Input />
           </div>
-        </ContainerHeader>
-        <ContainerSticky className="flex items-center  justify-between align-middle">
-          <div className="bg-red-50">
-            <span className="h-full">123</span>
-          </div>
-        </ContainerSticky>
-        <ContainerBody>
-          {!data?.length ? (
-            <div className="flex flex-1 items-center justify-center">
-              <div className="flex flex-col items-center gap-4 text-muted-foreground">
-                <div className="rounded-full bg-muted p-4">
-                  <FolderOpen className="size-6" aria-hidden="true" />
-                </div>
-                <p className="text-sm">{t("library.empty", "No files yet")}</p>
+        </div>
+      </ContainerHeader>
+      <ContainerSticky className="flex items-center  justify-between align-middle">
+        <div className="bg-red-50">
+          <span className="h-full">123</span>
+        </div>
+      </ContainerSticky>
+      <ContainerBody>
+        {!data?.length ? (
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <FolderOpen />
+              </EmptyMedia>
+              <EmptyTitle>资料库</EmptyTitle>
+              <EmptyDescription>{t("library.empty")}</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        ) : (
+          <>
+            <div className="p-6">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {data.map((item) => (
+                  <FileCard key={item.id} item={item} />
+                ))}
               </div>
             </div>
-          ) : (
-            <>
-              <div className="p-6">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {data.map((item) => (
-                    <FileCard key={item.id} item={item} />
-                  ))}
-                </div>
-              </div>
 
-              <div ref={sentinelRef} className="h-1" />
-              {isFetchingNextPage && (
-                <div className="flex justify-center pb-6">
-                  <div className="size-5 animate-spin rounded-full border-2 border-muted-foreground/20 border-t-muted-foreground" />
-                </div>
-              )}
-            </>
-          )}
-        </ContainerBody>
-      </Container>
-    </div>
+            <div ref={sentinelRef} className="h-1" />
+            {isFetchingNextPage && (
+              <div className="flex justify-center pb-6">
+                <div className="size-5 animate-spin rounded-full border-2 border-muted-foreground/20 border-t-muted-foreground" />
+              </div>
+            )}
+          </>
+        )}
+      </ContainerBody>
+    </Container>
   );
 };
 

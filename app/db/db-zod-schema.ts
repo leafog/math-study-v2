@@ -418,6 +418,26 @@ export const AppSettingsSchema = z.object({
 });
 export type AppSettings = z.infer<typeof AppSettingsSchema>;
 
+// ─── Setting model config schemas ──────────────────────────────
+
+/** Per-provider model configuration: base URL, available models, and credentials. */
+export const SettingModelConfigSchema = z.object({
+  id: z.string(),
+  provider_id: z.string().describe("FK to the provider this config belongs to"),
+  config_name: z.string().optional().describe("User-facing config name"),
+  base_url: z.string().describe("Base URL for the provider's API endpoint"),
+  all_models: z.array(z.string()).optional().describe("All available model identifiers (built-in + custom)"),
+  selected_models: z.array(z.string()).optional().describe("User-selected model identifiers"),
+  api_key: z.string().describe("API key for authentication"),
+  extra: z
+    .record(z.string(), z.any())
+    .optional()
+    .describe("Flexible key-value pairs for provider-specific settings"),
+  created_at: z.date(),
+  updated_at: z.date(),
+});
+export type SettingModelConfig = z.infer<typeof SettingModelConfigSchema>;
+
 // ─── Conversation schemas ───────────────────────────────────────
 
 export const ConversationSchema = z.object({
