@@ -1,5 +1,12 @@
-import type { InferAgentUIMessage } from "ai";
+import type { ChatTransport, InferAgentUIMessage, LanguageModel } from "ai";
 import type { agent } from "./client-agent";
+
+import { ModelProvider as ProviderId } from "@lobehub/icons";
+import type { FC } from "react";
+import type { IconAvatarProps, IconType } from "@lobehub/icons";
+import type { ChatMessage, SettingModelConfig } from "~/db/db-zod-schema";
+
+export { ProviderId };
 
 export type Locale = "zh" | "en";
 
@@ -20,9 +27,52 @@ export type PromptRegistry = Record<string, PromptEntry>;
 
 // ─── Chat message types ────────────────────────────────────
 
-export type MessageMetadata = {
-  created_at: Date;
-};
+export type MessageMetadata = NonNullable<ChatMessage["metadata"]>;
 
 /** Agent-typed UI message, tools auto-inferred from agent */
 export type UIChatMessage = InferAgentUIMessage<typeof agent, MessageMetadata>;
+
+export type AvatarComponent = FC<Omit<IconAvatarProps, "Icon">>;
+
+/** Form-managed subset of SettingModelConfig — single source of truth */
+export type ProviderConfigValue = Omit<
+  SettingModelConfig,
+  "id" | "provider_id" | "extra" | "created_at" | "updated_at"
+>;
+
+export interface ModelProviderConfigProps {
+  providerId: ProviderId;
+  value?: ProviderConfigValue;
+  onChange?: (value: ProviderConfigValue) => void;
+}
+
+export interface ModelIcon {
+  id: ProviderId;
+  name: string;
+  avatar: AvatarComponent;
+  text: IconType;
+}
+
+export type ModelIconRecord = Record<ProviderId, ModelIcon>;
+
+export type ModelConfigUIRecord = Partial<
+  Record<ProviderId, FC<ModelProviderConfigProps>>
+>;
+
+export type CreateChatTranSportAgentFC = (
+  config: SettingModelConfig,
+) => ChatTransport<UIChatMessage>;
+
+export type CreateLLMFC = (
+  config: ProviderConfigValue,
+  model: string,
+) => LanguageModel;
+
+export type CreateLLMs = Partial<Record<ProviderId, CreateLLMFC>>;
+
+export type TestLLMConnectFC = (
+  config: ProviderConfigValue,
+  model: string,
+) => Promise<boolean>;
+
+export type TestLLMConnects = Partial<Record<ProviderId, TestLLMConnectFC>>;

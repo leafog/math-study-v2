@@ -79,21 +79,13 @@ const ChatInnerWrapper = ({
 
 const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
   const { messages, status } = useActiveChatHelpers();
-  const isStreaming = status === "streaming";
-  // 流式期间用 useDeferredValue 降级渲染优先级，不阻塞用户交互
-  const displayMessages =
-    useDeferredValue(isStreaming ? messages : null) ?? messages;
   const { currentConversation, isNewChat } = useActiveChat();
   const onChatResize = useActiveChatToolsPanelStore().use.onChatResize();
-
   const onChatResizeDebounce = useDebounceCallback(onChatResize, 300);
-
   const [promptInputDivRef, { height: promptInputDivHeight }] = useMeasure();
-
   const [pinnedDivRef, { height: pinnedDivHeight }] = useMeasure();
   const toolsShow = useActiveChatToolsPanelStore().use.toolsShow();
   const menuShow = useActiveChatToolsPanelStore().use.menuShow();
-
   const pinned = usePinnedProblems.use.pinned();
 
   const pinnedPid = chatId ? pinned[chatId] : undefined;
@@ -106,6 +98,7 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
       }
     : {};
   const { settings } = useChatAgent();
+
   return (
     <ResizablePanel
       panelRef={panelRef}
@@ -157,8 +150,8 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
                   {showPinned && (
                     <div style={{ height: `${pinnedDivHeight}px` }}></div>
                   )}
-                  {displayMessages.map((message, i) => {
-                    const isLast = i === displayMessages.length - 1;
+                  {messages.map((message, i) => {
+                    const isLast = i === messages.length - 1;
                     return (
                       <MessageScrollerItem
                         key={message.id}

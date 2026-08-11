@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ps -p 2744,3692 -o pid,stat,comm)",
+      "Bash(kill 58047 58050 58344)"
+    ]
+  }
+}

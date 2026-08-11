@@ -1,4 +1,4 @@
-import type { ModelProviderConfigProps } from "../types";
+import type { ModelProviderConfigProps } from "~/lib/agent/types";
 import ProviderCommon from "./provider-common";
 
 const GeminiConfig = ({ providerId, value, onChange }: ModelProviderConfigProps) => (

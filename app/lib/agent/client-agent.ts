@@ -20,13 +20,6 @@ export const deepseek = createDeepSeek({
 
 export const deepseeks = deepseek.chat("deepseek-v4-flash");
 
-// Middleware to enable DeepSeek thinking (reasoning_content) + reasoning effort.
-// @ai-sdk/deepseek natively handles:
-//   - thinking: { type: "enabled" }  →  opens the "thinking" extra_body
-//   - reasoningEffort: "high"        →  reasoning_effort in the request
-//   - Response: reasoning_content is parsed into standard reasoning events
-//     (reasoning-start / reasoning-delta / reasoning-end in streams,
-//      { type: "reasoning", text } in generate)
 const thinkingMiddleware: LanguageModelMiddleware = {
   transformParams: async ({ params }) => {
     return {
@@ -89,10 +82,15 @@ export const transport = new DirectChatTransport({
     if (part.type === "start") {
       return { created_at: new Date() };
     }
+    if (part.type === "reasoning-start") {
+      return { [`${part.id}:${part.type}`]: Date.now() };
+    }
+    if (part.type === "reasoning-end") {
+      return { [`${part.id}:${part.type}`]: Date.now() };
+    }
   },
 });
 type UseAgentProps = {};
 export const useAgent = ({}: UseAgentProps) => {
   const { i18n } = useTranslation();
-  const locale = i18n.language;
 };

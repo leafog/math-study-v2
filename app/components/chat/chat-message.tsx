@@ -11,7 +11,6 @@ import {
   Reasoning,
   ReasoningContent,
   ReasoningTrigger,
-  useReasoning,
 } from "../ai-elements/reasoning";
 import { Bubble, BubbleContent } from "../ui/bubble";
 import { Message, MessageContent, MessageFooter } from "../ui/message";
@@ -110,20 +109,8 @@ const PureChatMessage = memo(
       toast.success("Copied to clipboard!", { position: "top-center" });
     }, [textFromParts, copyToClipboard]);
 
-    const reasoningText = useMemo(
-      () =>
-        message.parts
-          .filter((part) => part.type === "reasoning")
-          .map((part: any) => part.text)
-          .join("\n"),
-      [message.parts],
-    );
-
     const filteredParts = useMemo(
-      () =>
-        message.parts.filter(
-          (part) => part.type !== "reasoning" && part.type !== "step-start",
-        ),
+      () => message.parts.filter((part) => part.type !== "step-start"),
       [message.parts],
     );
 
@@ -147,12 +134,6 @@ const PureChatMessage = memo(
           <MessageContent>
             <Bubble variant={isUser ? "muted" : "ghost"} className="max-w-full">
               <BubbleContent className="typeset typeset-chat">
-                {reasoningText && (
-                  <Reasoning isStreaming={isAnimating} className="w-full">
-                    <ReasoningTrigger className="[&>p]:m-0" />
-                    <ReasoningContent>{reasoningText}</ReasoningContent>
-                  </Reasoning>
-                )}
                 {isThinking ? (
                   <Marker role="status">
                     <MarkerIcon>
@@ -165,45 +146,60 @@ const PureChatMessage = memo(
                 ) : (
                   <>
                     {filteredParts.map((part, i) => {
-                      const key = `message-${message.id}-part-${i}`;
-                      if (part.type === "text") {
-                        return (
-                          <MessageContent key={key}>
-                            <MessageResponse
-                              isAnimating={isAnimating}
-                              caret="block"
+                        const key = `message-${message.id}-part-${i}`;
+                        if (part.type === "text") {
+                          return (
+                            <MessageContent key={key}>
+                              <MessageResponse
+                                isAnimating={isAnimating}
+                                caret="block"
+                              >
+                                {part.text}
+                              </MessageResponse>
+                            </MessageContent>
+                          );
+                        }
+                        if (part.type === "file") {
+                          const isImage = part.mediaType.startsWith("image/");
+                          return (
+                            <div key={key} className="mb-2 last:mb-0">
+                              {isImage ? (
+                                <img
+                                  src={part.url}
+                                  alt={part.filename ?? ""}
+                                  className="max-h-48 w-auto rounded-lg object-cover border"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div className="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2 text-sm">
+                                  <FileIcon className="size-4 shrink-0 text-muted-foreground" />
+                                  <span className="truncate text-muted-foreground">
+                                    {part.filename ?? "file"}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        }
+                        if (part.type === "reasoning") {
+                          return (
+                            <Reasoning
+                              key={key}
+                              isStreaming={isAnimating}
+                              duration={(part as any)._duration}
+                              className="w-full"
                             >
-                              {part.text}
-                            </MessageResponse>
-                          </MessageContent>
-                        );
-                      }
-                      if (part.type === "file") {
-                        const isImage = part.mediaType.startsWith("image/");
-                        return (
-                          <div key={key} className="mb-2 last:mb-0">
-                            {isImage ? (
-                              <img
-                                src={part.url}
-                                alt={part.filename ?? ""}
-                                className="max-h-48 w-auto rounded-lg object-cover border"
-                                loading="lazy"
-                              />
-                            ) : (
-                              <div className="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2 text-sm">
-                                <FileIcon className="size-4 shrink-0 text-muted-foreground" />
-                                <span className="truncate text-muted-foreground">
-                                  {part.filename ?? "file"}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      }
-                      if (isToolPart(part)) {
-                        return <div key={key}>{renderToolPart(part)}</div>;
-                      }
-                      return null;
+                              <ReasoningTrigger className="[&>p]:m-0" />
+                              <ReasoningContent>
+                                {(part as any).text}
+                              </ReasoningContent>
+                            </Reasoning>
+                          );
+                        }
+                        if (isToolPart(part)) {
+                          return <div key={key}>{renderToolPart(part)}</div>;
+                        }
+                        return null;
                     })}
                   </>
                 )}

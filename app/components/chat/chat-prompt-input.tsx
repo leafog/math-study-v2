@@ -50,6 +50,12 @@ import { useEffect } from "react";
 import { useChatPromptInput } from "~/hooks/chat/active-chat/hooks";
 import { useChatPromptSuggestionStore } from "~/store/chat-prompt-suggestion-store";
 import { useEvent } from "~/event/use-event";
+import {
+  ModelSelector,
+  ModelSelectorTrigger,
+} from "../ai-elements/model-selector";
+import ChatPromptModelSelector from "./chat-prompt-model-selector";
+import ChatPromptModelThinkingEffort from "./chat-prompt-model-thinking-effort";
 
 const DisplayAttachments = () => {
   const attachments = usePromptInputAttachments();
@@ -188,7 +194,6 @@ const PruePromptInput = () => {
   const { textInput } = usePromptInputController();
   const textInputValue = useChatPromptInput().use.textInputValue();
   const setTextInputValue = useChatPromptInput().use.setTextInputValue();
-
   const setSuggestions = useChatPromptSuggestionStore.use.setSuggestions();
 
   useEffect(() => {
@@ -236,7 +241,11 @@ const PruePromptInput = () => {
             </PromptInputActionMenuContent>
           </PromptInputActionMenu>
         </PromptInputTools>
-        <PromptInputSubmit status={status} />
+        <div className="flex items-center gap-2">
+          <ChatPromptModelThinkingEffort />
+          <ChatPromptModelSelector />
+          <PromptInputSubmit status={status} />
+        </div>
       </PromptInputFooter>
     </PromptInput>
   );

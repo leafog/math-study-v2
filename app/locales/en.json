@@ -22,7 +22,9 @@
     "recent": "Recent",
     "quoteFrom": "> Quote from {{kind}}:\n>\n> {{content}}",
     "messageTime": "{{date, datetime}}",
-    "thinking": "Thinking..."
+    "thinking": "Thinking...",
+    "noModelConfigured": "No model configured",
+    "goToModelSettings": "Go to settings to configure"
   },
   "routes": {
     "files": "Files",
@@ -87,6 +89,8 @@
     "modelDesc": "Configure AI providers and their models. Keys are stored only on this computer.",
     "configuredModels": "Configured Models",
     "noConfiguredModels": "No models configured yet. Add one from the providers below.",
+    "deleteConfigTitle": "Confirm Delete",
+    "deleteConfigDesc": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
     "availableProviders": "Available Providers",
     "enable": "Enable",
     "configured": "Configured",
@@ -113,7 +117,9 @@
         "configNameDuplicate": "This name is already in use",
         "apiKeyRequired": "Please enter your API key",
         "modelAlreadyExists": "This model already exists"
-      }
+      },
+      "testing": "Testing",
+      "test": "Test"
     }
   },
   "suggestion": {

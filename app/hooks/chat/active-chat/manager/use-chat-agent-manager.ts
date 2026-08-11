@@ -1,7 +1,10 @@
 import { useLiveQuery } from "@tanstack/react-db";
+import { useEffect, useMemo } from "react";
 
 import { settingModelConfigColl } from "~/db/tdb-collections";
 import type { SettingModelConfig } from "~/db/db-zod-schema";
+import { modelIconRecord } from "~/lib/agent";
+import type { ProviderId } from "~/lib/agent/types";
 
 const useChatAgentManager = () => {
   const { data: settings = [] } = useLiveQuery((q) =>
@@ -14,6 +17,27 @@ const useChatAgentManager = () => {
         },
       ),
   );
+
+  const validProviders = useMemo(
+    () =>
+      settings
+        .map((it) => ({
+          provider: modelIconRecord[it.provider_id as ProviderId],
+          ...it,
+        }))
+        .filter((it) => it.provider !== undefined),
+    [settings],
+  );
+
+  useEffect(() => {
+    console.log(settings);
+  }, [settings]);
+
+  const currentProviders = useMemo(
+    () => validProviders.filter((it) => (it.selected_models ?? []).length > 0),
+    [validProviders],
+  );
+
   const hasConfig = settings.length > 0;
   const hasSameName = (name: string) =>
     settings.some((s) => s.config_name === name);
@@ -37,7 +61,20 @@ const useChatAgentManager = () => {
     });
   };
 
-  return { settings, hasConfig, hasSameName, insertConfig, updateConfig };
+  const deleteConfig = (id: string) => {
+    settingModelConfigColl.delete(id);
+  };
+
+  return {
+    settings,
+    validProviders,
+    hasConfig,
+    hasSameName,
+    insertConfig,
+    updateConfig,
+    deleteConfig,
+    currentProviders,
+  };
 };
 
 export default useChatAgentManager;

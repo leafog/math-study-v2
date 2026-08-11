@@ -4,25 +4,33 @@ import { combine, createJSONStorage, persist } from "zustand/middleware";
 import { createSelectors } from "./create-selectors";
 import { tanstackDbStorage } from "./tanstack-db-storage";
 
+type CurrentModel = {
+  id: string;
+  config_name: string;
+  model_name: string;
+};
+
 type ChatPromptInputState = {
   textInputValue: string;
-  // pushToTextInputValue: string;
+  currentModel: CurrentModel | null;
 };
 
 type ChatPromptInputAction = {
   setTextInputValue: (input: string) => void;
+  setCurrentModel: (model: CurrentModel) => void;
   clearTextInput: () => void;
-  // setPushToTextInputValue: (input: string) => void;
   reset: () => void;
 };
 
 const chatPromptInputStateDefault: ChatPromptInputState = {
   textInputValue: "",
+  currentModel: null,
 };
 
 const chatPromptInputStoreCreator = (init: ChatPromptInputState) =>
   combine<ChatPromptInputState, ChatPromptInputAction>({ ...init }, (set) => ({
     setTextInputValue: (input) => set({ textInputValue: input }),
+    setCurrentModel: (model) => set({ currentModel: model }),
     clearTextInput: () => set({ textInputValue: "" }),
     reset: () => set(chatPromptInputStateDefault),
   }));

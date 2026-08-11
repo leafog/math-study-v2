@@ -22,7 +22,9 @@
     "recent": "最近",
     "quoteFrom": "> 来自 {{kind}} 的引用:\n>\n> {{content}}",
     "messageTime": "{{date, datetime}}",
-    "thinking": "思考中..."
+    "thinking": "思考中...",
+    "noModelConfigured": "还未配置模型",
+    "goToModelSettings": "前往设置配置模型"
   },
   "routes": {
     "files": "文件",
@@ -87,6 +89,8 @@
     "modelDesc": "配置 AI 服务商及其模型。密钥仅存储在此计算机上。",
     "configuredModels": "已配置的模型",
     "noConfiguredModels": "暂无已配置的模型，从下方服务商中添加。",
+    "deleteConfigTitle": "确认删除",
+    "deleteConfigDesc": "确定要删除配置「{{name}}」吗？此操作不可撤销。",
     "availableProviders": "可添加的服务商",
     "enable": "启用",
     "configured": "已配置",
@@ -113,7 +117,9 @@
         "configNameDuplicate": "该名称已被使用",
         "apiKeyRequired": "请输入 API Key",
         "modelAlreadyExists": "该模型已存在"
-      }
+      },
+      "testing": "测试中",
+      "test": "测试"
     }
   },
   "suggestion": {

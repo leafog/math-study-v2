@@ -426,8 +426,14 @@ export const SettingModelConfigSchema = z.object({
   provider_id: z.string().describe("FK to the provider this config belongs to"),
   config_name: z.string().optional().describe("User-facing config name"),
   base_url: z.string().describe("Base URL for the provider's API endpoint"),
-  all_models: z.array(z.string()).optional().describe("All available model identifiers (built-in + custom)"),
-  selected_models: z.array(z.string()).optional().describe("User-selected model identifiers"),
+  all_models: z
+    .array(z.string())
+    .optional()
+    .describe("All available model identifiers (built-in + custom)"),
+  selected_models: z
+    .array(z.string())
+    .optional()
+    .describe("User-selected model identifiers"),
   api_key: z.string().describe("API key for authentication"),
   extra: z
     .record(z.string(), z.any())
@@ -456,7 +462,9 @@ export const ChatMessageSchema = z.object({
   metadata: z
     .object({
       created_at: z.date(),
+      reasonings_start_end: z.array(z.string()).optional(),
     })
+    .catchall(z.any())
     .optional(),
   created_at: z.date().optional(),
 });

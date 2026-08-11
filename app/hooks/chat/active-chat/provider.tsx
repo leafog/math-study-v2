@@ -39,6 +39,18 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
     messages: initMessages,
     onToolCall: async ({ toolCall }) => {},
     onFinish: ({ message }) => {
+      const meta = message.metadata as Record<string, number> | undefined;
+      if (meta) {
+        message.parts
+          ?.filter((part) => part.type === "reasoning")
+          .forEach((part, i) => {
+            const start = meta[`reasoning-${i}:reasoning-start`];
+            const end = meta[`reasoning-${i}:reasoning-end`];
+            if (start != null && end != null) {
+              (part as any)._duration = Math.ceil((end - start) / 1000);
+            }
+          });
+      }
       chatMessageColl.insert({
         chat_id: chatId,
         created_at: new Date(),

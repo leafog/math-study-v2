@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState, type FC } from "react";
 import { useTranslation } from "react-i18next";
-import { useForm } from "@tanstack/react-form";
+import { useForm, useSelector } from "@tanstack/react-form";
 import {
   PlusIcon,
   XIcon,
   ExternalLinkIcon,
   EyeIcon,
   EyeOffIcon,
+  CheckCircleIcon,
+  XCircleIcon,
 } from "lucide-react";
 import {
   Field,
@@ -17,28 +19,31 @@ import {
   FieldLabel,
   FieldLegend,
   FieldTitle,
-} from "../../ui/field";
-import { Button } from "../../ui/button";
-import { Input } from "../../ui/input";
+} from "~/components/ui/field";
+import { Button } from "~/components/ui/button";
+import { Spinner } from "~/components/ui/spinner";
+import { Input } from "~/components/ui/input";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "../../ui/accordion";
-import { Checkbox } from "../../ui/checkbox";
+} from "~/components/ui/accordion";
+import { Checkbox } from "~/components/ui/checkbox";
 import {
   InputGroup,
-  InputGroupInput,
   InputGroupAddon,
   InputGroupButton,
-} from "../../ui/input-group";
+  InputGroupInput,
+} from "~/components/ui/input-group";
 import { useChatAgent } from "~/hooks/chat/active-chat";
 import { useImmer } from "use-immer";
-import type { ProviderConfigValue } from "../types";
+import { useBoolean } from "usehooks-ts";
+import type { ProviderConfigValue, ProviderId } from "~/lib/agent/types";
+import { testLLMConnectRecord } from "../test-llm-connect";
 
 interface ProviderCommonProps {
-  providerId: string;
+  providerId: ProviderId;
   name: string;
   apiKeyUrl: string;
   models: string[];
@@ -61,7 +66,7 @@ const ProviderCommon: FC<ProviderCommonProps> = ({
   onChange,
 }) => {
   const { t } = useTranslation();
-  const [showApiKey, setShowApiKey] = useState(false);
+  const { value: showApiKey, toggle: toggleShowApiKey } = useBoolean(false);
   const { hasSameName } = useChatAgent();
 
   const initialCustom = useMemo(
@@ -75,8 +80,13 @@ const ProviderCommon: FC<ProviderCommonProps> = ({
     [models, customModels],
   );
 
+  const defaultValues = useMemo(
+    () => ({ ...value }) as ProviderFormData,
+    [value],
+  );
+
   const form = useForm({
-    defaultValues: { ...value } as ProviderFormData,
+    defaultValues,
     onSubmit: ({ value: formValue }: { value: ProviderFormData }) => {
       onChange?.({
         config_name: formValue.config_name?.trim() || undefined,
@@ -133,6 +143,52 @@ const ProviderCommon: FC<ProviderCommonProps> = ({
     }
   };
 
+  const {
+    value: testing,
+    setTrue: startTest,
+    setFalse: endTest,
+  } = useBoolean(false);
+
+  const { value: testSuccess, setValue: setTestSuccess } = useBoolean(false);
+  const [hasTested, setHasTested] = useState(false);
+
+  const apiKey = useSelector(form.store, (it) => it.values.api_key);
+  const allModelsLength = useSelector(
+    form.store,
+    (it) => it.values.all_models?.length ?? 0,
+  );
+  const testFn = testLLMConnectRecord[providerId];
+  const canTest = Boolean(
+    testFn && apiKey?.trim() && allModelsLength > 0 && !testing,
+  );
+
+  // Reset test result when API key or models change
+  useEffect(() => {
+    setTestSuccess(false);
+    setHasTested(false);
+  }, [apiKey, allModelsLength]);
+
+  const handleTest = async () => {
+    if (!testFn) return;
+    startTest();
+    try {
+      const result = await testFn(
+        {
+          api_key: apiKey ?? "",
+          base_url: form.getFieldValue("base_url") || defaultBaseUrl,
+        },
+        allModels[0],
+      );
+      setTestSuccess(result);
+      setHasTested(true);
+    } catch {
+      setTestSuccess(false);
+      setHasTested(true);
+    } finally {
+      endTest();
+    }
+  };
+
   return (
     <div className="m-4">
       <FieldGroup>
@@ -184,29 +240,51 @@ const ProviderCommon: FC<ProviderCommonProps> = ({
               <FieldLabel htmlFor="api-key">
                 {t("settings.provider.apiKeyLabel", { name })}
               </FieldLabel>
-              <InputGroup>
-                <InputGroupInput
-                  id="api-key"
-                  type={showApiKey ? "text" : "password"}
-                  placeholder={t("settings.provider.apiKeyPlaceholder")}
-                  value={apiField.state.value}
-                  onChange={(e) => apiField.handleChange(e.target.value)}
-                  onBlur={apiField.handleBlur}
-                />
-                <InputGroupAddon align="inline-end">
-                  <InputGroupButton
-                    size="icon-xs"
-                    variant="ghost"
-                    onClick={() => setShowApiKey((v) => !v)}
-                  >
-                    {showApiKey ? (
-                      <EyeOffIcon className="size-4" />
-                    ) : (
-                      <EyeIcon className="size-4" />
-                    )}
-                  </InputGroupButton>
-                </InputGroupAddon>
-              </InputGroup>
+              <div className="flex gap-1">
+                <InputGroup className="flex-1">
+                  <InputGroupInput
+                    id="api-key"
+                    disabled={testing}
+                    type={showApiKey ? "text" : "password"}
+                    placeholder={t("settings.provider.apiKeyPlaceholder")}
+                    value={apiField.state.value}
+                    onChange={(e) => apiField.handleChange(e.target.value)}
+                    onBlur={apiField.handleBlur}
+                  />
+                  <InputGroupAddon align="inline-end">
+                    <InputGroupButton
+                      size="icon-xs"
+                      variant="ghost"
+                      onClick={toggleShowApiKey}
+                    >
+                      {showApiKey ? (
+                        <EyeOffIcon className="size-4" />
+                      ) : (
+                        <EyeIcon className="size-4" />
+                      )}
+                    </InputGroupButton>
+                    {hasTested &&
+                      !testing &&
+                      (testSuccess ? (
+                        <CheckCircleIcon className="size-4 text-green-500" />
+                      ) : (
+                        <XCircleIcon className="size-4 text-destructive" />
+                      ))}
+                  </InputGroupAddon>
+                </InputGroup>
+                <Button
+                  size="default"
+                  variant="outline"
+                  className="ml-1"
+                  disabled={!canTest}
+                  onClick={handleTest}
+                >
+                  {testing && <Spinner data-icon="inline-start" />}
+                  {testing
+                    ? t("settings.provider.testing")
+                    : t("settings.provider.test")}
+                </Button>
+              </div>
               <FieldDescription>
                 {t("settings.provider.noKeyYet")}{" "}
                 <Button
@@ -310,7 +388,7 @@ const ProviderCommon: FC<ProviderCommonProps> = ({
                 {(newModelField) => (
                   <>
                     <InputGroup>
-                      <InputGroupInput
+                      <Input
                         placeholder={t("settings.provider.addCustomModel")}
                         value={newModelField.state.value}
                         onChange={(e) =>
