@@ -23,6 +23,11 @@
     "quoteFrom": "> Quote from {{kind}}:\n>\n> {{content}}",
     "messageTime": "{{date, datetime}}",
     "thinking": "Thinking...",
+    "reasoning": {
+      "thinking": "Thinking...",
+      "fewSeconds": "Thought for a few seconds",
+      "seconds": "Thought for {{count}} seconds"
+    },
     "noModelConfigured": "No model configured",
     "goToModelSettings": "Go to settings to configure"
   },

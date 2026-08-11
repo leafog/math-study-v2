@@ -12,6 +12,7 @@ import { getKnowledgeGraph } from "./tools/tool-get-knowledge-graph";
 import { instructions } from "./instructions";
 import { useTranslation } from "react-i18next";
 import {} from "./tools";
+import { genId } from "../id-utils";
 export const deepseek = createDeepSeek({
   apiKey: "",
 });
@@ -47,10 +48,12 @@ export const messageMetadata: MessageMetadataFn = ({ part }) => {
     return { created_at: new Date() };
   }
   if (part.type === "reasoning-start") {
-    return { [`${part.id}:${part.type}`]: Date.now() };
+    const nowNumber = Date.now();
+    return { [`${part.type}:${nowNumber}`]: nowNumber };
   }
   if (part.type === "reasoning-end") {
-    return { [`${part.id}:${part.type}`]: Date.now() };
+    const nowNumber = Date.now();
+    return { [`${part.type}:${nowNumber}`]: nowNumber };
   }
 };
 export const transport = new DirectChatTransport({

@@ -12,6 +12,7 @@ import {
   ReasoningContent,
   ReasoningTrigger,
 } from "../ai-elements/reasoning";
+import { Shimmer } from "../ai-elements/shimmer";
 import { Bubble, BubbleContent } from "../ui/bubble";
 import { Message, MessageContent, MessageFooter } from "../ui/message";
 import { Button } from "../ui/button";
@@ -90,6 +91,19 @@ const PureChatMessage = memo(
     const [_, copyToClipboard] = useCopyToClipboard();
     const { t } = useTranslation();
 
+    const getThinkingMessage = useCallback(
+      (isStreaming: boolean, duration?: number) => {
+        if (isStreaming || duration === 0) {
+          return <Shimmer duration={1}>{t("chat.reasoning.thinking")}</Shimmer>;
+        }
+        if (duration === undefined) {
+          return <p>{t("chat.reasoning.fewSeconds")}</p>;
+        }
+        return <p>{t("chat.reasoning.seconds", { count: duration })}</p>;
+      },
+      [t],
+    );
+
     const textFromParts = useMemo(
       () =>
         message.parts
@@ -146,60 +160,63 @@ const PureChatMessage = memo(
                 ) : (
                   <>
                     {filteredParts.map((part, i) => {
-                        const key = `message-${message.id}-part-${i}`;
-                        if (part.type === "text") {
-                          return (
-                            <MessageContent key={key}>
-                              <MessageResponse
-                                isAnimating={isAnimating}
-                                caret="block"
-                              >
-                                {part.text}
-                              </MessageResponse>
-                            </MessageContent>
-                          );
-                        }
-                        if (part.type === "file") {
-                          const isImage = part.mediaType.startsWith("image/");
-                          return (
-                            <div key={key} className="mb-2 last:mb-0">
-                              {isImage ? (
-                                <img
-                                  src={part.url}
-                                  alt={part.filename ?? ""}
-                                  className="max-h-48 w-auto rounded-lg object-cover border"
-                                  loading="lazy"
-                                />
-                              ) : (
-                                <div className="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2 text-sm">
-                                  <FileIcon className="size-4 shrink-0 text-muted-foreground" />
-                                  <span className="truncate text-muted-foreground">
-                                    {part.filename ?? "file"}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        }
-                        if (part.type === "reasoning") {
-                          return (
-                            <Reasoning
-                              key={key}
-                              isStreaming={isAnimating}
-                              duration={(part as any)._duration}
-                              className="w-full"
+                      const key = `message-${message.id}-part-${i}`;
+                      if (part.type === "text") {
+                        return (
+                          <MessageContent key={key}>
+                            <MessageResponse
+                              isAnimating={part.state === "streaming"}
+                              caret="block"
                             >
-                              <ReasoningTrigger className="[&>p]:m-0" />
-                              <ReasoningContent>
-                                {(part as any).text}
-                              </ReasoningContent>
-                            </Reasoning>
-                          );
-                        }
-                        if (isToolPart(part)) {
-                          return <div key={key}>{renderToolPart(part)}</div>;
-                        }
-                        return null;
+                              {part.text}
+                            </MessageResponse>
+                          </MessageContent>
+                        );
+                      }
+                      if (part.type === "file") {
+                        const isImage = part.mediaType.startsWith("image/");
+                        return (
+                          <div key={key} className="mb-2 last:mb-0">
+                            {isImage ? (
+                              <img
+                                src={part.url}
+                                alt={part.filename ?? ""}
+                                className="max-h-48 w-auto rounded-lg object-cover border"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2 text-sm">
+                                <FileIcon className="size-4 shrink-0 text-muted-foreground" />
+                                <span className="truncate text-muted-foreground">
+                                  {part.filename ?? "file"}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }
+                      if (part.type === "reasoning") {
+                        return (
+                          <Reasoning
+                            key={key}
+                            isStreaming={part.state === "streaming"}
+                            duration={(part as any)._duration}
+                            className="w-full"
+                          >
+                            <ReasoningTrigger
+                              getThinkingMessage={getThinkingMessage}
+                              className="[&>p]:m-0"
+                            />
+                            <ReasoningContent>
+                              {(part as any).text}
+                            </ReasoningContent>
+                          </Reasoning>
+                        );
+                      }
+                      if (isToolPart(part)) {
+                        return <div key={key}>{renderToolPart(part)}</div>;
+                      }
+                      return null;
                     })}
                   </>
                 )}

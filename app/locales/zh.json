@@ -23,6 +23,11 @@
     "quoteFrom": "> 来自 {{kind}} 的引用:\n>\n> {{content}}",
     "messageTime": "{{date, datetime}}",
     "thinking": "思考中...",
+    "reasoning": {
+      "thinking": "思考中...",
+      "fewSeconds": "思考了数秒",
+      "seconds": "思考了 {{count}} 秒"
+    },
     "noModelConfigured": "还未配置模型",
     "goToModelSettings": "前往设置配置模型"
   },

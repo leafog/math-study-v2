@@ -41,15 +41,27 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
     onFinish: ({ message }) => {
       const meta = message.metadata as Record<string, number> | undefined;
       if (meta) {
-        message.parts
-          ?.filter((part) => part.type === "reasoning")
-          .forEach((part, i) => {
-            const start = meta[`reasoning-${i}:reasoning-start`];
-            const end = meta[`reasoning-${i}:reasoning-end`];
-            if (start != null && end != null) {
-              (part as any)._duration = Math.ceil((end - start) / 1000) + 1;
+        // Collect reasoning start/end timestamps from Date.now()-based keys
+        const startKeys = Object.keys(meta)
+          .filter((k) => k.startsWith("reasoning-start:"))
+          .sort((a, b) => meta[a]! - meta[b]!);
+        const endKeys = Object.keys(meta)
+          .filter((k) => k.startsWith("reasoning-end:"))
+          .sort((a, b) => meta[a]! - meta[b]!);
+        const reasoningParts = message.parts?.filter(
+          (part) => part.type === "reasoning",
+        );
+        if (reasoningParts) {
+          reasoningParts.forEach((part, i) => {
+            if (i < startKeys.length && i < endKeys.length) {
+              const start = meta[startKeys[i]!];
+              const end = meta[endKeys[i]!];
+              if (start != null && end != null) {
+                (part as any)._duration = Math.ceil((end - start) / 1000);
+              }
             }
           });
+        }
       }
       chatMessageColl.insert({
         chat_id: chatId,
