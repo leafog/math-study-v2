@@ -1,9 +1,11 @@
 import type {
-  Agent,
   ChatTransport,
   InferAgentUIMessage,
   LanguageModel,
+  TextStreamPart,
+  ToolApprovalStatus,
   ToolLoopAgent,
+  ToolSet,
 } from "ai";
 import type { agent } from "./client-agent";
 
@@ -36,8 +38,20 @@ export type PromptRegistry = Record<string, PromptEntry>;
 export type MessageMetadata = NonNullable<ChatMessage["metadata"]>;
 
 /** Agent-typed UI message, tools auto-inferred from agent */
-export type UIChatMessage = InferAgentUIMessage<typeof agent, MessageMetadata>;
+type AgentType = typeof agent;
+export type UIChatMessage = InferAgentUIMessage<AgentType, MessageMetadata>;
+export type AgentTools = AgentType["tools"];
+export type AgentToolApproval = Partial<
+  Record<keyof AgentTools, ToolApprovalStatus>
+>;
+export type ToolsConfig = {
+  toolApproval: AgentToolApproval;
+  tools: AgentTools;
+};
 
+export type MessageMetadataFn = (options: {
+  part: TextStreamPart<ToolSet>;
+}) => MessageMetadata | undefined;
 export type AvatarComponent = FC<Omit<IconAvatarProps, "Icon">>;
 
 /** Form-managed subset of SettingModelConfig — single source of truth */
@@ -83,6 +97,9 @@ export type TestLLMConnectFC = (
 
 export type TestLLMConnects = Partial<Record<ProviderId, TestLLMConnectFC>>;
 
-export type AgentFC = (config: ProviderConfigValue) => Agent;
+export type TransportFC = (
+  config: ProviderConfigValue,
+  model: string,
+) => ChatTransport<UIChatMessage>;
 
-export type Agents = Partial<Record<ProviderId, AgentFC>>;
+export type Transports = Partial<Record<ProviderId, TransportFC>>;

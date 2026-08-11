@@ -202,8 +202,7 @@ description_i18n 存放各语言描述，必须提供。
     },
     "format.math": {
       description: "数学公式格式约束",
-      template:
-        "MATH FORMAT RULE (VIOLATION = NO RENDERING): All LaTeX MUST use $$...$$ delimiters. Inline: text $$formula$$ text (same line). Block: $$ on its own line, formula, $$ on its own line. FORBIDDEN: single $, \\( \\), \\[ \\], code blocks, raw LaTeX. Before every output, scan for math and verify $$ wrapping.",
+      template: String.raw`MATH FORMAT RULE (VIOLATION = NO RENDERING): All LaTeX MUST use $$...$$ delimiters. Inline: text $$formula$$ text (same line). Block: $$ on its own line, formula, $$ on its own line. FORBIDDEN: single $, \( \), \[ \], code blocks, raw LaTeX. Before every output, scan for math and verify $$ wrapping.`,
     },
     "format.markdown": {
       description: "Markdown 格式约束",
@@ -362,17 +361,21 @@ This lets students view the standard solution even without submitting an answer.
       description: "getKnowledgeGraph tool description",
       template:
         "Fetch the complete knowledge graph (all topics and dependency edges). Call this when students enter via the Welcome page's Understand flow to learn a concept/method/theorem. Use the graph to structure your explanation: find prerequisites, successor topics, and related topics in the same subject, helping students build a knowledge network. Returns topics (id/name/subject) and edges (prerequisite_id/topic_id/strength)",
-    },    "suggestion.understand.0": {
+    },
+    "suggestion.understand.0": {
       description: "Understand suggestion — concept",
-      template: "Help me understand a concept. First ask me what concept I want to learn.",
+      template:
+        "Help me understand a concept. First ask me what concept I want to learn.",
     },
     "suggestion.understand.1": {
       description: "Understand suggestion — method",
-      template: "Help me understand a method. First ask me what method I want to learn.",
+      template:
+        "Help me understand a method. First ask me what method I want to learn.",
     },
     "suggestion.understand.2": {
       description: "Understand suggestion — theorem",
-      template: "Help me understand a theorem. First ask me what theorem I want to learn.",
+      template:
+        "Help me understand a theorem. First ask me what theorem I want to learn.",
     },
     "suggestion.solve-problem.0": {
       description: "Practice suggestion — solve",
@@ -412,8 +415,7 @@ This lets students view the standard solution even without submitting an answer.
     },
     "format.math": {
       description: "Math format constraint",
-      template:
-        "MATH FORMAT RULE (VIOLATION = NO RENDERING): All LaTeX MUST use $$...$$ delimiters. Inline: text $$formula$$ text (same line). Block: $$ on its own line, formula, $$ on its own line. FORBIDDEN: single $, \\( \\), \\[ \\], code blocks, raw LaTeX. Before every output, scan for math and verify $$ wrapping.",
+      template: String.raw`MATH FORMAT RULE (VIOLATION = NO RENDERING): All LaTeX MUST use $$...$$ delimiters. Inline: text $$formula$$ text (same line). Block: $$ on its own line, formula, $$ on its own line. FORBIDDEN: single $, \( \), \[ \], code blocks, raw LaTeX. Before every output, scan for math and verify $$ wrapping.`,
     },
     "format.markdown": {
       description: "Markdown format constraint",

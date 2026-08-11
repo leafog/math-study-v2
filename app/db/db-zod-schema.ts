@@ -461,7 +461,7 @@ export const ChatMessageSchema = z.object({
   parts: z.array(z.any()),
   metadata: z
     .object({
-      created_at: z.date(),
+      created_at: z.date().optional(),
       reasonings_start_end: z.array(z.string()).optional(),
     })
     .catchall(z.any())

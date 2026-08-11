@@ -42,4 +42,3 @@ export const modelIconRecord: ModelIconRecord = keyBy(
 ) as ModelIconRecord;
 
 export { testLLMConnectRecord } from "./test-llm-connect";
-export { agentRecord } from "./create-agent";

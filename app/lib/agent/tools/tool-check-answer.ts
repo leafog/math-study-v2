@@ -1,6 +1,9 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { AnswerRecordSchema, CheckAnswerOutputSchema } from "~/db/db-zod-schema";
+import {
+  AnswerRecordSchema,
+  CheckAnswerOutputSchema,
+} from "~/db/db-zod-schema";
 import { answerRecordColl, answerAnalysisColl } from "~/db/tdb-collections";
 import { genId } from "~/lib/id-utils";
 import { normalizeMathDelimiters } from "~/lib/utils";

@@ -14,7 +14,6 @@ export function getPrompt(key: PromptKey, options?: PromptOptions): string {
       text = text.replaceAll(`{${k}}`, String(v));
     }
   }
-
   return text;
 }
 
