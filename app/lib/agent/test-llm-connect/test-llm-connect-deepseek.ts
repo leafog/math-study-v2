@@ -2,11 +2,11 @@ import { generateText } from "ai";
 import createLLMDeepseek from "../create-llm/create-llm-deepseek";
 import type { TestLLMConnectFC } from "../types";
 
-const testLLMConnectDeepseek: TestLLMConnectFC = async (config, _model) => {
-  const ds = createLLMDeepseek(config, "deepseek-v4-flash");
+const testLLMConnectDeepseek: TestLLMConnectFC = async (config, model) => {
+  const ds = createLLMDeepseek(config, model);
   const { text } = await generateText({
     model: ds,
-    prompt: "我在测试你能否连上 可以回一个ok 就完事 ",
+    prompt: "I'm testing the connection. Just reply 'ok' and we're done.",
   });
   console.log(text);
   return text.length > 0;

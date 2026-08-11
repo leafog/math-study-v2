@@ -1,4 +1,10 @@
-import type { ChatTransport, InferAgentUIMessage, LanguageModel } from "ai";
+import type {
+  Agent,
+  ChatTransport,
+  InferAgentUIMessage,
+  LanguageModel,
+  ToolLoopAgent,
+} from "ai";
 import type { agent } from "./client-agent";
 
 import { ModelProvider as ProviderId } from "@lobehub/icons";
@@ -76,3 +82,7 @@ export type TestLLMConnectFC = (
 ) => Promise<boolean>;
 
 export type TestLLMConnects = Partial<Record<ProviderId, TestLLMConnectFC>>;
+
+export type AgentFC = (config: ProviderConfigValue) => Agent;
+
+export type Agents = Partial<Record<ProviderId, AgentFC>>;

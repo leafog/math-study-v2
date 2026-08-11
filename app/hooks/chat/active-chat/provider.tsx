@@ -47,7 +47,7 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
             const start = meta[`reasoning-${i}:reasoning-start`];
             const end = meta[`reasoning-${i}:reasoning-end`];
             if (start != null && end != null) {
-              (part as any)._duration = Math.ceil((end - start) / 1000);
+              (part as any)._duration = Math.ceil((end - start) / 1000) + 1;
             }
           });
       }

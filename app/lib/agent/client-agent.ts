@@ -90,6 +90,7 @@ export const transport = new DirectChatTransport({
     }
   },
 });
+
 type UseAgentProps = {};
 export const useAgent = ({}: UseAgentProps) => {
   const { i18n } = useTranslation();
