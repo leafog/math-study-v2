@@ -147,6 +147,20 @@
       "review.0": "Review material",
       "review.1": "Key points",
       "review.2": "Review quiz"
+    },
+    "prompts": {
+      "understand.0": "Help me understand a concept. First ask me what concept I want to learn.",
+      "understand.1": "Help me understand a method. First ask me what method I want to learn.",
+      "understand.2": "Help me understand a theorem. First ask me what theorem I want to learn.",
+      "solve-problem.0": " Help me solve this problem",
+      "solve-problem.1": " Give me some similar practice problems",
+      "solve-problem.2": " Check if my answer is correct",
+      "knowledge-map.0": " What topics are related to this",
+      "knowledge-map.1": " Help me map out this chapter's structure",
+      "knowledge-map.2": " What are the prerequisite topics for this",
+      "review.0": " Help me review what I've learned recently",
+      "review.1": " Summarize today's key points",
+      "review.2": " Generate a review quiz for me"
     }
   },
   "welcome": {
@@ -168,9 +182,29 @@
     "buildRelationFailed": "Failed to build relation",
     "checkingAnswer": "Checking answer...",
     "answerCorrect": "Correct",
-    "answerWrong": "Incorrect",
+    "answerWrong": "Not quite, but that's okay!",
+    "answerInCorrect": "Not quite, but that's okay!",
+    "getHint": "Get a Hint",
     "checkAnswerFailed": "Check failed",
     "execFailed": "Execution failed",
+    "status": {
+      "approvalRequested": "Awaiting Approval",
+      "approvalResponded": "Responded",
+      "inputAvailable": "Running",
+      "inputStreaming": "Pending",
+      "outputAvailable": "Completed",
+      "outputDenied": "Denied",
+      "outputError": "Error"
+    },
+    "title": {
+      "checkAnswer": "Check Answer",
+      "createExplanation": "Generate Explanation",
+      "createProblem": "Create Problem",
+      "createRelationship": "Build Relationship",
+      "createTopic": "Record Topic",
+      "getKnowledgeGraph": "Get Knowledge Graph",
+      "searchSimilarTopics": "Search Similar"
+    },
     "creatingExplanation": "Generating explanation...",
     "explanationCreated": "Explanation generated",
     "createExplanationFailed": "Failed to generate explanation",

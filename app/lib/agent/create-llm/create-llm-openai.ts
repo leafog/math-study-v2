@@ -2,10 +2,7 @@ import type { CreateLLMFC } from "../types";
 import { createOpenAI } from "@ai-sdk/openai";
 
 const createLLMOpenAI: CreateLLMFC = (config, model) => {
-  const openai = createOpenAI({
-    baseURL: config.base_url,
-    apiKey: config.api_key,
-  });
+  const openai = createOpenAI(config);
   return openai.chat(model);
 };
 

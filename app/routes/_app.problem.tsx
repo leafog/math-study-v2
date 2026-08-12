@@ -138,7 +138,7 @@ const ProblemIndex = () => {
       <ContainerHeader className="h-20 mt-10">
         <div className="flex h-full justify-between items-center">
           <div>
-            <h1 className="text-3xl font-mono">{t("problem.title")}</h1>
+            <h1 className="text-3xl font-mono ">{t("problem.title")}</h1>
             <p className="text-sm text-muted-foreground">
               {t("problem.subtitle")}
             </p>
@@ -168,7 +168,7 @@ const ProblemIndex = () => {
           </Empty>
         ) : (
           <>
-            <div className="px-6 py-5 flex flex-col gap-4">
+            <div className="py-5 flex flex-col gap-4">
               {filtered.map((p) => (
                 <ProblemPreview
                   key={p.id}

@@ -2,10 +2,7 @@ import type { CreateLLMFC } from "../types";
 import { createDeepSeek } from "@ai-sdk/deepseek";
 
 const createLLMDeepseek: CreateLLMFC = (config, model) => {
-  const deepseek = createDeepSeek({
-    baseURL: config.base_url,
-    apiKey: config.api_key,
-  });
+  const deepseek = createDeepSeek(config);
   return deepseek.chat(model);
 };
 

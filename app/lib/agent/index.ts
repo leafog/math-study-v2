@@ -34,7 +34,7 @@ export const modelIcons: ModelIcon[] = [
     text: Kimi.Text,
   },
 ];
-export { modelConfigUIRecord } from "./provider-config-ui";
+export { modelConfigUIs } from "./provider-config-ui";
 
 export const modelIconRecord: ModelIconRecord = keyBy(
   modelIcons,
@@ -42,3 +42,4 @@ export const modelIconRecord: ModelIconRecord = keyBy(
 ) as ModelIconRecord;
 
 export { testLLMConnectRecord } from "./test-llm-connect";
+export { transports } from "./create-transport";

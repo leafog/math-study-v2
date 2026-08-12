@@ -1,4 +1,6 @@
 import { eq, useLiveSuspenseQuery } from "@tanstack/react-db";
+import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Outlet, useLocation } from "react-router";
 import AppSidebar from "~/components/chat/app-sider";
 import ChatShell from "~/components/chat/chat-shell";
@@ -7,6 +9,7 @@ import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar";
 import { initDb } from "~/db/pw-db";
 import { zustandStorageColl } from "~/db/tdb-collections";
 import { ActiveChatProvider } from "~/hooks/chat/active-chat";
+
 import { initWorkerApi } from "~/lib/similar";
 import { cn } from "~/lib/utils";
 
@@ -24,12 +27,17 @@ const AppLayout = () => {
       .where(({ zustandStorageColl }) => eq(zustandStorageColl.id, "none"))
       .findOne();
   }, []);
+  const { t, i18n } = useTranslation();
+
+  useEffect(() => {
+    console.log(i18n.services.resourceStore.data);
+  }, [i18n]);
 
   const hiddenRoutes = ["/library", "/graph", "/problem", "/settings"];
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset className="border-l border-border  w-full overflow-hidden">
+      <SidebarInset className="border-l border-border  w-full overflow-hidden overscroll-none">
         <div className="h-screen flex">
           <ActiveChatProvider>
             <div

@@ -147,6 +147,20 @@
       "review.0": "复习内容",
       "review.1": "总结重点",
       "review.2": "复习检测"
+    },
+    "prompts": {
+      "understand.0": "帮我理解一个概念。先问我想理解什么概念。",
+      "understand.1": "帮我理解一个方法。先问我想理解什么方法。",
+      "understand.2": "帮我理解一个定理。先问我想理解什么定理。",
+      "solve-problem.0": "帮我解这道题",
+      "solve-problem.1": "给我出几道类似的练习题",
+      "solve-problem.2": "检查我的答案是否正确",
+      "knowledge-map.0": "这个知识点关联哪些内容",
+      "knowledge-map.1": "帮我梳理这一章的知识结构",
+      "knowledge-map.2": "查看这个领域的前置知识",
+      "review.0": "帮我复习最近学的内容",
+      "review.1": "总结今天的重点知识",
+      "review.2": "生成一份复习检测题"
     }
   },
   "welcome": {
@@ -168,9 +182,29 @@
     "buildRelationFailed": "关系建立失败",
     "checkingAnswer": "正在检查回答...",
     "answerCorrect": "回答正确",
-    "answerWrong": "回答有误",
+    "answerWrong": "不太对，但没关系！",
+    "answerInCorrect": "不太对，但没关系！",
+    "getHint": "获取提示",
     "checkAnswerFailed": "检查失败",
     "execFailed": "执行失败",
+    "status": {
+      "approvalRequested": "等待审批",
+      "approvalResponded": "已响应",
+      "inputAvailable": "执行中",
+      "inputStreaming": "等待中",
+      "outputAvailable": "已完成",
+      "outputDenied": "已拒绝",
+      "outputError": "错误"
+    },
+    "title": {
+      "checkAnswer": "检查答案",
+      "createExplanation": "生成解析",
+      "createProblem": "创建题目",
+      "createRelationship": "建立关系",
+      "createTopic": "记录知识点",
+      "getKnowledgeGraph": "获取知识图谱",
+      "searchSimilarTopics": "搜索相似"
+    },
     "creatingExplanation": "正在生成解析...",
     "explanationCreated": "解析已生成",
     "createExplanationFailed": "生成解析失败",

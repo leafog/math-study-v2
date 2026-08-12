@@ -83,23 +83,25 @@ export type CreateChatTranSportAgentFC = (
   config: SettingModelConfig,
 ) => ChatTransport<UIChatMessage>;
 
-export type CreateLLMFC = (
-  config: ProviderConfigValue,
-  model: string,
-) => LanguageModel;
+export type LLMConfig = { apiKey: string; baseUrl: string };
+
+export type CreateLLMFC = (config: LLMConfig, model: string) => LanguageModel;
 
 export type CreateLLMs = Partial<Record<ProviderId, CreateLLMFC>>;
 
 export type TestLLMConnectFC = (
-  config: ProviderConfigValue,
+  config: LLMConfig,
   model: string,
 ) => Promise<boolean>;
 
 export type TestLLMConnects = Partial<Record<ProviderId, TestLLMConnectFC>>;
-
+export interface TransportOptions {
+  locale?: Locale;
+}
 export type TransportFC = (
-  config: ProviderConfigValue,
+  config: LLMConfig,
   model: string,
+  options: TransportOptions,
 ) => ChatTransport<UIChatMessage>;
 
 export type Transports = Partial<Record<ProviderId, TransportFC>>;

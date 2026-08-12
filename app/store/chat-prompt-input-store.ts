@@ -55,17 +55,19 @@ export const createChatPromptInputStore = (
   chatId: string,
 ): ChatPromptInputStore => {
   if (isNewChat) {
-    newChatPromptInputStore.getState().reset();
     return newChatPromptInputStore;
   }
   let store = chatPromptInputStoreCache.get(chatId);
   if (!store) {
     store = createSelectors(
       create(
-        persist(chatPromptInputStoreCreator(chatPromptInputStateDefault), {
-          name: toKey(chatId),
-          storage: createJSONStorage(() => tanstackDbStorage),
-        }),
+        persist(
+          chatPromptInputStoreCreator(newChatPromptInputStore.getState()),
+          {
+            name: toKey(chatId),
+            storage: createJSONStorage(() => tanstackDbStorage),
+          },
+        ),
       ),
     );
     chatPromptInputStoreCache.set(chatId, store);

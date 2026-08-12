@@ -50,7 +50,7 @@ import { Checkbox } from "../ui/checkbox";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from "../ui/empty";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import { ProviderId, type ProviderConfigValue } from "~/lib/agent/types";
-import { modelConfigUIRecord, modelIconRecord } from "~/lib/agent";
+import { modelConfigUIs, modelIconRecord } from "~/lib/agent";
 
 import { useChatDefaultModel } from "~/store/chat-default-model";
 
@@ -65,13 +65,8 @@ type ConfigData = {
 };
 const ModelConfig = () => {
   const { t } = useTranslation();
-  const {
-    validProviders,
-    hasConfig,
-    insertConfig,
-    updateConfig,
-    deleteConfig,
-  } = useChatAgent();
+  const { validProviders, insertConfig, updateConfig, deleteConfig } =
+    useChatAgent();
 
   const [dialogProviderId, setDialogProviderId] = useState<ProviderId | null>(
     null,
@@ -108,7 +103,7 @@ const ModelConfig = () => {
     : null;
 
   const DialogConfig = dialogProviderId
-    ? (modelConfigUIRecord[dialogProviderId] ?? null)
+    ? (modelConfigUIs[dialogProviderId] ?? null)
     : null;
 
   const handleOpenConfig = (id: ProviderId) => {
@@ -203,12 +198,7 @@ const ModelConfig = () => {
           <CardDescription>{t("settings.modelDesc")}</CardDescription>
         </CardHeader>
         <CardContent>
-          <Accordion
-            type="multiple"
-            defaultValue={
-              hasConfig ? ["configured-models"] : ["available-providers"]
-            }
-          >
+          <Accordion type="multiple" defaultValue={["available-providers"]}>
             {/* Accordion 1: 可添加的服务商目录 */}
             <AccordionItem value="available-providers">
               <AccordionTrigger>
@@ -218,161 +208,152 @@ const ModelConfig = () => {
                 <ModelProviderList onOpenConfig={handleOpenConfig} />
               </AccordionContent>
             </AccordionItem>
-
-            {/* Accordion 2: 已配置的模型列表 */}
-            <AccordionItem value="configured-models">
-              <AccordionTrigger>
-                {t("settings.configuredModels")}
-              </AccordionTrigger>
-              <AccordionContent key={validProviders.length}>
-                {validProviders.length > 0 ? (
-                  <div className="grid  gap-4">
-                    {validProviders.map(
-                      ({
-                        provider,
-                        id,
-                        provider_id,
-                        config_name,
-                        selected_models,
-                        all_models,
-                        api_key,
-                        base_url,
-                      }) => {
-                        const cfg: ConfigData = {
-                          id,
-                          provider_id,
-                          api_key,
-                          base_url,
-                          config_name: config_name ?? "",
-                          all_models: all_models ?? [],
-                          selected_models: selected_models ?? [],
-                        };
-
-                        const onCheckedChange = onCheckedChangeFactory(cfg);
-                        const onSetDefault = onSetDefaultFactory(cfg);
-                        const onEdit = onEditFactory(cfg)(provider.id);
-
-                        return (
-                          <Item key={id} variant={"muted"}>
-                            <ItemMedia>
-                              <provider.avatar size={24} shape="square" />
-                            </ItemMedia>
-                            <ItemContent>
-                              <ItemTitle>
-                                <provider.text />
-                                {cfg.config_name || provider.id}
-                              </ItemTitle>
-                            </ItemContent>
-                            <ItemActions className="opacity-0 gap-1 group-hover/item:opacity-100">
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={onEdit}
-                              >
-                                <Edit />
-                              </Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    disabled={defaultModel?.id === id}
-                                  >
-                                    <Trash2 className="text-destructive" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>
-                                      {t("settings.deleteConfigTitle")}
-                                    </AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      {t("settings.deleteConfigDesc", {
-                                        name: cfg.config_name || provider.id,
-                                      })}
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>
-                                      {t("common.cancel")}
-                                    </AlertDialogCancel>
-                                    <AlertDialogAction
-                                      variant="destructive"
-                                      onClick={() => deleteConfig(id)}
-                                    >
-                                      {t("common.delete")}
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </ItemActions>
-                            <ItemFooter>
-                              <FieldGroup className="gap-2 grid grid-cols-2 md:grid-cols-3">
-                                {cfg.all_models.map((model) => {
-                                  const isDefault =
-                                    defaultModel?.id === id &&
-                                    defaultModel?.model_name === model;
-                                  return (
-                                    <FieldLabel key={model}>
-                                      <Field
-                                        orientation="horizontal"
-                                        className="group/model-row"
-                                      >
-                                        <Checkbox
-                                          id={`${id}-${model}`}
-                                          checked={cfg.selected_models.includes(
-                                            model,
-                                          )}
-                                          disabled={isDefault}
-                                          onCheckedChange={(checked) =>
-                                            onCheckedChange(model, checked)
-                                          }
-                                        />
-                                        <FieldContent>
-                                          <FieldTitle className="flex w-full justify-between items-center">
-                                            {model}
-                                            {isDefault ? (
-                                              <Badge>default</Badge>
-                                            ) : (
-                                              <Button
-                                                variant="outline"
-                                                size="xs"
-                                                className="opacity-0 group-hover/model-row:opacity-100 transition-opacity"
-                                                onClick={() =>
-                                                  onSetDefault(model)
-                                                }
-                                              >
-                                                default
-                                              </Button>
-                                            )}
-                                          </FieldTitle>
-                                        </FieldContent>
-                                      </Field>
-                                    </FieldLabel>
-                                  );
-                                })}
-                              </FieldGroup>
-                            </ItemFooter>
-                          </Item>
-                        );
-                      },
-                    )}
-                  </div>
-                ) : (
-                  <Empty className="py-4">
-                    <EmptyHeader>
-                      <EmptyMedia variant="icon">
-                        <PackageOpen />
-                      </EmptyMedia>
-                      <EmptyTitle>
-                        {t("settings.noConfiguredModels")}
-                      </EmptyTitle>
-                    </EmptyHeader>
-                  </Empty>
-                )}
-              </AccordionContent>
-            </AccordionItem>
           </Accordion>
+        </CardContent>
+      </Card>
+
+      <Card size="sm">
+        <CardHeader>
+          <CardTitle>{t("settings.configuredModels")}</CardTitle>
+        </CardHeader>
+        <CardContent key={validProviders.length}>
+          {validProviders.length > 0 ? (
+            <div className="grid gap-4">
+              {validProviders.map(
+                ({
+                  provider,
+                  id,
+                  provider_id,
+                  config_name,
+                  selected_models,
+                  all_models,
+                  api_key,
+                  base_url,
+                }) => {
+                  const cfg: ConfigData = {
+                    id,
+                    provider_id,
+                    api_key,
+                    base_url,
+                    config_name: config_name ?? "",
+                    all_models: all_models ?? [],
+                    selected_models: selected_models ?? [],
+                  };
+
+                  const onCheckedChange = onCheckedChangeFactory(cfg);
+                  const onSetDefault = onSetDefaultFactory(cfg);
+                  const onEdit = onEditFactory(cfg)(provider.id);
+
+                  return (
+                    <Item key={id} variant={"muted"}>
+                      <ItemMedia>
+                        <provider.avatar size={24} shape="square" />
+                      </ItemMedia>
+                      <ItemContent>
+                        <ItemTitle>
+                          <provider.text />
+                          {cfg.config_name || provider.id}
+                        </ItemTitle>
+                      </ItemContent>
+                      <ItemActions className="opacity-0 gap-1 group-hover/item:opacity-100">
+                        <Button size="icon" variant="ghost" onClick={onEdit}>
+                          <Edit />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              disabled={defaultModel?.id === id}
+                            >
+                              <Trash2 className="text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                {t("settings.deleteConfigTitle")}
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {t("settings.deleteConfigDesc", {
+                                  name: cfg.config_name || provider.id,
+                                })}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>
+                                {t("common.cancel")}
+                              </AlertDialogCancel>
+                              <AlertDialogAction
+                                variant="destructive"
+                                onClick={() => deleteConfig(id)}
+                              >
+                                {t("common.delete")}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </ItemActions>
+                      <ItemFooter>
+                        <FieldGroup className="gap-2 grid grid-cols-2 md:grid-cols-3">
+                          {cfg.all_models.map((model) => {
+                            const isDefault =
+                              defaultModel?.id === id &&
+                              defaultModel?.model_name === model;
+                            return (
+                              <FieldLabel key={model}>
+                                <Field
+                                  orientation="horizontal"
+                                  className="group/model-row"
+                                >
+                                  <Checkbox
+                                    id={`${id}-${model}`}
+                                    checked={cfg.selected_models.includes(
+                                      model,
+                                    )}
+                                    disabled={isDefault}
+                                    onCheckedChange={(checked) =>
+                                      onCheckedChange(model, checked)
+                                    }
+                                  />
+                                  <FieldContent>
+                                    <FieldTitle className="flex w-full justify-between items-center">
+                                      {model}
+                                      {isDefault ? (
+                                        <Badge>default</Badge>
+                                      ) : (
+                                        <Button
+                                          variant="outline"
+                                          size="xs"
+                                          className="opacity-0 group-hover/model-row:opacity-100 transition-opacity"
+                                          onClick={() => onSetDefault(model)}
+                                        >
+                                          default
+                                        </Button>
+                                      )}
+                                    </FieldTitle>
+                                  </FieldContent>
+                                </Field>
+                              </FieldLabel>
+                            );
+                          })}
+                        </FieldGroup>
+                      </ItemFooter>
+                    </Item>
+                  );
+                },
+              )}
+            </div>
+          ) : (
+            <Empty className="py-4">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <PackageOpen />
+                </EmptyMedia>
+                <EmptyTitle>{t("settings.noConfiguredModels")}</EmptyTitle>
+              </EmptyHeader>
+            </Empty>
+          )}
         </CardContent>
       </Card>
 

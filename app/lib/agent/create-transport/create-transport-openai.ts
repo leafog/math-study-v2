@@ -3,18 +3,18 @@ import type { TransportFC } from "../types";
 import { getPrompt } from "../instructions";
 
 import { commonToolsConfig } from "../tools";
-import createLLMDeepseek from "../create-llm/create-llm-deepseek";
+import createLLMOpenAI from "../create-llm/create-llm-openai";
 import { messageMetadata } from "../client-agent";
 
-const createTransportDeepseek: TransportFC = (config, model, options) => {
-  const deepseek = createLLMDeepseek(config, model);
+const createTransportOpenAI: TransportFC = (config, model, options) => {
+  const openai = createLLMOpenAI(config, model);
   const locale = options.locale ?? "en";
   const instructions = getPrompt("system", {
     vars: { language: locale },
   });
 
   const agent = new ToolLoopAgent({
-    model: deepseek,
+    model: openai,
     instructions,
     ...commonToolsConfig,
   });
@@ -25,4 +25,4 @@ const createTransportDeepseek: TransportFC = (config, model, options) => {
   });
 };
 
-export default createTransportDeepseek;
+export default createTransportOpenAI;

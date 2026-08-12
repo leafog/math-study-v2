@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { ToolCallLabel } from "./_tool-call-label";
 import type { ToolRendererProps } from "./types";
+import { ToolInline } from "./_tool-common";
 
 export const SearchSimilarTopics = ({
   part,
@@ -8,11 +8,6 @@ export const SearchSimilarTopics = ({
   const { t } = useTranslation();
 
   return (
-    <ToolCallLabel
-      state={part.state}
-      loadingKey="toolCall.searchingSimilar"
-      doneText={t("toolCall.searchComplete")}
-      errorKey="toolCall.searchSimilarFailed"
-    />
+    <ToolInline title={t("toolCall.title.searchSimilarTopics")} part={part} />
   );
 };

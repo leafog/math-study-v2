@@ -1,7 +1,13 @@
 import { createDeepSeek } from "@ai-sdk/deepseek";
-import { DirectChatTransport, ToolLoopAgent, wrapLanguageModel } from "ai";
-import type { LanguageModelMiddleware } from "ai";
-import type { MessageMetadataFn } from "./types";
+import { DirectChatTransport, ToolLoopAgent } from "ai";
+import type { ChatTransport } from "ai";
+import type {
+  LLMConfig,
+  Locale,
+  MessageMetadataFn,
+  ProviderId,
+  UIChatMessage,
+} from "./types";
 import { createTopic } from "./tools/tool-create-topic";
 import { createRelationship } from "./tools/tool-create-relationship";
 import { createProblem } from "./tools/tool-create-problem";
@@ -10,9 +16,11 @@ import { createExplanation } from "./tools/tool-create-explanation";
 import { searchSimilarTopics } from "./tools/tool-search-similar-topics";
 import { getKnowledgeGraph } from "./tools/tool-get-knowledge-graph";
 import { instructions } from "./instructions";
-import { useTranslation } from "react-i18next";
 import {} from "./tools";
-import { genId } from "../id-utils";
+import { genId, hashString } from "../id-utils";
+import { useTranslation } from "react-i18next";
+import { transports } from "./create-transport";
+
 export const deepseek = createDeepSeek({
   apiKey: "",
 });
@@ -61,8 +69,37 @@ export const transport = new DirectChatTransport({
   sendReasoning: true,
   messageMetadata,
 });
+const TransportMap = new Map<string, ChatTransport<UIChatMessage>>();
 
-type UseAgentProps = {};
-export const useAgent = ({}: UseAgentProps) => {
+const calcAgentKey = (
+  providerId: ProviderId,
+  config: LLMConfig,
+  model: string,
+  locale: Locale,
+) => {
+  return hashString(
+    `${providerId}:${config.apiKey}:${config.baseUrl}:${model}:${locale}`,
+  );
+};
+
+export const useAgent = (
+  providerId: ProviderId | undefined,
+  config: LLMConfig | undefined,
+  model: string | undefined,
+): ChatTransport<UIChatMessage> | undefined => {
   const { i18n } = useTranslation();
+  const locale: Locale = i18n.language?.startsWith("zh") ? "zh" : "en";
+
+  if (!providerId || !config || !model) return undefined;
+
+  const key = calcAgentKey(providerId, config, model, locale);
+  const cached = TransportMap.get(key);
+  if (cached) return cached;
+
+  const createTransport = transports[providerId];
+  if (!createTransport) return undefined;
+
+  const transport = createTransport(config, model, { locale });
+  TransportMap.set(key, transport);
+  return transport;
 };

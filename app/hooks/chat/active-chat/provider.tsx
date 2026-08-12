@@ -1,10 +1,10 @@
 import { useEffect, useMemo, type ReactNode } from "react";
 import { useChat } from "@ai-sdk/react";
-import { transport } from "~/lib/agent/client-agent";
+import { transport, useAgent } from "~/lib/agent/client-agent";
 import { genId } from "~/lib/id-utils";
 import { chatMessageColl } from "~/db/tdb-collections";
 import { createChatToolsPanelStore } from "~/store/chat-tools-panel-store";
-import type { UIChatMessage } from "~/lib/agent/types";
+import type { ProviderId, UIChatMessage } from "~/lib/agent/types";
 import {
   ActiveChatContext,
   ChatHelpersContext,
@@ -22,6 +22,7 @@ import useChatProblemsManager from "./manager/use-chat-problems-manager";
 import useChatKgTopicsManager from "./manager/use-chat-kg-topics-manager";
 import useChatPromptInputManager from "./manager/use-chat-prompt-input-manager";
 import useChatAgentManager from "./manager/use-chat-agent-manager";
+import { toast } from "sonner";
 
 export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
   // const { chatId, isNewChat, createChat } = useChatIdManager();
@@ -32,12 +33,27 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
 
   const initMessages = useMessagesManager(chatId);
 
-  const chatHelpers = useChat<UIChatMessage>({
+  const chatAgentState = useChatAgentManager();
+  const chatPromptInputStore = useChatPromptInputManager(isNewChat, chatId);
+  const { id, model_name } = chatPromptInputStore.use.currentModel() ?? {};
+  const config = chatAgentState.settings.find((it) => it.id === id);
+
+  const agentTransport = useAgent(
+    config?.provider_id as ProviderId | undefined,
+    config ? { apiKey: config.api_key, baseUrl: config.base_url } : undefined,
+    model_name,
+  );
+
+  const chatHelpersRaw = useChat<UIChatMessage>({
     id: chatId,
-    transport,
+    transport: agentTransport!,
     generateId: genId,
     messages: initMessages,
+    throttle: 100,
     onToolCall: async ({ toolCall }) => {},
+    onError: (error) => {
+      toast.error(error.message, { position: "top-center" });
+    },
     onFinish: ({ message }) => {
       const meta = message.metadata as Record<string, number> | undefined;
       if (meta) {
@@ -72,6 +88,11 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
     // sendAutomaticallyWhen: () => true,
   });
 
+  const chatHelpers = useMemo(
+    () => chatHelpersRaw,
+    [chatHelpersRaw.messages, chatHelpersRaw.status, chatHelpersRaw.error],
+  );
+
   const chatToolsPanelStore = useMemo(() => {
     return createChatToolsPanelStore(isNewChat, chatId);
   }, [isNewChat, chatId]);
@@ -85,8 +106,6 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
   const chatToolsManager = useChatToolsManager(chatId, onOpenBefore);
   const chatProblemState = useChatProblemsManager(chatId);
   const chatKgTopicsState = useChatKgTopicsManager(chatId);
-  const chatPromptInputStore = useChatPromptInputManager(isNewChat, chatId);
-  const chatAgentState = useChatAgentManager();
 
   return (
     <ChatAgentContext.Provider value={chatAgentState}>

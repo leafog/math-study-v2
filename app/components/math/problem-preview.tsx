@@ -38,6 +38,7 @@ import { ButtonGroup } from "../ui/button-group";
 import { usePinnedProblems } from "~/store/pinned-problems-store";
 import { useBoolean } from "usehooks-ts";
 import type { ProblemFull, ProblemStateColor } from "./type";
+import { PROBLEM_STATE_COLORS } from "./constants";
 import { keyBy } from "lodash-es";
 import { motion, useAnimationControls } from "motion/react";
 import KgTopicInChatItem from "../graph/kg-topic-in-chat-item";
@@ -54,10 +55,11 @@ export type ProblemProps = {
 
 export const toStateColor = (answers: AnswerRecord[]): ProblemStateColor => {
   if (answers.length === 0) {
-    return "bg-muted-foreground";
-  } else {
-    return answers.some((it) => it.correct) ? "bg-primary" : "bg-destructive";
+    return PROBLEM_STATE_COLORS.unanswered;
   }
+  return answers.some((it) => it.correct)
+    ? PROBLEM_STATE_COLORS.correct
+    : PROBLEM_STATE_COLORS.incorrect;
 };
 const ProblemPreview = forwardRef<ProblemPreviewHandle, ProblemProps>(
   (
@@ -207,8 +209,14 @@ const ProblemPreview = forwardRef<ProblemPreviewHandle, ProblemProps>(
                                   "mt-1.5 size-2 shrink-0 rounded-full cursor-help",
                                   "hover:ring-2 hover:ring-offset-1 hover:ring-offset-background transition-all",
                                   it.correct
-                                    ? "bg-primary hover:ring-primary/40"
-                                    : "bg-destructive hover:ring-destructive/40",
+                                    ? cn(
+                                        PROBLEM_STATE_COLORS.correct,
+                                        "hover:ring-green-600/40",
+                                      )
+                                    : cn(
+                                        PROBLEM_STATE_COLORS.incorrect,
+                                        "hover:ring-amber-600/40",
+                                      ),
                                 )}
                               />
                             </HoverCardTrigger>
@@ -228,7 +236,9 @@ const ProblemPreview = forwardRef<ProblemPreviewHandle, ProblemProps>(
                           <span
                             className={cn(
                               "mt-1.5 size-2 shrink-0 rounded-full",
-                              it.correct ? "bg-primary" : "bg-destructive",
+                              it.correct
+                                ? PROBLEM_STATE_COLORS.correct
+                                : PROBLEM_STATE_COLORS.incorrect,
                             )}
                           />
                         )}

@@ -5,7 +5,7 @@ import AnthropicConfig from "./provider-anthropic";
 import GeminiConfig from "./provider-gemini";
 import KimiConfig from "./provider-kimi";
 
-export const modelConfigUIRecord: ModelConfigUIRecord = {
+export const modelConfigUIs: ModelConfigUIRecord = {
   [ProviderId.DeepSeek]: DeepSeekConfig,
   [ProviderId.OpenAI]: OpenAIConfig,
   [ProviderId.Anthropic]: AnthropicConfig,

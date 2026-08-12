@@ -46,7 +46,10 @@ const ChatProblemsList = () => {
         return (
           <div
             key={p.id}
-            className="group flex items-center px-2 py-1.5 text-xs rounded-md hover:bg-accent transition-colors"
+            className={cn(
+              "group flex items-center px-2 py-1.5 text-xs rounded-md hover:bg-accent transition-colors",
+              pinnedId === p.id ? "bg-accent" : "",
+            )}
           >
             <button
               type="button"
@@ -59,7 +62,12 @@ const ChatProblemsList = () => {
               <span className="truncate">
                 {p.description || p.content.slice(0, 40)}
               </span>
-              <div className="absolute right-0 top-1/2 -translate-y-1/2 z-40 flex items-center gap-0.5 rounded bg-accent px-1 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div
+                className={cn(
+                  "absolute right-0 top-1/2 -translate-y-1/2 z-40 flex items-center gap-0.5 rounded bg-accent px-1 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity",
+                  pinnedId === p.id ? "opacity-100" : "",
+                )}
+              >
                 {problemHasanswers(p.id) && (
                   <span
                     onClick={(e) => {

@@ -26,7 +26,7 @@ const ContainerHeader = ({
 }: React.ComponentProps<"div">) => {
   return (
     <div className={cn("shrink-0 bg-card/50 ", className)} {...props}>
-      <div className="max-w-3xl mx-auto size-full">{children}</div>
+      <div className="max-w-3xl mx-auto size-full px-4">{children}</div>
     </div>
   );
 };
@@ -53,7 +53,7 @@ const ContainerSticky = ({
       )}
       {...props}
     >
-      <div className="max-w-3xl mx-auto w-full h-full flex items-center">
+      <div className="max-w-3xl mx-auto w-full h-full flex items-center px-4">
         {children}
       </div>
     </div>
@@ -66,7 +66,7 @@ const ContainerBody = ({
 }: React.ComponentProps<"div">) => {
   return (
     <div
-      className={cn("flex-1 min-h-0 max-w-3xl mx-auto w-full", className)}
+      className={cn("flex-1 min-h-0 max-w-3xl mx-auto w-full px-4", className)}
       {...props}
     />
   );

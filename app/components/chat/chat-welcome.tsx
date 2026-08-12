@@ -27,68 +27,68 @@ const suggestionMap: Record<
     {
       prevKey: "suggestion.prev.understand",
       showKey: "suggestion.show.understand.0",
-      promptKey: "suggestion.understand.0",
+      promptKey: "suggestion.prompts.understand.0",
     },
     {
       prevKey: "suggestion.prev.understand",
       showKey: "suggestion.show.understand.1",
-      promptKey: "suggestion.understand.1",
+      promptKey: "suggestion.prompts.understand.1",
     },
     {
       prevKey: "suggestion.prev.understand",
       showKey: "suggestion.show.understand.2",
-      promptKey: "suggestion.understand.2",
+      promptKey: "suggestion.prompts.understand.2",
     },
   ],
   "solve-problem": [
     {
       prevKey: "suggestion.prev.solve-problem",
       showKey: "suggestion.show.solve-problem.0",
-      promptKey: "suggestion.solve-problem.0",
+      promptKey: "suggestion.prompts.solve-problem.0",
     },
     {
       prevKey: "suggestion.prev.solve-problem",
       showKey: "suggestion.show.solve-problem.1",
-      promptKey: "suggestion.solve-problem.1",
+      promptKey: "suggestion.prompts.solve-problem.1",
     },
     {
       prevKey: "suggestion.prev.solve-problem",
       showKey: "suggestion.show.solve-problem.2",
-      promptKey: "suggestion.solve-problem.2",
+      promptKey: "suggestion.prompts.solve-problem.2",
     },
   ],
   "knowledge-map": [
     {
       prevKey: "suggestion.prev.knowledge-map",
       showKey: "suggestion.show.knowledge-map.0",
-      promptKey: "suggestion.knowledge-map.0",
+      promptKey: "suggestion.prompts.knowledge-map.0",
     },
     {
       prevKey: "suggestion.prev.knowledge-map",
       showKey: "suggestion.show.knowledge-map.1",
-      promptKey: "suggestion.knowledge-map.1",
+      promptKey: "suggestion.prompts.knowledge-map.1",
     },
     {
       prevKey: "suggestion.prev.knowledge-map",
       showKey: "suggestion.show.knowledge-map.2",
-      promptKey: "suggestion.knowledge-map.2",
+      promptKey: "suggestion.prompts.knowledge-map.2",
     },
   ],
   review: [
     {
       prevKey: "suggestion.prev.review",
       showKey: "suggestion.show.review.0",
-      promptKey: "suggestion.review.0",
+      promptKey: "suggestion.prompts.review.0",
     },
     {
       prevKey: "suggestion.prev.review",
       showKey: "suggestion.show.review.1",
-      promptKey: "suggestion.review.1",
+      promptKey: "suggestion.prompts.review.1",
     },
     {
       prevKey: "suggestion.prev.review",
       showKey: "suggestion.show.review.2",
-      promptKey: "suggestion.review.2",
+      promptKey: "suggestion.prompts.review.2",
     },
   ],
 };
@@ -97,7 +97,7 @@ const CARD_MIN_WIDTH = 150;
 const GAP = 16;
 const MAX_COLS = 4;
 
-const ChatWelCome = () => {
+const ChatWelcome = () => {
   const { t } = useTranslation();
   const [ref, { width }] = useMeasure();
 
@@ -118,7 +118,10 @@ const ChatWelCome = () => {
         <span className="text-3xl">{t("welcome.title")}</span>
       </div>
       <div
-        className={cn("grid gap-4 w-full", hasInputValue && "opacity-0")}
+        className={cn(
+          "grid gap-4 w-full ",
+          hasInputValue && "opacity-0 pointer-events-none",
+        )}
         style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
       >
         {welcomeActions.slice(0, cols).map((action, index) => {
@@ -166,4 +169,4 @@ const ChatWelCome = () => {
   );
 };
 
-export default ChatWelCome;
+export default ChatWelcome;

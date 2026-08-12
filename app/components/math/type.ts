@@ -5,6 +5,7 @@ import type {
   Problem,
   ProblemExplanation,
 } from "~/db/db-zod-schema";
+import { PROBLEM_STATE_COLORS } from "./constants";
 
 export interface ProblemFull {
   problem: Problem;
@@ -14,5 +15,6 @@ export interface ProblemFull {
   problemExplanations?: ProblemExplanation[];
   chatId?: string;
 }
+
 export type ProblemStateColor =
-  "bg-muted-foreground" | "bg-primary" | "bg-destructive";
+  (typeof PROBLEM_STATE_COLORS)[keyof typeof PROBLEM_STATE_COLORS];

@@ -15,7 +15,7 @@ export function scrollToSeletion(
   if (rect.top >= viewportHeight * 0.2 && rect.bottom <= viewportHeight * 0.8) {
     return;
   }
-  el.scrollIntoView({ behavior: "smooth", block: "start" });
+  el.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
 /**
@@ -32,7 +32,7 @@ export function scrollToProblemWithOutEvent(problemId: string): void {
   if (rect.top >= viewportHeight * 0.2 && rect.bottom <= viewportHeight * 0.8) {
     return;
   }
-  el.scrollIntoView({ behavior: "smooth", block: "start" });
+  el.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
 export function scrollToProblem(problemId: string): void {

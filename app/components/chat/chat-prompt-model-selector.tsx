@@ -50,10 +50,16 @@ const ChatPromptModelSelector = () => {
 
   // Fall back to defaultModel if currentModel is invalid or missing
   useEffect(() => {
+    console.log("fill this", isCurrentModelValid, defaultModel);
     if (!isCurrentModelValid && defaultModel) {
+      console.log("fill");
       setCurrentModel(defaultModel);
     }
   }, [isCurrentModelValid, defaultModel, setCurrentModel]);
+
+  useEffect(() => {
+    console.log(currentModel, "look");
+  }, [currentModel]);
 
   const activeModel = isCurrentModelValid ? currentModel : defaultModel;
   const currentValue = activeModel

@@ -22,6 +22,7 @@ export type AgentToolPart = ToolPartMap[keyof ToolPartMap];
 export type ToolRendererProps<K extends keyof ToolPartMap> = {
   part: ToolPartMap[K];
 };
+export type AgentToolState = ToolPartMap[keyof ToolPartMap]["state"];
 
 export type ToolPartRenderMap = {
   [K in keyof ToolPartMap]?: ComponentType<{ part: ToolPartMap[K] }>;

@@ -157,6 +157,8 @@ const ProviderCommon: FC<ProviderCommonProps> = ({
     form.store,
     (it) => it.values.all_models?.length ?? 0,
   );
+  const baseUrl = useSelector(form.store, (it) => it.values.base_url);
+
   const testFn = testLLMConnectRecord[providerId];
   const canTest = Boolean(
     testFn && apiKey?.trim() && allModelsLength > 0 && !testing,
@@ -166,7 +168,7 @@ const ProviderCommon: FC<ProviderCommonProps> = ({
   useEffect(() => {
     setTestSuccess(false);
     setHasTested(false);
-  }, [apiKey, allModelsLength]);
+  }, [apiKey, allModelsLength, baseUrl]);
 
   const handleTest = async () => {
     if (!testFn) return;
@@ -174,8 +176,8 @@ const ProviderCommon: FC<ProviderCommonProps> = ({
     try {
       const result = await testFn(
         {
-          api_key: apiKey ?? "",
-          base_url: form.getFieldValue("base_url") || defaultBaseUrl,
+          apiKey,
+          baseUrl: form.getFieldValue("base_url") || defaultBaseUrl,
         },
         allModels[0],
       );

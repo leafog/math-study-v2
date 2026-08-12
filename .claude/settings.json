@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(ps -p 2744,3692 -o pid,stat,comm)",
-      "Bash(kill 58047 58050 58344)"
+      "Bash(kill 58047 58050 58344)",
+      "Bash(mkdir -p /Users/yanfeiwuji/work/no1/math-study-v2/app/locales/zh /Users/yanfeiwuji/work/no1/math-study-v2/app/locales/en)"
+    ],
+    "additionalDirectories": [
+      "/Users/yanfeiwuji/work/no1/math-study-v2/app/locales"
     ]
   }
 }
