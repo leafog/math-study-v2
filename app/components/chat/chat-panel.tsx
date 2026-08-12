@@ -24,7 +24,7 @@ import {
   type CSSProperties,
   type PropsWithChildren,
 } from "react";
-import { useDebounce, useMeasure } from "@uidotdev/usehooks";
+import { useMeasure } from "@uidotdev/usehooks";
 import { usePinnedProblems } from "~/store/pinned-problems-store";
 import { ProblemPreviewSimple } from "../math/problem-preview-simple";
 import ChatWelcome from "./chat-welcome";

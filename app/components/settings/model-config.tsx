@@ -367,7 +367,7 @@ const ModelConfig = () => {
           }
         }}
       >
-        <DialogContent className="sm:max-w-lg max-h-[85vh] grid-rows-[auto_1fr] overflow-hidden">
+        <DialogContent className="sm:max-w-lg max-h-[85vh] scrollbar-gutter-both grid-rows-[auto_1fr] px-0 overflow-hidden">
           {dialogProvider && DialogConfig && (
             <>
               <DialogHeader>
