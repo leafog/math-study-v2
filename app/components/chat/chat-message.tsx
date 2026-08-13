@@ -22,7 +22,6 @@ import { Button } from "../ui/button";
 import { CopyIcon, FileIcon } from "lucide-react";
 import { useCopyToClipboard } from "usehooks-ts";
 import { toast } from "sonner";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 import { isToolPart, renderToolPart } from "~/lib/agent/tools/tools-ui";
 import { useTranslation } from "react-i18next";
@@ -31,6 +30,7 @@ import { formatMessageTime } from "~/lib/date-utils";
 import { cn } from "~/lib/utils";
 import { Marker, MarkerContent, MarkerIcon } from "../ui/marker";
 import { Spinner } from "../ui/spinner";
+import type { ChatStatus } from "ai";
 
 export type MessageActionProps = ComponentProps<typeof Button> & {
   tooltip?: string;
@@ -41,15 +41,13 @@ const PureChatMessage = memo(
   ({
     message,
     isAnimating = false,
+    status,
   }: {
     message: UIChatMessage;
     isAnimating?: boolean;
+    status: ChatStatus;
   }) => {
     const { t } = useTranslation();
-
-    useEffect(() => {
-      console.log(message.parts.length, message.role);
-    }, [message.parts]);
 
     const isUser = message.role === "user";
     const align = isUser ? "end" : "start";

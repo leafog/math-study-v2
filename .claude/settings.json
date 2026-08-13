@@ -4,7 +4,15 @@
       "Bash(ps -p 2744,3692 -o pid,stat,comm)",
       "Bash(kill 58047 58050 58344)",
       "Bash(mkdir -p /Users/yanfeiwuji/work/no1/math-study-v2/app/locales/zh /Users/yanfeiwuji/work/no1/math-study-v2/app/locales/en)",
-      "Bash(awk '/type ToolLoopAgentSettings/{f=1} f{print} f&&/^};/{exit}' node_modules/ai/dist/index.d.ts)"
+      "Bash(awk '/type ToolLoopAgentSettings/{f=1} f{print} f&&/^};/{exit}' node_modules/ai/dist/index.d.ts)",
+      "Read(//Users/yanfeiwuji/Library/Application Support/Google/Chrome/OptimizationGuideModelsManifest/1.20260810.11/**)",
+      "Bash(sort -k5 -h)",
+      "Bash(cd \"/Users/yanfeiwuji/Library/Application Support/Google/Chrome/OptimizationGuideModelsManifest/1.20260810.11\"; echo \"=== manifest.json ===\"; cat manifest.json; echo; echo \"=== manifest.binarypb 里的 URL / 模型名 / 大小信息 ===\"; strings manifest.binarypb | grep -iE \"http|nano|gemma|model|\\\\.tflite|\\\\.bin|download|component|version|MB|gb\" | head -60)",
+      "Bash(git checkout *)",
+      "Bash(cat)",
+      "Bash(bun /tmp/ce-bench.mjs)",
+      "WebFetch(domain:epsil.dev)",
+      "Bash(bun outdated *)"
     ],
     "additionalDirectories": [
       "/Users/yanfeiwuji/work/no1/math-study-v2/app/locales"

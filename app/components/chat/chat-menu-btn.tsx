@@ -18,7 +18,6 @@ const ChatMenuBtn = () => {
   });
 
   useEvent("topic:in-chat-view-topic", (id) => {
-    console.log("---");
     if (toolsShow) {
       if (popoverOpen) {
         return;
@@ -39,7 +38,7 @@ const ChatMenuBtn = () => {
   });
 
   return toolsShow ? (
-    <Popover open={popoverOpen} onOpenChange={(e) => console.log(e)}>
+    <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
       <PopoverTrigger asChild>
         <Button
           size="icon"

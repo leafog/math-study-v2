@@ -1,4 +1,6 @@
 import { useBoolean } from "usehooks-ts";
+import { useTranslation } from "react-i18next";
+import { Brain } from "lucide-react";
 import { Button } from "../ui/button";
 import {
   DropdownMenu,
@@ -20,6 +22,7 @@ const REASONING_OPTIONS: LLMreasoning[] = [
 ];
 
 const ChatPromptModelThinkingEffort = () => {
+  const { t } = useTranslation();
   const { value: open, setValue: setOpen } = useBoolean(false);
   const reasoning = useChatPromptInput().use.reasoning();
   const setReasoning = useChatPromptInput().use.setReasoning();
@@ -28,7 +31,8 @@ const ChatPromptModelThinkingEffort = () => {
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button variant={"outline"} className="rounded-full">
-          {reasoning}
+          <Brain size={16} />
+          {t(`chat.reasoningEffort.${reasoning}`)}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="center">
@@ -38,7 +42,7 @@ const ChatPromptModelThinkingEffort = () => {
         >
           {REASONING_OPTIONS.map((option) => (
             <DropdownMenuRadioItem key={option} value={option}>
-              {option}
+              {t(`chat.reasoningEffort.${option}`)}
             </DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>

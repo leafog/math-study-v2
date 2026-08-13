@@ -6,6 +6,7 @@ import { checkAnswer } from "./tool-check-answer";
 import { createExplanation } from "./tool-create-explanation";
 import { searchSimilarTopics } from "./tool-search-similar-topics";
 import { getKnowledgeGraph } from "./tool-get-knowledge-graph";
+import { invokeCortex } from "./tool-invoke-cortex";
 
 export const commonToolsConfig: ToolsConfig = {
   toolApproval: {
@@ -16,6 +17,7 @@ export const commonToolsConfig: ToolsConfig = {
     createExplanation: "approved",
     searchSimilarTopics: "approved",
     getKnowledgeGraph: "approved",
+    invokeCortex: "approved",
   },
   tools: {
     createTopic,
@@ -25,5 +27,6 @@ export const commonToolsConfig: ToolsConfig = {
     createExplanation,
     searchSimilarTopics,
     getKnowledgeGraph,
+    invokeCortex,
   },
 };

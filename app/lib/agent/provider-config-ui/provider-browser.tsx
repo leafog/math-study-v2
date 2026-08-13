@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CheckCircleIcon, XCircleIcon } from "lucide-react";
 import type { ModelProviderConfigProps } from "~/lib/agent/types";
@@ -14,7 +14,6 @@ import { Progress } from "~/components/ui/progress";
 import { Spinner } from "~/components/ui/spinner";
 import { useBoolean } from "usehooks-ts";
 import { testLLMConnectRecord } from "../test-llm-connect";
-import { createBrowserAI } from "@browser-ai/core";
 
 const BrowserConfig = ({
   providerId,
@@ -34,14 +33,6 @@ const BrowserConfig = ({
 
   const testFn = testLLMConnectRecord[providerId];
 
-  useEffect(() => {
-    console.log("wow");
-    const model = createBrowserAI().chat("text");
-
-    model.createSessionWithProgress((it) => {
-      console.log(it);
-    });
-  }, []);
   const handleSave = () => {
     onChange?.({
       config_name: configName.trim() || undefined,
@@ -60,7 +51,6 @@ const BrowserConfig = ({
       const result = await testFn({ apiKey: "", baseUrl: "" }, "text", (p) =>
         setProgress(p),
       );
-      console.log(result);
 
       setTestSuccess(result.ok);
       setHasTested(true);

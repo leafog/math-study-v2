@@ -12,7 +12,7 @@
         "@blocknote/react": "^0.52.1",
         "@blocknote/shadcn": "^0.52.1",
         "@browser-ai/core": "^3.0.0",
-        "@cortex-js/compute-engine": "^0.97.0",
+        "@cortex-js/compute-engine": "^0.105.0",
         "@dnd-kit/react": "^0.5.0",
         "@emotion/hash": "^0.9.2",
         "@excalidraw/excalidraw": "^0.18.1",
@@ -232,7 +232,7 @@
 
     "@chevrotain/utils": ["@chevrotain/utils@11.0.3", "https://registry.npmmirror.com/@chevrotain/utils/-/utils-11.0.3.tgz", {}, "sha512-YslZMgtJUyuMbZ+aKvfF3x1f5liK4mWNxghFRv7jqRR9C3R3fAOGTTKvxXDa2Y1s9zSbcpuO0cAxDYsc9SrXoQ=="],
 
-    "@cortex-js/compute-engine": ["@cortex-js/compute-engine@0.97.0", "", { "dependencies": { "@arnog/colors": "^0.5.0", "complex-esm": "^2.1.1-esm1" }, "bin": { "cortex": "dist/esm-min/cli/cortex.js" } }, "sha512-mW4bNvAq01Jbe/88qPmvezBSA+Y3CuXyCScLfI2nhL2thh0l9nB/xOvhbcroV/VVj0mltYiOuOaK2Nlp4oy77Q=="],
+    "@cortex-js/compute-engine": ["@cortex-js/compute-engine@0.105.0", "", { "dependencies": { "@arnog/colors": "^0.5.0", "complex-esm": "^2.1.1-esm1" }, "bin": { "epsil": "dist/esm-min/cli/epsil.js" } }, "sha512-S+rwfvkluES4BENqLssKV9cQPUl78/V49lsjHVG5ni/jhFrcaA5vdhWDna7Nh1y5VQqxG+hjQB3gJpjR4v/oVA=="],
 
     "@dnd-kit/abstract": ["@dnd-kit/abstract@0.5.0", "https://registry.npmmirror.com/@dnd-kit/abstract/-/abstract-0.5.0.tgz", { "dependencies": { "@dnd-kit/geometry": "^0.5.0", "@dnd-kit/state": "^0.5.0", "tslib": "^2.6.2" } }, "sha512-hi13iMJgjPX/KDYVKg5VeDIhmYiV6buc9bAX+tCLYf4QdyYjPbsXjn2sPo6m7fQ6SGJBEFgHJ2PemeKDUbwBaA=="],
 

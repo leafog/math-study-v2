@@ -23,6 +23,7 @@ import { genId, hashString } from "../id-utils";
 import { useTranslation } from "react-i18next";
 import { transports } from "./create-transport";
 import { useMemo } from "react";
+import { invokeCortex } from "./tools/tool-invoke-cortex";
 
 export const deepseek = createDeepSeek({
   apiKey: "",
@@ -30,7 +31,7 @@ export const deepseek = createDeepSeek({
 
 export const deepseeks = deepseek.chat("deepseek-v4-flash");
 
-const agent = new ToolLoopAgent({
+export const agent = new ToolLoopAgent({
   id: "deepseek/deepseek-v4-flash",
   model: deepseeks,
   instructions,
@@ -43,6 +44,7 @@ const agent = new ToolLoopAgent({
     createExplanation: "approved",
     searchSimilarTopics: "approved",
     getKnowledgeGraph: "approved",
+    invokeCortex: "approved",
   },
   tools: {
     createTopic,
@@ -52,6 +54,7 @@ const agent = new ToolLoopAgent({
     createExplanation,
     searchSimilarTopics,
     getKnowledgeGraph,
+    invokeCortex,
   },
 });
 
@@ -99,6 +102,7 @@ export const useAgent = (
   const transport = useMemo(() => {
     if (!providerId || !config || !model) return undefined;
     const key = calcAgentKey(providerId, config, model, { locale, reasoning });
+
     const cached = TransportMap.get(key);
     if (cached) return cached;
     const createTransport = transports[providerId];

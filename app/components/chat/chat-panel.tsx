@@ -21,6 +21,7 @@ import { cn } from "~/lib/utils";
 import {
   useEffect,
   useRef,
+  useState,
   type CSSProperties,
   type PropsWithChildren,
 } from "react";
@@ -30,6 +31,7 @@ import { ProblemPreviewSimple } from "../math/problem-preview-simple";
 import ChatWelcome from "./chat-welcome";
 import ChatPromptSuggestion from "./chat-prompt-suggestion";
 import { useChatPromptSuggestionStore } from "~/store/chat-prompt-suggestion-store";
+import { conversationColl } from "~/db/tdb-collections";
 import { useDebounceCallback } from "usehooks-ts";
 import {
   Conversation,
@@ -38,6 +40,8 @@ import {
 } from "../ai-elements/conversation";
 import type { StickToBottomContext } from "use-stick-to-bottom";
 import { withRef } from "~/lib/ref-utils";
+import { Input } from "../ui/input";
+import { Button } from "../ui/button";
 
 interface ChatPanelProps {
   panelRef: React.RefObject<PanelImperativeHandle | null>;
@@ -97,6 +101,28 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
   const hasSuggestions = useChatPromptSuggestionStore.use.hasSuggestions();
   const showSuggestions = hasSuggestions && isNewChat;
 
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleValue, setTitleValue] = useState("");
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editingTitle) {
+      titleInputRef.current?.focus();
+      titleInputRef.current?.select();
+    }
+  }, [editingTitle]);
+
+  const saveTitle = () => {
+    const trimmed = titleValue.trim();
+    if (trimmed && currentConversation) {
+      conversationColl.update(currentConversation.id, (draft) => {
+        draft.title = trimmed;
+        draft.updated_at = new Date();
+      });
+    }
+    setEditingTitle(false);
+  };
+
   const stickRef = useRef<StickToBottomContext>(null);
   useEffect(() => {
     withRef(stickRef, (it) => {
@@ -129,11 +155,34 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
       className="flex relative flex-col "
     >
       <ChatHeaderContainer
-        className={cn("shrink-0 px-4", isNewChat ? "" : "border-b-2")}
+        className={cn("shrink-0 px-4", isNewChat ? "" : "border-b")}
       >
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="block truncate">{currentConversation?.title}</span>
+            {editingTitle ? (
+              <Input
+                ref={titleInputRef}
+                value={titleValue}
+                onChange={(e) => setTitleValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") saveTitle();
+                  if (e.key === "Escape") setEditingTitle(false);
+                }}
+                onBlur={saveTitle}
+                className="w-fit min-w-fit field-sizing-content px-1 [font-size:inherit] leading-[inherit]"
+              />
+            ) : (
+              <Button
+                variant={"ghost"}
+                onClick={() => {
+                  if (!currentConversation) return;
+                  setEditingTitle(true);
+                  setTitleValue(currentConversation.title ?? "");
+                }}
+              >
+                {currentConversation?.title}
+              </Button>
+            )}
           </div>
         </div>
         <div className="gap-2 flex">
@@ -158,7 +207,7 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
       )}
       <Conversation contextRef={stickRef}>
         <ConversationContent
-          className="flex flex-row"
+          className="flex flex-row "
           scrollClassName={cn("scrollbar-thin scroll-fade")}
         >
           <div className="min-w-0 w-full mx-auto max-w-3xl ">
@@ -172,6 +221,7 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
                 <ChatMessage
                   key={message.id}
                   message={message}
+                  status={status}
                   isAnimating={status === "streaming" && isLast}
                 />
               );

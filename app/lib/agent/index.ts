@@ -4,6 +4,7 @@ import {
   DeepSeek,
   Gemini,
   Kimi,
+  Ollama,
   OpenAI,
 } from "@lobehub/icons";
 import { keyBy } from "lodash-es";
@@ -45,6 +46,12 @@ export const modelIcons: ModelIcon[] = [
     name: "Browser",
     avatar: Browserless.Avatar,
     text: Browserless.Text,
+  },
+  {
+    id: ProviderId.Ollama,
+    name: "Ollama",
+    avatar: Ollama.Avatar,
+    text: Ollama.Text,
   },
 ];
 export { modelConfigUIs } from "./provider-config-ui";

@@ -6,7 +6,6 @@ import {
   CheckCircleIcon,
   CircleIcon,
   XCircleIcon,
-  WrenchIcon,
   Wrench,
 } from "lucide-react";
 import { type ToolPart } from "~/components/ai-elements/tool";
@@ -41,10 +40,10 @@ const ToolState = ({
 }) => {
   const { t } = useTranslation();
   return (
-    <div className="flex gap-2">
-      <div className="flex items-center gap-2">
-        <WrenchIcon className="size-4 text-muted-foreground" />
-        <span className="font-medium text-sm">{title}</span>
+    <div className="flex gap-2 h-full items-center align-middle">
+      <div className="flex  gap-2 items-center align-middle ">
+        <Wrench className="size-4 text-muted-foreground" />
+        <span className="font-medium text-sm  truncate">{title}</span>
       </div>
       <Badge className="gap-1.5 rounded-full text-xs" variant="secondary">
         {statusIcons[state]}

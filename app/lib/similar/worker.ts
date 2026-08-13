@@ -50,7 +50,6 @@ function buildEmbedText(topic: OmitKgTopic): string {
 const api: EmbedWorkerApi = {
   async findSimilar(topic: OmitKgTopic, k = 5): Promise<SimilarResult[]> {
     const queryVec = embed(buildEmbedText(topic));
-    console.log(queryVec);
     const candidates = await db.topicVec.toArray();
     if (candidates.length === 0) return [];
     return candidates

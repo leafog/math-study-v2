@@ -28,6 +28,14 @@
       "fewSeconds": "Thought for a few seconds",
       "seconds": "Thought for {{count}} seconds"
     },
+    "reasoningEffort": {
+      "none": "None",
+      "minimal": "Minimal",
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "xhigh": "Maximum"
+    },
     "noModelConfigured": "No model configured",
     "goToModelSettings": "Go to settings to configure"
   },
@@ -119,6 +127,11 @@
       "addCustomModel": "Add custom model…",
       "browserNoKeyNeeded": "Uses the browser's built-in AI — no API key or base URL required.",
       "downloadingModel": "Downloading the built-in model, please wait…",
+      "serviceUrl": "Service URL",
+      "serviceUrlDesc": "Ollama server address, e.g. http://localhost:11434",
+      "refreshModels": "Refresh models",
+      "fetchingModels": "Fetching…",
+      "noModelsFetched": "No models yet — click refresh to fetch from the server",
       "errors": {
         "configNameRequired": "Please enter a config name",
         "configNameDuplicate": "This name is already in use",
@@ -205,6 +218,7 @@
       "createRelationship": "Build Relationship",
       "createTopic": "Record Topic",
       "getKnowledgeGraph": "Get Knowledge Graph",
+      "invokeCortex": "Compute",
       "searchSimilarTopics": "Search Similar"
     },
     "creatingExplanation": "Generating explanation...",

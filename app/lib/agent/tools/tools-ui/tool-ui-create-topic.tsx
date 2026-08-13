@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
 import type { ToolRendererProps } from "./types";
-import { useChatKgTopics } from "~/hooks/chat/active-chat";
 import KgTopicItem from "~/components/graph/kg-topic-in-chat-item";
 import { ToolInline } from "./_tool-common";
 

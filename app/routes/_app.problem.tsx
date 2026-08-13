@@ -1,12 +1,13 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { useMemo, useEffect, useCallback, useRef } from "react";
 import {
+  count,
   inArray,
   useLiveInfiniteQuery,
   useLiveQuery,
 } from "@tanstack/react-db";
 import { useTranslation } from "react-i18next";
 import { groupBy } from "lodash-es";
-import { FileQuestion, Loader2 } from "lucide-react";
+import { FileQuestion, Loader2, Search, X } from "lucide-react";
 import {
   problemColl,
   answerRecordColl,
@@ -29,6 +30,13 @@ import {
 } from "~/components/ui/empty";
 import ProblemPreview from "~/components/math/problem-preview";
 import { useChatKgTopics } from "~/hooks/chat/active-chat";
+import { Input } from "~/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "~/components/ui/input-group";
 
 const PAGE_SIZE = 20;
 
@@ -45,7 +53,6 @@ const ProblemIndex = () => {
           }),
       { pageSize: PAGE_SIZE },
     );
-  console.log(isLoading);
 
   const problems = (data ?? []) as ProblemType[];
   const pids = useMemo(() => problems.map((it) => it.id), [problems]);
@@ -89,6 +96,18 @@ const ProblemIndex = () => {
         ),
     [pids],
   );
+  const { data: problemCount = { count: 0 } } = useLiveQuery((q) =>
+    q
+      .from({ problemColl })
+      .select(({ problemColl }) => ({
+        count: count(problemColl.id),
+      }))
+      .findOne(),
+  );
+
+  useEffect(() => {
+    console.log(problemCount.count);
+  }, [problemCount]);
 
   const problemExplanationsMap = useMemo(
     () => groupBy(problemExplanations, (it) => it.problem_id),
@@ -145,15 +164,27 @@ const ProblemIndex = () => {
           </div>
           <p className="text-sm text-muted-foreground tabular-nums">
             <span className="text-foreground font-semibold">
-              {problems.length}
-            </span>{" "}
+              {problemCount.count}
+            </span>
             {t("problem.total")}
           </p>
         </div>
       </ContainerHeader>
 
       <ContainerSticky className="flex items-center gap-1.5 flex-wrap">
-        123
+        <div>
+          <InputGroup className="max-w-xs">
+            <InputGroupInput placeholder="Search..." />
+            <InputGroupAddon>
+              <Search />
+            </InputGroupAddon>
+            <InputGroupAddon align="inline-end">
+              <InputGroupButton>
+                <X />
+              </InputGroupButton>
+            </InputGroupAddon>
+          </InputGroup>
+        </div>
       </ContainerSticky>
       <ContainerBody>
         {filtered.length === 0 ? (

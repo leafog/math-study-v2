@@ -28,6 +28,14 @@
       "fewSeconds": "思考了数秒",
       "seconds": "思考了 {{count}} 秒"
     },
+    "reasoningEffort": {
+      "none": "无",
+      "minimal": "最低",
+      "low": "低",
+      "medium": "中",
+      "high": "高",
+      "xhigh": "最高"
+    },
     "noModelConfigured": "还未配置模型",
     "goToModelSettings": "前往设置配置模型"
   },
@@ -119,6 +127,11 @@
       "addCustomModel": "添加自定义模型…",
       "browserNoKeyNeeded": "使用浏览器内置 AI，无需配置 API Key 或 Base URL。",
       "downloadingModel": "正在下载内置模型，请稍候…",
+      "serviceUrl": "服务地址",
+      "serviceUrlDesc": "Ollama 服务地址，例如 http://localhost:11434",
+      "refreshModels": "刷新模型",
+      "fetchingModels": "获取中…",
+      "noModelsFetched": "尚未获取模型列表，点击“刷新模型”从服务获取",
       "errors": {
         "configNameRequired": "请输入配置名称",
         "configNameDuplicate": "该名称已被使用",
@@ -205,6 +218,7 @@
       "createRelationship": "建立关系",
       "createTopic": "记录知识点",
       "getKnowledgeGraph": "获取知识图谱",
+      "invokeCortex": "计算",
       "searchSimilarTopics": "搜索相似"
     },
     "creatingExplanation": "正在生成解析...",

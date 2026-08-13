@@ -44,22 +44,17 @@ const ChatPromptModelSelector = () => {
   const isCurrentModelValid = useMemo(() => {
     if (!currentModel) return false;
     const provider = currentProviders.find((p) => p.id === currentModel.id);
+
     if (!provider) return false;
     return (provider.selected_models ?? []).includes(currentModel.model_name);
   }, [currentModel, currentProviders]);
 
   // Fall back to defaultModel if currentModel is invalid or missing
   useEffect(() => {
-    console.log("fill this", isCurrentModelValid, defaultModel);
     if (!isCurrentModelValid && defaultModel) {
-      console.log("fill");
       setCurrentModel(defaultModel);
     }
   }, [isCurrentModelValid, defaultModel, setCurrentModel]);
-
-  useEffect(() => {
-    console.log(currentModel, "look");
-  }, [currentModel]);
 
   const activeModel = isCurrentModelValid ? currentModel : defaultModel;
   const currentValue = activeModel
@@ -128,11 +123,12 @@ const ChatPromptModelSelector = () => {
                 <DropdownMenuRadioGroup
                   value={currentValue}
                   onValueChange={(value) => {
-                    const [configId, model_name] = value.split(":");
+                    const [configId, ...rest] = value.split(":");
+
                     setCurrentModel({
                       id: configId,
                       config_name: config_name ?? "",
-                      model_name,
+                      model_name: rest.join(":"),
                     });
                   }}
                 >
