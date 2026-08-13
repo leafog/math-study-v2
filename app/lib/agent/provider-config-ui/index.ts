@@ -4,6 +4,7 @@ import OpenAIConfig from "./provider-openai";
 import AnthropicConfig from "./provider-anthropic";
 import GeminiConfig from "./provider-gemini";
 import KimiConfig from "./provider-kimi";
+import BrowserConfig from "./provider-browser";
 
 export const modelConfigUIs: ModelConfigUIRecord = {
   [ProviderId.DeepSeek]: DeepSeekConfig,
@@ -11,4 +12,5 @@ export const modelConfigUIs: ModelConfigUIRecord = {
   [ProviderId.Anthropic]: AnthropicConfig,
   [ProviderId.Gemini]: GeminiConfig,
   [ProviderId.Moonshot]: KimiConfig,
+  [ProviderId.Browser]: BrowserConfig,
 };

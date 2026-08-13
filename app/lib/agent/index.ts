@@ -1,4 +1,11 @@
-import { Anthropic, DeepSeek, Gemini, Kimi, OpenAI } from "@lobehub/icons";
+import {
+  Anthropic,
+  Browserless,
+  DeepSeek,
+  Gemini,
+  Kimi,
+  OpenAI,
+} from "@lobehub/icons";
 import { keyBy } from "lodash-es";
 import { ProviderId, type ModelIcon, type ModelIconRecord } from "./types";
 
@@ -32,6 +39,12 @@ export const modelIcons: ModelIcon[] = [
     name: "Kimi",
     avatar: Kimi.Avatar,
     text: Kimi.Text,
+  },
+  {
+    id: ProviderId.Browser,
+    name: "Browser",
+    avatar: Browserless.Avatar,
+    text: Browserless.Text,
   },
 ];
 export { modelConfigUIs } from "./provider-config-ui";

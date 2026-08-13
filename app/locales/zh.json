@@ -117,6 +117,8 @@
       "models": "模型",
       "modelsDesc": "选择要启用的模型。",
       "addCustomModel": "添加自定义模型…",
+      "browserNoKeyNeeded": "使用浏览器内置 AI，无需配置 API Key 或 Base URL。",
+      "downloadingModel": "正在下载内置模型，请稍候…",
       "errors": {
         "configNameRequired": "请输入配置名称",
         "configNameDuplicate": "该名称已被使用",

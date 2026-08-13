@@ -181,7 +181,7 @@ const ProviderCommon: FC<ProviderCommonProps> = ({
         },
         allModels[0],
       );
-      setTestSuccess(result);
+      setTestSuccess(result.ok);
       setHasTested(true);
     } catch {
       setTestSuccess(false);

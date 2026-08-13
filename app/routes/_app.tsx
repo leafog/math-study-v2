@@ -27,11 +27,6 @@ const AppLayout = () => {
       .where(({ zustandStorageColl }) => eq(zustandStorageColl.id, "none"))
       .findOne();
   }, []);
-  const { t, i18n } = useTranslation();
-
-  useEffect(() => {
-    console.log(i18n.services.resourceStore.data);
-  }, [i18n]);
 
   const hiddenRoutes = ["/library", "/graph", "/problem", "/settings"];
   return (

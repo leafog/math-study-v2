@@ -6,9 +6,12 @@ import { commonToolsConfig } from "../tools";
 import createLLMDeepseek from "../create-llm/create-llm-deepseek";
 import { messageMetadata } from "../client-agent";
 
-const createTransportDeepseek: TransportFC = (config, model, options) => {
+const createTransportDeepseek: TransportFC = (
+  config,
+  model,
+  { locale = "en", reasoning = "provider-default" },
+) => {
   const deepseek = createLLMDeepseek(config, model);
-  const locale = options.locale ?? "en";
   const instructions = getPrompt("system", {
     vars: { language: locale },
   });
@@ -16,6 +19,7 @@ const createTransportDeepseek: TransportFC = (config, model, options) => {
   const agent = new ToolLoopAgent({
     model: deepseek,
     instructions,
+    reasoning,
     ...commonToolsConfig,
   });
   return new DirectChatTransport({

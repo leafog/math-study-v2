@@ -1,4 +1,10 @@
-import { memo, type ComponentProps, useMemo, useCallback } from "react";
+import {
+  memo,
+  type ComponentProps,
+  useMemo,
+  useCallback,
+  useEffect,
+} from "react";
 import {
   Message,
   MessageAction,
@@ -39,13 +45,15 @@ const PureChatMessage = memo(
     message: UIChatMessage;
     isAnimating?: boolean;
   }) => {
-    if (message.parts.length === 0) {
-      return null;
-    }
+    const { t } = useTranslation();
+
+    useEffect(() => {
+      console.log(message.parts.length, message.role);
+    }, [message.parts]);
+
     const isUser = message.role === "user";
     const align = isUser ? "end" : "start";
     const [_, copyToClipboard] = useCopyToClipboard();
-    const { t } = useTranslation();
 
     const getThinkingMessage = useCallback(
       (isStreaming: boolean, duration?: number) => {
@@ -97,7 +105,23 @@ const PureChatMessage = memo(
       [message.parts],
     );
     const isThinking = isAnimating && !isUser && !hasContent;
-    console.log(message.parts.length);
+
+    if (message.parts.length === 0) {
+      return null;
+    }
+
+    if (message.parts.length === 1 && message.parts[0].type === "step-start") {
+      return (
+        <Marker role="status">
+          <MarkerIcon>
+            <Spinner />
+          </MarkerIcon>
+          <MarkerContent className="shimmer">
+            {t("chat.thinking")}
+          </MarkerContent>
+        </Marker>
+      );
+    }
 
     return (
       <div className="group">

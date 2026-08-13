@@ -1,6 +1,6 @@
 import { useEffect, useMemo, type ReactNode } from "react";
 import { useChat } from "@ai-sdk/react";
-import { transport, useAgent } from "~/lib/agent/client-agent";
+import { useAgent } from "~/lib/agent/client-agent";
 import { genId } from "~/lib/id-utils";
 import { chatMessageColl } from "~/db/tdb-collections";
 import { createChatToolsPanelStore } from "~/store/chat-tools-panel-store";
@@ -36,12 +36,14 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
   const chatAgentState = useChatAgentManager();
   const chatPromptInputStore = useChatPromptInputManager(isNewChat, chatId);
   const { id, model_name } = chatPromptInputStore.use.currentModel() ?? {};
+  const reasoning = chatPromptInputStore.use.reasoning();
   const config = chatAgentState.settings.find((it) => it.id === id);
 
   const agentTransport = useAgent(
     config?.provider_id as ProviderId | undefined,
     config ? { apiKey: config.api_key, baseUrl: config.base_url } : undefined,
     model_name,
+    reasoning,
   );
 
   const chatHelpersRaw = useChat<UIChatMessage>({

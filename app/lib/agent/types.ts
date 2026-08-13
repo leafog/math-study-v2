@@ -4,20 +4,26 @@ import type {
   LanguageModel,
   TextStreamPart,
   ToolApprovalStatus,
-  ToolLoopAgent,
   ToolSet,
 } from "ai";
 import type { agent } from "./client-agent";
 
-import { ModelProvider as ProviderId } from "@lobehub/icons";
+import { ModelProvider } from "@lobehub/icons";
+
 import type { FC } from "react";
 import type { IconAvatarProps, IconType } from "@lobehub/icons";
 import type { ChatMessage, SettingModelConfig } from "~/db/db-zod-schema";
 
-export { ProviderId };
+/** Provider IDs — extends @lobehub/icons ModelProvider with custom entries */
+export const ProviderId = {
+  ...ModelProvider,
+  /** Browser-local model (e.g. WebLLM) */
+  Browser: "browser",
+} as const;
+
+export type ProviderId = (typeof ProviderId)[keyof typeof ProviderId];
 
 export type Locale = "zh" | "en";
-
 /** Known prompt keys — extend as needed */
 export type PromptKey = "system" | (string & {});
 
@@ -89,18 +95,30 @@ export type CreateLLMFC = (config: LLMConfig, model: string) => LanguageModel;
 
 export type CreateLLMs = Partial<Record<ProviderId, CreateLLMFC>>;
 
+export type TestLLMConnectResult = {
+  /** Whether the provider is reachable / available */
+  ok: boolean;
+} & Record<string, unknown>;
+
 export type TestLLMConnectFC = (
   config: LLMConfig,
   model: string,
-) => Promise<boolean>;
+  onProgress?: (progress: number) => void,
+) => Promise<TestLLMConnectResult>;
 
 export type TestLLMConnects = Partial<Record<ProviderId, TestLLMConnectFC>>;
+
+export type LLMreasoning =
+  "provider-default" | "none" | "minimal" | "low" | "medium" | "high" | "xhigh";
 export interface TransportOptions {
   locale?: Locale;
+  reasoning?: LLMreasoning;
 }
+
 export type TransportFC = (
   config: LLMConfig,
   model: string,
+
   options: TransportOptions,
 ) => ChatTransport<UIChatMessage>;
 

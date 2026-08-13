@@ -3,9 +3,11 @@ import { DirectChatTransport, ToolLoopAgent } from "ai";
 import type { ChatTransport } from "ai";
 import type {
   LLMConfig,
+  LLMreasoning,
   Locale,
   MessageMetadataFn,
   ProviderId,
+  TransportOptions,
   UIChatMessage,
 } from "./types";
 import { createTopic } from "./tools/tool-create-topic";
@@ -20,6 +22,7 @@ import {} from "./tools";
 import { genId, hashString } from "../id-utils";
 import { useTranslation } from "react-i18next";
 import { transports } from "./create-transport";
+import { useMemo } from "react";
 
 export const deepseek = createDeepSeek({
   apiKey: "",
@@ -27,7 +30,7 @@ export const deepseek = createDeepSeek({
 
 export const deepseeks = deepseek.chat("deepseek-v4-flash");
 
-export const agent = new ToolLoopAgent({
+const agent = new ToolLoopAgent({
   id: "deepseek/deepseek-v4-flash",
   model: deepseeks,
   instructions,
@@ -51,6 +54,7 @@ export const agent = new ToolLoopAgent({
     getKnowledgeGraph,
   },
 });
+
 export const messageMetadata: MessageMetadataFn = ({ part }) => {
   if (part.type === "start") {
     return { created_at: new Date() };
@@ -64,21 +68,22 @@ export const messageMetadata: MessageMetadataFn = ({ part }) => {
     return { [`${part.type}:${nowNumber}`]: nowNumber };
   }
 };
-export const transport = new DirectChatTransport({
+const transport = new DirectChatTransport({
   agent,
   sendReasoning: true,
   messageMetadata,
 });
+
 const TransportMap = new Map<string, ChatTransport<UIChatMessage>>();
 
 const calcAgentKey = (
   providerId: ProviderId,
   config: LLMConfig,
   model: string,
-  locale: Locale,
+  { locale = "en", reasoning = "none" }: TransportOptions,
 ) => {
   return hashString(
-    `${providerId}:${config.apiKey}:${config.baseUrl}:${model}:${locale}`,
+    `${providerId}:${config.apiKey}:${config.baseUrl}:${model}:${locale}:${reasoning}`,
   );
 };
 
@@ -86,20 +91,22 @@ export const useAgent = (
   providerId: ProviderId | undefined,
   config: LLMConfig | undefined,
   model: string | undefined,
+  reasoning?: LLMreasoning,
 ): ChatTransport<UIChatMessage> | undefined => {
   const { i18n } = useTranslation();
   const locale: Locale = i18n.language?.startsWith("zh") ? "zh" : "en";
 
-  if (!providerId || !config || !model) return undefined;
+  const transport = useMemo(() => {
+    if (!providerId || !config || !model) return undefined;
+    const key = calcAgentKey(providerId, config, model, { locale, reasoning });
+    const cached = TransportMap.get(key);
+    if (cached) return cached;
+    const createTransport = transports[providerId];
+    if (!createTransport) return undefined;
+    const transport = createTransport(config, model, { locale, reasoning });
+    TransportMap.set(key, transport);
+    return transport;
+  }, [providerId, config, model, locale, reasoning]);
 
-  const key = calcAgentKey(providerId, config, model, locale);
-  const cached = TransportMap.get(key);
-  if (cached) return cached;
-
-  const createTransport = transports[providerId];
-  if (!createTransport) return undefined;
-
-  const transport = createTransport(config, model, { locale });
-  TransportMap.set(key, transport);
   return transport;
 };

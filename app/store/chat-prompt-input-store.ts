@@ -3,6 +3,7 @@ import { combine, createJSONStorage, persist } from "zustand/middleware";
 
 import { createSelectors } from "./create-selectors";
 import { tanstackDbStorage } from "./tanstack-db-storage";
+import type { LLMreasoning } from "~/lib/agent/types";
 
 type CurrentModel = {
   id: string;
@@ -13,24 +14,29 @@ type CurrentModel = {
 type ChatPromptInputState = {
   textInputValue: string;
   currentModel: CurrentModel | null;
+  reasoning: LLMreasoning;
 };
 
 type ChatPromptInputAction = {
   setTextInputValue: (input: string) => void;
   setCurrentModel: (model: CurrentModel) => void;
+  setReasoning: (reasoning: LLMreasoning) => void;
   clearTextInput: () => void;
+
   reset: () => void;
 };
 
 const chatPromptInputStateDefault: ChatPromptInputState = {
   textInputValue: "",
   currentModel: null,
+  reasoning: "none",
 };
 
 const chatPromptInputStoreCreator = (init: ChatPromptInputState) =>
   combine<ChatPromptInputState, ChatPromptInputAction>({ ...init }, (set) => ({
-    setTextInputValue: (input) => set({ textInputValue: input }),
-    setCurrentModel: (model) => set({ currentModel: model }),
+    setTextInputValue: (textInputValue) => set({ textInputValue }),
+    setCurrentModel: (currentModel) => set({ currentModel }),
+    setReasoning: (reasoning) => set({ reasoning }),
     clearTextInput: () => set({ textInputValue: "" }),
     reset: () => set(chatPromptInputStateDefault),
   }));

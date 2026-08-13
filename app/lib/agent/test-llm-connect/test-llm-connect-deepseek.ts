@@ -8,8 +8,7 @@ const testLLMConnectDeepseek: TestLLMConnectFC = async (config, model) => {
     model: ds,
     prompt: "I'm testing the connection. Just reply 'ok' and we're done.",
   });
-  console.log(text);
-  return text.length > 0;
+  return { ok: text.length > 0 };
 };
 
 export default testLLMConnectDeepseek;

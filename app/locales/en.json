@@ -117,6 +117,8 @@
       "models": "Models",
       "modelsDesc": "Select the models you want to enable.",
       "addCustomModel": "Add custom model…",
+      "browserNoKeyNeeded": "Uses the browser's built-in AI — no API key or base URL required.",
+      "downloadingModel": "Downloading the built-in model, please wait…",
       "errors": {
         "configNameRequired": "Please enter a config name",
         "configNameDuplicate": "This name is already in use",
