@@ -2,22 +2,23 @@ import * as React from "react";
 import { useIntersectionObserver } from "@uidotdev/usehooks";
 import { cn } from "~/lib/utils";
 
-const Container = ({
-  className,
-  children,
-  ...props
-}: React.ComponentProps<"div">) => {
-  return (
-    <div
-      className={cn(
-        "flex flex-1 min-h-0 flex-col w-full h-screen overflow-auto scrollbar-thin",
-        className,
-      )}
-    >
-      <div className="flex flex-col grow shrink-0 w-full">{children}</div>
-    </div>
-  );
-};
+const Container = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(
+  ({ className, children, ...props }, ref) => {
+    return (
+      <div
+        ref={ref}
+        className={cn(
+          "flex flex-1 min-h-0 flex-col w-full h-screen overflow-auto overscroll-none scrollbar-thin scrollbar-gutter-both [overflow-anchor:none]",
+          className,
+        )}
+        {...props}
+      >
+        <div className="flex flex-col grow shrink-0 w-full">{children}</div>
+      </div>
+    );
+  },
+);
+Container.displayName = "Container";
 
 const ContainerHeader = ({
   className,

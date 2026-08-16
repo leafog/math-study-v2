@@ -1,4 +1,11 @@
-import { forwardRef, useEffect, useImperativeHandle, useMemo } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useInsertionEffect,
+  useMemo,
+  useRef,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { MessageContent, MessageResponse } from "../ai-elements/message";
 import "katex/dist/katex.min.css";
@@ -36,12 +43,13 @@ import {
 import { ButtonGroup } from "../ui/button-group";
 
 import { usePinnedProblems } from "~/store/pinned-problems-store";
-import { useBoolean } from "usehooks-ts";
+import { useBoolean, useIntersectionObserver } from "usehooks-ts";
 import type { ProblemFull, ProblemStateColor } from "./type";
 import { PROBLEM_STATE_COLORS } from "./constants";
 import { keyBy } from "lodash-es";
 import { motion, useAnimationControls } from "motion/react";
 import KgTopicInChatItem from "../graph/kg-topic-in-chat-item";
+import CopyButton from "../common-ui/copy-button";
 
 export type ProblemPreviewHandle = {
   openExplanation: () => void;
@@ -76,7 +84,11 @@ const ProblemPreview = forwardRef<ProblemPreviewHandle, ProblemProps>(
   ) => {
     const { t } = useTranslation();
     const { id, content, description } = problem;
-
+    const [cardRef, isIntersecting] = useIntersectionObserver({
+      threshold: 0,
+      root: null,
+      rootMargin: "-20% 0px -20% 0px",
+    });
     const barColor = toStateColor(answers ?? []);
 
     const answerAnalysesMap = useMemo(
@@ -115,26 +127,55 @@ const ProblemPreview = forwardRef<ProblemPreviewHandle, ProblemProps>(
       });
     };
 
+    const pendingActionRef = useRef<(() => void) | null>(null);
+
+    // 卡片进入视口时，执行排队中的动作
+    useEffect(() => {
+      if (isIntersecting && pendingActionRef.current) {
+        const action = pendingActionRef.current;
+        pendingActionRef.current = null;
+        action();
+      }
+    }, [isIntersecting]);
+
+    // 已在视口内就直接执行，否则排队等滚动到位
+    const runWhenVisible = (action: () => void) => {
+      if (isIntersecting) {
+        action();
+      } else {
+        pendingActionRef.current = action;
+      }
+    };
+
     useImperativeHandle(ref, () => ({
       openExplanation: () => {
-        openExplanation();
-        flash(expplations);
+        runWhenVisible(() => {
+          openExplanation();
+          flash(expplations);
+        });
       },
       openAnswerRecord: () => {
-        openAnswerRecord();
-        flash(anwsers);
+        runWhenVisible(() => {
+          openAnswerRecord();
+          flash(anwsers);
+        });
       },
       highlight: () => {
-        controls.start({
-          scaleX: [1, 4, 1],
-          opacity: [1, 0.5, 1],
-          transition: { duration: 0.8 },
+        runWhenVisible(() => {
+          controls.start({
+            scaleX: [1, 4, 1],
+            opacity: [1, 0.5, 1],
+            transition: { duration: 0.8 },
+          });
         });
       },
     }));
 
     return (
-      <Card className={cn("my-3 min-w-0 relative m-1 rounded-lg", className)}>
+      <Card
+        ref={cardRef}
+        className={cn("my-3 min-w-0 relative m-1 rounded-lg", className)}
+      >
         <motion.div
           animate={controls}
           style={{ originX: 0 }}
@@ -151,6 +192,7 @@ const ProblemPreview = forwardRef<ProblemPreviewHandle, ProblemProps>(
           )}
           <CardAction>
             <ButtonGroup>
+              <CopyButton text={problem.content} />
               {chatId && id && (
                 <Tooltip>
                   <TooltipTrigger asChild>

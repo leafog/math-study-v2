@@ -11,6 +11,7 @@ export const createProblem = tool({
     id: true,
     created_at: true,
     updated_at: true,
+    status: true,
   }),
   execute: (input) => {
     const chatId = chatIdStore.getState().chatId;
@@ -21,6 +22,7 @@ export const createProblem = tool({
       ...input,
       id: pid,
       chat_id: chatId,
+      status: "unanswered" as const,
       created_at: now,
       updated_at: now,
     };

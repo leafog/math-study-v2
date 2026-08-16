@@ -7,7 +7,6 @@ import {
 } from "react";
 import {
   Message,
-  MessageAction,
   MessageActions,
   MessageContent,
   MessageResponse,
@@ -19,11 +18,10 @@ import {
 } from "../ai-elements/reasoning";
 import { Shimmer } from "../ai-elements/shimmer";
 import { Button } from "../ui/button";
-import { CopyIcon, FileIcon } from "lucide-react";
-import { useCopyToClipboard } from "usehooks-ts";
-import { toast } from "sonner";
+import { FileIcon } from "lucide-react";
 
 import { isToolPart, renderToolPart } from "~/lib/agent/tools/tools-ui";
+import CopyButton from "../common-ui/copy-button";
 import { useTranslation } from "react-i18next";
 import type { UIChatMessage } from "~/lib/agent/types";
 import { formatMessageTime } from "~/lib/date-utils";
@@ -51,7 +49,6 @@ const PureChatMessage = memo(
 
     const isUser = message.role === "user";
     const align = isUser ? "end" : "start";
-    const [_, copyToClipboard] = useCopyToClipboard();
 
     const getThinkingMessage = useCallback(
       (isStreaming: boolean, duration?: number) => {
@@ -76,15 +73,6 @@ const PureChatMessage = memo(
       [message.parts],
     );
 
-    const handleCopy = useCallback(async () => {
-      if (!textFromParts) {
-        toast.error("There's no text to copy!", { position: "top-center" });
-        return;
-      }
-      await copyToClipboard(textFromParts);
-      toast.success("Copied to clipboard!", { position: "top-center" });
-    }, [textFromParts, copyToClipboard]);
-
     const filteredParts = useMemo(
       () => message.parts.filter((part) => part.type !== "step-start"),
       [message.parts],
@@ -108,7 +96,11 @@ const PureChatMessage = memo(
       return null;
     }
 
-    if (message.parts.length === 1 && message.parts[0].type === "step-start") {
+    if (
+      isThinking &&
+      message.parts.length === 1 &&
+      message.parts[0].type === "step-start"
+    ) {
       return (
         <Marker role="status">
           <MarkerIcon>
@@ -202,9 +194,7 @@ const PureChatMessage = memo(
             isUser ? "ml-auto justify-end" : "",
           )}
         >
-          <MessageAction label="Copy" onClick={handleCopy} tooltip="copy">
-            <CopyIcon />
-          </MessageAction>
+          <CopyButton text={textFromParts} />
           {!isAnimating && message.metadata?.created_at && (
             <span className="text-sm">
               {formatMessageTime(message.metadata.created_at, t)}

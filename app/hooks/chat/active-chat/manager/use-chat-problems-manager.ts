@@ -1,10 +1,12 @@
 import { useLiveQuery, eq } from "@tanstack/react-db";
 import { keyBy, groupBy } from "lodash-es";
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useSearchParams } from "react-router";
 import {
   toStateColor,
   type ProblemPreviewHandle,
 } from "~/components/math/problem-preview";
+import { scrollToProblem } from "~/components/math/scroll-utils";
 import type { ProblemStateColor } from "~/components/math/type";
 import {
   problemColl,
@@ -15,6 +17,9 @@ import {
 import { useEvent } from "~/event/use-event";
 
 const useChatProblemsManager = (chatId: string) => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const problemId = searchParams.get("problemId");
+
   const { data: problems } = useLiveQuery(
     (q) =>
       q
@@ -89,6 +94,7 @@ const useChatProblemsManager = (chatId: string) => {
   useEvent("problem:scroll-to", (pid) => {
     refs.current.get(pid)?.highlight();
   });
+
   const problemHasanswers = useCallback(
     (pid: string) => {
       return (answerRecordsMap[pid] ?? []).length > 0;
@@ -101,6 +107,18 @@ const useChatProblemsManager = (chatId: string) => {
     },
     [problemExplanationsMap],
   );
+  const to = problemId ? refs.current.get(problemId) : undefined;
+
+  useEffect(() => {
+    if (problemId) {
+      scrollToProblem(problemId);
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete("problemId");
+        return next;
+      });
+    }
+  }, [to]);
 
   return {
     problems,

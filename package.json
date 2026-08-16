@@ -47,6 +47,8 @@
     "@tanstack/query-db-collection": "^1.0.47",
     "@tanstack/react-db": "^0.1.92",
     "@tanstack/react-form": "^1.33.4",
+    "@tanstack/react-virtual": "^3.14.9",
+    "@tanstack/solid-virtual": "^3.13.36",
     "@ternlight/base": "^0.1.0",
     "@types/lodash-es": "^4.17.12",
     "@uidotdev/usehooks": "^2.4.1",

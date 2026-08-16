@@ -15,17 +15,14 @@ import {
   scrollToProblemAndOpenExplanation,
 } from "~/components/math/scroll-utils";
 import { usePinnedProblems } from "~/store/pinned-problems-store";
+import StatusIcon from "~/components/math/status-icon";
 
 const ChatProblemsList = () => {
   const { t } = useTranslation();
   const { chatId } = useActiveChat();
 
-  const {
-    problems,
-    toStateColorByPid,
-    problemHasanswers,
-    problemHasExplanations,
-  } = useChatProblems();
+  const { problems, problemHasanswers, problemHasExplanations } =
+    useChatProblems();
 
   const pinned = usePinnedProblems((s) => s.pinned);
   const togglePin = usePinnedProblems((s) => s.toggle);
@@ -56,9 +53,7 @@ const ChatProblemsList = () => {
               onClick={() => scrollToProblem(p.id)}
               className="relative flex items-center gap-2 flex-1 min-w-0 text-left"
             >
-              <span
-                className={`size-2 shrink-0 rounded-full ${toStateColorByPid(p.id)}`}
-              />
+              <StatusIcon status={p.status} />
               <span className="truncate">
                 {p.description || p.content.slice(0, 40)}
               </span>

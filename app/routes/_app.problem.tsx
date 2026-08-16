@@ -1,7 +1,9 @@
-import { useMemo, useEffect, useCallback, useRef } from "react";
+import { useMemo, useEffect, useState, useRef } from "react";
 import {
   count,
+  eq,
   inArray,
+  like,
   useLiveInfiniteQuery,
   useLiveQuery,
 } from "@tanstack/react-db";
@@ -37,25 +39,80 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "~/components/ui/input-group";
+import { SearchInput } from "~/components/common-ui/search-input";
+import { useDebounce, useIntersectionObserver } from "@uidotdev/usehooks";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { type ProblemStatus } from "~/components/math/constants";
+import ProblemCard from "~/components/math/problem/problem-card";
+import StatusIcon from "~/components/math/status-icon";
+import ProblemDetailDialog from "~/components/math/problem/problem-detail-dialog";
 
 const PAGE_SIZE = 20;
+const CARD_HEIGHT = 256; // h-64
+const GRID_GAP = 16; // gap-4
 
 const ProblemIndex = () => {
   const { t } = useTranslation();
+  const [search, setSearch] = useState<string>("");
+  const debouncedSearch = useDebounce(search, 300);
+  const [status, setStatus] = useState<"all" | ProblemStatus>("all");
+  const [activeProblem, setActiveProblem] = useState<ProblemType | null>(null);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     useLiveInfiniteQuery(
-      (q) =>
-        q
+      (q) => {
+        const base = q
           .from({ problemColl })
-          .orderBy(({ problemColl: col }) => col.created_at, {
-            direction: "desc",
-          }),
+          .where(({ problemColl }) =>
+            like(problemColl.content, `%${debouncedSearch}%`),
+          );
+        const withStatus =
+          status === "all"
+            ? base
+            : base.where(({ problemColl }) => eq(problemColl.status, status));
+        return withStatus.orderBy(({ problemColl: col }) => col.created_at, {
+          direction: "desc",
+        });
+      },
       { pageSize: PAGE_SIZE },
+      [debouncedSearch, status],
     );
 
   const problems = (data ?? []) as ProblemType[];
   const pids = useMemo(() => problems.map((it) => it.id), [problems]);
+
+  // Responsive column count, matched to the grid's md/xl breakpoints.
+  const [columns, setColumns] = useState(() =>
+    typeof window === "undefined"
+      ? 1
+      : window.innerWidth >= 1280
+        ? 3
+        : window.innerWidth >= 768
+          ? 2
+          : 1,
+  );
+
+  useEffect(() => {
+    const onResize = () =>
+      setColumns(
+        window.innerWidth >= 1280 ? 3 : window.innerWidth >= 768 ? 2 : 1,
+      );
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  // The outer Container is the scroll element.
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const rowCount = Math.ceil(problems.length / columns);
+
+  const rowVirtualizer = useVirtualizer({
+    count: rowCount,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => CARD_HEIGHT + GRID_GAP,
+    overscan: 4,
+  });
 
   // Bulk queries for related data
   const { data: answerRecords = [] } = useLiveQuery(
@@ -116,26 +173,24 @@ const ProblemIndex = () => {
 
   const { kgTopicsMap } = useChatKgTopics();
 
-  const filtered = useMemo(() => {
-    return problems;
-  }, [problems]);
-
   // Infinite scroll
-  const sentinelRef = useRef<HTMLDivElement>(null);
-  const handleObserver = useCallback(
-    (entries: IntersectionObserverEntry[]) => {
-      if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage)
-        fetchNextPage();
-    },
-    [hasNextPage, isFetchingNextPage, fetchNextPage],
-  );
+  const [sentinelRef, entry] = useIntersectionObserver<HTMLDivElement>({
+    rootMargin: "200px",
+  });
+
+  // Only fire on the false -> true edge, so each scroll loads exactly one page
+  // instead of cascading through all remaining pages at once.
+  const lastIntersectingRef = useRef(false);
+
   useEffect(() => {
-    const el = sentinelRef.current;
-    if (!el) return;
-    const o = new IntersectionObserver(handleObserver, { rootMargin: "400px" });
-    o.observe(el);
-    return () => o.disconnect();
-  }, [handleObserver]);
+    const isIntersecting = entry?.isIntersecting ?? false;
+    const crossed = isIntersecting && !lastIntersectingRef.current;
+    lastIntersectingRef.current = isIntersecting;
+
+    if (crossed && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [entry, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   if (isLoading) {
     return (
@@ -153,41 +208,44 @@ const ProblemIndex = () => {
   }
 
   return (
-    <Container>
+    <Container ref={scrollRef}>
       <ContainerHeader className="h-20 mt-10">
         <div className="flex h-full justify-between items-center">
           <div>
             <h1 className="text-3xl font-mono ">{t("problem.title")}</h1>
-            <p className="text-sm text-muted-foreground">
-              {t("problem.subtitle")}
-            </p>
           </div>
-          <p className="text-sm text-muted-foreground tabular-nums">
-            <span className="text-foreground font-semibold">
-              {problemCount.count}
-            </span>
-            {t("problem.total")}
-          </p>
+          <div>
+            <SearchInput value={search} onChange={setSearch} />
+          </div>
         </div>
       </ContainerHeader>
 
       <ContainerSticky className="flex items-center gap-1.5 flex-wrap">
         <div>
-          <InputGroup className="max-w-xs">
-            <InputGroupInput placeholder="Search..." />
-            <InputGroupAddon>
-              <Search />
-            </InputGroupAddon>
-            <InputGroupAddon align="inline-end">
-              <InputGroupButton>
-                <X />
-              </InputGroupButton>
-            </InputGroupAddon>
-          </InputGroup>
+          <Tabs
+            value={status}
+            onValueChange={(v) => setStatus(v as "all" | ProblemStatus)}
+          >
+            <TabsList>
+              <TabsTrigger value="all">{t("problem.status.all")}</TabsTrigger>
+              <TabsTrigger value="unanswered">
+                <StatusIcon status="unanswered" />
+                {t("problem.status.unanswered")}
+              </TabsTrigger>
+              <TabsTrigger value="correct">
+                <StatusIcon status="correct" />
+                {t("problem.status.correct")}
+              </TabsTrigger>
+              <TabsTrigger value="incorrect">
+                <StatusIcon status="incorrect" />
+                {t("problem.status.incorrect")}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
       </ContainerSticky>
       <ContainerBody>
-        {filtered.length === 0 ? (
+        {problems.length === 0 ? (
           <Empty>
             <EmptyHeader>
               <EmptyMedia variant="icon">
@@ -199,18 +257,37 @@ const ProblemIndex = () => {
           </Empty>
         ) : (
           <>
-            <div className="py-5 flex flex-col gap-4">
-              {filtered.map((p) => (
-                <ProblemPreview
-                  key={p.id}
-                  problem={p}
-                  answers={answerRecordsMap[p.id] ?? []}
-                  answerAnalyses={answerAnalysisesMap[p.id] ?? []}
-                  kgTopics={p.tags.map((id) => kgTopicsMap[id] ?? [])}
-                  problemExplanations={problemExplanationsMap[p.id] ?? []}
-                  className="m-0 hover:shadow-md transition-shadow duration-200"
-                />
-              ))}
+            <div className="py-2">
+              <div
+                className="relative w-full"
+                style={{ height: rowVirtualizer.getTotalSize() }}
+              >
+                {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                  const start = virtualRow.index * columns;
+                  const rowItems = problems.slice(start, start + columns);
+                  return (
+                    <div
+                      key={virtualRow.key}
+                      className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        width: "100%",
+                        transform: `translateY(${virtualRow.start}px)`,
+                      }}
+                    >
+                      {rowItems.map((p) => (
+                        <ProblemCard
+                          problem={p}
+                          key={p.id}
+                          onCardContentClick={setActiveProblem}
+                        />
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
             <div ref={sentinelRef} className="h-1" />
@@ -223,6 +300,10 @@ const ProblemIndex = () => {
           </>
         )}
       </ContainerBody>
+      <ProblemDetailDialog
+        problem={activeProblem}
+        onClose={() => setActiveProblem(null)}
+      />
     </Container>
   );
 };

@@ -37,13 +37,10 @@ export const useChatIdManager = () => {
 
   const isNewChat = !hasChatIdInUrl && currentConversation === undefined;
 
-  // 等 conversation 查询就绪后再判断是否 404，避免异步初始化期间的误重定向
   useEffect(() => {
-    if (
-      conversationReady &&
-      hasChatIdInUrl &&
-      currentConversation === undefined
-    ) {
+    if (!hasChatIdInUrl) return;
+    if (!conversationReady) return;
+    if (currentConversation === undefined) {
       navigate("/", { replace: true });
     }
   }, [conversationReady, hasChatIdInUrl, currentConversation, navigate]);
@@ -64,7 +61,7 @@ export const useChatIdManager = () => {
     setChatId(chatId);
   }, [chatId]);
 
-  const createChat = (title: string) => {
+  const createChat = async (title: string) => {
     const id = chatId;
     const tx = createTx();
     tx.mutate(() => {
@@ -80,6 +77,7 @@ export const useChatIdManager = () => {
         actived_history: [],
       });
     });
+    await tx.isPersisted.promise;
     navigate(`/chat/${id}`);
   };
 

@@ -26,6 +26,8 @@ import {
   scrollToProblemAndOpenExplanation,
 } from "./scroll-utils";
 import { usePinnedProblems } from "~/store/pinned-problems-store";
+import { Tool } from "../ai-elements/tool";
+import CopyButton from "../common-ui/copy-button";
 
 export interface ProblemPreviewProps {
   problemId: string;
@@ -81,6 +83,7 @@ export function ProblemPreviewSimple({
         )}
         <CardAction>
           <ButtonGroup>
+            <CopyButton text={problem.content} />
             {hasAnswers && (
               <Tooltip>
                 <TooltipTrigger asChild>

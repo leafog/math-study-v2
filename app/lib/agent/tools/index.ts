@@ -1,5 +1,6 @@
 import type { ToolsConfig } from "../types";
 import { createTopic } from "./tool-create-topic";
+import { linkTopics } from "./tool-link-topics";
 import { createRelationship } from "./tool-create-relationship";
 import { createProblem } from "./tool-create-problem";
 import { checkAnswer } from "./tool-check-answer";
@@ -11,6 +12,7 @@ import { invokeCortex } from "./tool-invoke-cortex";
 export const commonToolsConfig: ToolsConfig = {
   toolApproval: {
     createTopic: "approved",
+    linkTopics: "approved",
     createRelationship: "approved",
     createProblem: "approved",
     checkAnswer: "approved",
@@ -21,6 +23,7 @@ export const commonToolsConfig: ToolsConfig = {
   },
   tools: {
     createTopic,
+    linkTopics,
     createRelationship,
     createProblem,
     checkAnswer,

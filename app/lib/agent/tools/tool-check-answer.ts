@@ -4,7 +4,11 @@ import {
   AnswerRecordSchema,
   CheckAnswerOutputSchema,
 } from "~/db/db-zod-schema";
-import { answerRecordColl, answerAnalysisColl } from "~/db/tdb-collections";
+import {
+  answerRecordColl,
+  answerAnalysisColl,
+  problemColl,
+} from "~/db/tdb-collections";
 import { genId } from "~/lib/id-utils";
 import { normalizeMathDelimiters } from "~/lib/utils";
 import { chatIdStore } from "~/store/chat-id-store";
@@ -43,6 +47,14 @@ export const checkAnswer = tool({
       chat_id: chatId,
       created_at: new Date(),
       time_spent_ms: 10086,
+    });
+    // 同步更新题目状态：一旦答对永久 correct，否则若尚未答对则标记为 incorrect
+    problemColl.update(input.problem_id, (draft) => {
+      if (input.correct) {
+        draft.status = "correct";
+      } else if (draft.status !== "correct") {
+        draft.status = "incorrect";
+      }
     });
     if (normalizedAnalysis) {
       answerAnalysisColl.insert({

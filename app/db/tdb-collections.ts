@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createCollection } from "@tanstack/react-db";
+import { BasicIndex, createCollection } from "@tanstack/react-db";
 import type { Collection } from "@tanstack/react-db";
 import {
   powerSyncCollectionOptions,
@@ -11,12 +11,6 @@ import type { Table } from "@powersync/web";
 
 import { zipObject } from "lodash-es";
 
-// ── 自动生成 deserializationSchema ──────────────────────────────
-// 将 rich schema 中的 z.boolean() → z.number().transform(...)
-// z.array() / z.object() → z.string().transform(JSON.parse)
-// 其余保持原样
-
-/** 剥离所有 nullable / optional 包装，返回裸类型 + 包装链（外层→内层） */
 function collectWrappers(f: any): {
   raw: any;
   wrappers: Array<"nullable" | "optional">;
@@ -127,6 +121,8 @@ function mkColl<TTable extends Table, TSchema extends z.ZodType<any, any>>(
       onDeserializationError: (error: any) => {
         console.error(`Deserialization error:`, error);
       },
+      autoIndex: "eager",
+      defaultIndexType: BasicIndex,
     }) as any,
   );
 }

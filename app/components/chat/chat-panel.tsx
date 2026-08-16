@@ -38,8 +38,8 @@ import {
   ConversationContent,
   ConversationScrollButton,
 } from "../ai-elements/conversation";
-import type { StickToBottomContext } from "use-stick-to-bottom";
 import { withRef } from "~/lib/ref-utils";
+import useChatScrollHandler from "~/hooks/chat/use-chat-scroll-handler";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 
@@ -123,15 +123,12 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
     setEditingTitle(false);
   };
 
-  const stickRef = useRef<StickToBottomContext>(null);
-  useEffect(() => {
-    withRef(stickRef, (it) => {
-      const scrollEl = it.scrollRef?.current;
-      if (scrollEl && promptInputDivHeight) {
-        scrollEl.style.scrollPaddingBottom = `${promptInputDivHeight + 24}px`;
-      }
-    });
-  }, [promptInputDivHeight, stickRef]);
+  const { stickRef } = useChatScrollHandler({
+    scrollPaddingTop: pinnedDivHeight,
+    scrollPaddingBottom: promptInputDivHeight,
+    showTop: Boolean(showPinned),
+  });
+
   useEffect(() => {
     if (pinnedDivHeight) {
       withRef(stickRef, (it) => {

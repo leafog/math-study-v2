@@ -3,6 +3,7 @@ import { ToolBlock } from "./_tool-common";
 import type { ToolRendererProps } from "./types";
 import ProblemPreview from "~/components/math/problem-preview";
 import { useChatKgTopics, useChatProblems } from "~/hooks/chat/active-chat";
+import { useEffect, useRef } from "react";
 
 export const CreateProblem = ({
   part,

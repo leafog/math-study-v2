@@ -12,7 +12,23 @@
       "Bash(cat)",
       "Bash(bun /tmp/ce-bench.mjs)",
       "WebFetch(domain:epsil.dev)",
-      "Bash(bun outdated *)"
+      "Bash(bun outdated *)",
+      "Bash(python3 -c \"import json; d=json.load\\(open\\('/Users/yanfeiwuji/work/no1/math-study-v2/app/locales/en.json'\\)\\); print\\('\\\\n'.join\\(d.keys\\(\\)\\)\\)\")",
+      "Bash(python3 -c \"import json; d=json.load\\(open\\('/Users/yanfeiwuji/work/no1/math-study-v2/app/locales/en.json'\\)\\); print\\(json.dumps\\(d['common'], ensure_ascii=False, indent=2\\)\\)\")",
+      "Bash(python3 -c \"import json; d=json.load\\(open\\('/Users/yanfeiwuji/work/no1/math-study-v2/app/locales/zh.json'\\)\\); print\\(json.dumps\\(d['common'], ensure_ascii=False, indent=2\\)\\)\")",
+      "Bash(bun -e 'import { z } from \"zod\"; const s = z.enum\\([\"unanswered\",\"correct\",\"incorrect\"]\\).catch\\(\"unanswered\"\\); console.log\\(\"null ->\", s.parse\\(null\\)\\); console.log\\(\"undefined ->\", s.parse\\(undefined\\)\\); console.log\\(\"correct ->\", s.parse\\(\"correct\"\\)\\); console.log\\(\"bad ->\", s.parse\\(\"garbage\"\\)\\);')",
+      "Bash(node -e \"const l=require\\('lucide-react'\\); for \\(const n of ['NotebookPen','PenLine','SquarePen','Dumbbell','MoreHorizontal','Ellipsis','Copy','GraduationCap','BookOpen','PencilLine']\\) console.log\\(n, !!l[n]\\);\")",
+      "Bash(node -e \"const l=require\\('lucide-react'\\); for \\(const n of ['MessageSquare','MessageCircle','MessagesSquare','Eye','PenLine','NotebookPen']\\) console.log\\(n, !!l[n]\\);\")",
+      "Bash(grep -n \"useSearchParams\\\\|searchParams\\\\|useParams\\\\|useLocation\\\\|problemId\\\\|problem_id\" app/routes/_app.chat.\\\\$id.tsx | head -30)",
+      "Read(//Users/yanfeiwuji/work/no1/math-study-v2/app/routes/**)",
+      "Bash(head -60 app/routes/_app.chat.\\\\$id.tsx)",
+      "Bash(cat app/routes/_app.chat.\\\\$id.tsx; echo \"=== _app.tsx ===\"; grep -n \"chat\\\\|problem\\\\|scroll\\\\|navigate\\\\|path\" app/routes/_app.tsx | head -30)",
+      "Bash(git mv *)",
+      "Bash(grep -oE \"\\(children|className\\)[^;]{0,120}\" node_modules/streamdown/dist/chunk-BO2N2NFS.js)",
+      "Bash(grep -oE \"createElement\\\\\\([A-Za-z]+, *\\\\{[^}]{0,200}\" node_modules/streamdown/dist/chunk-BO2N2NFS.js)",
+      "Bash(grep -oE \"function [A-Za-z]+\\\\\\([^\\)]*\\\\\\)\\\\{[^}]*data-streamdown=[^}]{0,80}\" node_modules/streamdown/dist/chunk-BO2N2NFS.js)",
+      "Bash(grep -oE \"jsx\\\\\\(\\\\\"div\\\\\",\\\\{[^}]*className:[a-z][^}]{0,120}\" node_modules/streamdown/dist/chunk-BO2N2NFS.js)",
+      "Bash(grep -oE \"data-streamdown[^,]{0,40}\" node_modules/streamdown/dist/chunk-BO2N2NFS.js)"
     ],
     "additionalDirectories": [
       "/Users/yanfeiwuji/work/no1/math-study-v2/app/locales"

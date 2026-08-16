@@ -4,6 +4,7 @@ import type { ToolPartRenderMap, AgentToolPart } from "./types";
 import { CheckAnswer } from "./tool-ui-check-answer";
 import { CreateProblem } from "./tool-ui-create-problem";
 import { CreateTopic } from "./tool-ui-create-topic";
+import { LinkTopics } from "./tool-ui-link-topics";
 import { CreateRelationship } from "./tool-ui-create-relationship";
 import { CreateExplanation } from "./tool-ui-create-explanation";
 import { SearchSimilarTopics } from "./tool-ui-search-similar-topics";
@@ -16,6 +17,7 @@ const renderMap = {
   "tool-checkAnswer": CheckAnswer,
   "tool-createProblem": CreateProblem,
   "tool-createTopic": CreateTopic,
+  "tool-linkTopics": LinkTopics,
   "tool-createRelationship": CreateRelationship,
   "tool-createExplanation": CreateExplanation,
   "tool-searchSimilarTopics": SearchSimilarTopics,

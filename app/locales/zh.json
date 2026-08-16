@@ -8,6 +8,10 @@
     "edit": "编辑",
     "create": "新建",
     "search": "搜索",
+    "copy": {
+      "success": "已复制到剪贴板！",
+      "empty": "没有可复制的内容！"
+    },
     "close": "关闭",
     "confirm": "确认",
     "loadMore": "加载更多"
@@ -75,6 +79,12 @@
     "total": "道题目",
     "source": "来源",
     "clearFilter": "清除",
+    "status": {
+      "all": "全部",
+      "unanswered": "未作答",
+      "correct": "已答对",
+      "incorrect": "答错"
+    },
     "empty": "还没有题目，开始创建吧",
     "noFiltered": "没有该来源的题目",
     "yourAnswer": "你的回答",
@@ -88,7 +98,10 @@
     "pinHint": "固定这道题目，方便随时查看",
     "pinReplaceHint": "已固定了另一道题目，固定后将替换",
     "aiFeedback": "AI 点评",
-    "explanation": "题目解析"
+    "explanation": "题目解析",
+    "practice": "去练习",
+    "viewInChat": "在聊天中查看",
+    "copy": "复制"
   },
   "settings": {
     "title": "设置",
@@ -217,6 +230,7 @@
       "createProblem": "创建题目",
       "createRelationship": "建立关系",
       "createTopic": "记录知识点",
+      "linkTopics": "关联知识点",
       "getKnowledgeGraph": "获取知识图谱",
       "invokeCortex": "计算",
       "searchSimilarTopics": "搜索相似"

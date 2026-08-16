@@ -8,6 +8,10 @@
     "edit": "Edit",
     "create": "Create",
     "search": "Search",
+    "copy": {
+      "success": "Copied to clipboard!",
+      "empty": "There's no text to copy!"
+    },
     "close": "Close",
     "confirm": "Confirm",
     "loadMore": "Load More"
@@ -75,6 +79,12 @@
     "total": "problems",
     "source": "Source",
     "clearFilter": "Clear",
+    "status": {
+      "all": "All",
+      "unanswered": "Unanswered",
+      "correct": "Correct",
+      "incorrect": "Incorrect"
+    },
     "empty": "No problems yet, start creating!",
     "noFiltered": "No problems from this source yet",
     "yourAnswer": "Your answer",
@@ -88,7 +98,10 @@
     "pinHint": "Pin this problem for quick access",
     "pinReplaceHint": "Another problem is pinned. Pinning this will replace it.",
     "aiFeedback": "AI Feedback",
-    "explanation": "Solution"
+    "explanation": "Solution",
+    "practice": "Practice",
+    "viewInChat": "View in Chat",
+    "copy": "Copy"
   },
   "settings": {
     "title": "Settings",
@@ -217,6 +230,7 @@
       "createProblem": "Create Problem",
       "createRelationship": "Build Relationship",
       "createTopic": "Record Topic",
+      "linkTopics": "Link Topics",
       "getKnowledgeGraph": "Get Knowledge Graph",
       "invokeCortex": "Compute",
       "searchSimilarTopics": "Search Similar"

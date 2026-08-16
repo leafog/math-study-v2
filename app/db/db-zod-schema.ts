@@ -22,6 +22,12 @@ export const ProblemSchema = z.object({
   source: z
     .enum(["photo", "latex", "batch", "ai", "manual"])
     .describe("How the problem was created"),
+  status: z
+    .enum(["unanswered", "correct", "incorrect"])
+    .catch("unanswered")
+    .describe(
+      "Denormalized answer status, maintained by checkAnswer. Avoids join queries on the problem list.",
+    ),
   created_at: z.date(),
   updated_at: z.date(),
 });
@@ -602,6 +608,14 @@ export const CheckAnswerOutputSchema = z.object({
   message: z.string(),
 });
 export type CheckAnswerOutput = z.infer<typeof CheckAnswerOutputSchema>;
+
+export const LinkTopicsOutputSchema = z.object({
+  success: z.boolean(),
+  linked: z.array(z.string()),
+  skipped: z.array(z.string()),
+  message: z.string(),
+});
+export type LinkTopicsOutput = z.infer<typeof LinkTopicsOutputSchema>;
 
 export const SearchSimilarTopicsOutputSchema = z.object({
   matches: z.array(

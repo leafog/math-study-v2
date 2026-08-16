@@ -25,3 +25,6 @@ export const PROBLEM_STATE_COLORS = {
   /** 答错 — 对应 output-denied (orange-600)，暖色不刺眼 */
   incorrect: "bg-amber-600 dark:bg-amber-500",
 } as const;
+
+/** 题目作答状态 —— 与 ProblemSchema.status 的枚举一致 */
+export type ProblemStatus = keyof typeof PROBLEM_STATE_COLORS;

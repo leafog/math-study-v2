@@ -4,10 +4,11 @@ import { useEffect } from "react";
 import { useBoolean } from "usehooks-ts";
 import confetti from "canvas-confetti";
 import { ToolInline } from "./_tool-common";
-import { Check, X } from "lucide-react";
 
 import { Badge } from "~/components/ui/badge";
-import { PROBLEM_STATE_COLORS } from "~/components/math/constants";
+import { ANSWER_COLORS } from "~/components/math/constants";
+import { cn } from "~/lib/utils";
+import StatusIcon from "~/components/math/status-icon";
 
 export const CheckAnswer = ({
   part,
@@ -35,13 +36,25 @@ export const CheckAnswer = ({
     <ToolInline title={t("toolCall.title.checkAnswer")} part={part}>
       {part.state === "output-available" &&
         (part.output.correct ? (
-          <Badge className={PROBLEM_STATE_COLORS.correct}>
-            <Check data-icon="inline-start" />
+          <Badge
+            className={cn(
+              ANSWER_COLORS.correct.bg,
+              ANSWER_COLORS.correct.text,
+              ANSWER_COLORS.correct.border,
+            )}
+          >
+            <StatusIcon status="correct" />
             {t("toolCall.answerCorrect")}
           </Badge>
         ) : (
-          <Badge className={PROBLEM_STATE_COLORS.incorrect}>
-            <X data-icon="inline-start" />
+          <Badge
+            className={cn(
+              ANSWER_COLORS.incorrect.bg,
+              ANSWER_COLORS.incorrect.text,
+              ANSWER_COLORS.incorrect.border,
+            )}
+          >
+            <StatusIcon status="incorrect" />
             {t("toolCall.answerInCorrect")}
           </Badge>
         ))}

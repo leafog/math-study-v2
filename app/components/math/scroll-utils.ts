@@ -37,9 +37,7 @@ export function scrollToProblemWithOutEvent(problemId: string): void {
 
 export function scrollToProblem(problemId: string): void {
   scrollToProblemWithOutEvent(problemId);
-  setTimeout(() => {
-    bus.emit("problem:scroll-to", problemId);
-  }, 400);
+  bus.emit("problem:scroll-to", problemId);
 }
 
 /**
@@ -47,9 +45,7 @@ export function scrollToProblem(problemId: string): void {
  */
 export function scrollToProblemAndOpenExplanation(problemId: string): void {
   scrollToSeletion(problemId, "explanation");
-  setTimeout(() => {
-    bus.emit("problem:open-explanation", problemId);
-  }, 400);
+  bus.emit("problem:scroll-to", problemId);
 }
 
 /**
@@ -57,7 +53,5 @@ export function scrollToProblemAndOpenExplanation(problemId: string): void {
  */
 export function scrollToProblemAndOpenAnswerRecords(problemId: string): void {
   scrollToSeletion(problemId, "answers");
-  setTimeout(() => {
-    bus.emit("problem:open-answer-record", problemId);
-  }, 400);
+  bus.emit("problem:open-answer-record", problemId);
 }

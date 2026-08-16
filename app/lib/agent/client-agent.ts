@@ -11,6 +11,7 @@ import type {
   UIChatMessage,
 } from "./types";
 import { createTopic } from "./tools/tool-create-topic";
+import { linkTopics } from "./tools/tool-link-topics";
 import { createRelationship } from "./tools/tool-create-relationship";
 import { createProblem } from "./tools/tool-create-problem";
 import { checkAnswer } from "./tools/tool-check-answer";
@@ -38,6 +39,7 @@ export const agent = new ToolLoopAgent({
   reasoning: "low",
   toolApproval: {
     createTopic: "approved",
+    linkTopics: "approved",
     createRelationship: "approved",
     createProblem: "approved",
     checkAnswer: "approved",
@@ -48,6 +50,7 @@ export const agent = new ToolLoopAgent({
   },
   tools: {
     createTopic,
+    linkTopics,
     createRelationship,
     createProblem,
     checkAnswer,

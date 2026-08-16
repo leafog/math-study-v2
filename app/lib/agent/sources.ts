@@ -41,9 +41,10 @@ The system returns the top-5 semantically similar knowledge points (with name, d
 **Key rules**:
 - **Always call searchSimilarTopics before creating any topic**
 - Based on similarity results:
-  - similarity > 0.85 and semantically identical → inform the user the topic exists, **do NOT create a duplicate**
+  - similarity > 0.85 and semantically identical → inform the user the topic exists, **do NOT create a duplicate**; instead call linkTopics with the existing topic's ID so it is recorded against this conversation
   - similarity > 0.7 but conceptually distinct → ask the user whether it's the same topic
   - similarity < 0.7 or no results → call createTopic to create the new topic
+- Whenever the conversation already mentions a topic that exists in the knowledge graph (whether found via searchSimilarTopics or getKnowledgeGraph), call linkTopics with its ID so the session records it — even if you are not creating anything new.
 - When uncertain, show the user the similar topics found and let them decide
 
 ### 3. Name Language Convention
@@ -132,6 +133,11 @@ This lets students view the standard solution even without submitting an answer.
       description: "createProblem tool description",
       template:
         "Create a math problem and present it to the student. Use this tool when you need to give exercises, assign practice, or let the student try solving problems. Content supports Markdown and LaTeX",
+    },
+    "toolDesc.linkTopics": {
+      description: "linkTopics tool description",
+      template:
+        "Associate existing knowledge points with the current conversation. Use this when the conversation touches on topics that already exist in the knowledge graph (found via searchSimilarTopics or getKnowledgeGraph) but haven't been linked to this chat yet. Pass their IDs — do NOT create new topics for ones that already exist. After calling, the topic appears in the session's knowledge graph.",
     },
     "toolDesc.createRelationship": {
       description: "createRelationship tool description",
