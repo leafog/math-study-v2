@@ -12,9 +12,11 @@ import { groupBy } from "lodash-es";
 import { FileQuestion, Loader2, Search, X } from "lucide-react";
 import {
   problemColl,
+  problemChatRelColl,
   answerRecordColl,
   answerAnalysisColl,
   problemExplanationColl,
+  conversationColl,
 } from "~/db/tdb-collections";
 import type { Problem as ProblemType } from "~/db/db-zod-schema";
 import {
@@ -113,17 +115,61 @@ const ProblemIndex = () => {
     estimateSize: () => CARD_HEIGHT + GRID_GAP,
     overscan: 4,
   });
+  const isScrolling = rowVirtualizer.isScrolling;
+  const visibleRowRangeKey = rowVirtualizer
+    .getVirtualItems()
+    .map((item) => item.index)
+    .join(",");
 
+  const visiblePids = useMemo(() => {
+    const pids = new Set<string>();
+    for (const item of rowVirtualizer.getVirtualItems()) {
+      const start = item.index * columns;
+      for (let c = 0; c < columns; c++) {
+        const p = problems[start + c];
+        if (p) pids.add(p.id);
+      }
+    }
+    return [...pids];
+  }, [visibleRowRangeKey, problems, columns]);
+
+  const { data: problemChatInfo } = useLiveQuery(
+    (q) => {
+      if (isScrolling) return;
+      return q
+        .from({ problemChatRelColl })
+        .join(
+          { conversationColl },
+          ({ problemChatRelColl, conversationColl }) =>
+            eq(problemChatRelColl.chat_id, conversationColl.id),
+          "inner",
+        )
+        .where(({ problemChatRelColl }) =>
+          inArray(problemChatRelColl.pid, pids),
+        )
+        .select(({ problemChatRelColl, conversationColl }) => ({
+          pid: problemChatRelColl.pid,
+          chat_id: problemChatRelColl.chat_id,
+          title: conversationColl.title,
+        }));
+    },
+    [visiblePids, isScrolling],
+  );
+  const problemChatInfoMap = useMemo(
+    () => groupBy(problemChatInfo, (it) => it.pid),
+    [problemChatInfo],
+  );
   // Bulk queries for related data
   const { data: answerRecords = [] } = useLiveQuery(
     (q) =>
       q
         .from({ answerRecordColl })
         .where(({ answerRecordColl }) =>
-          inArray(answerRecordColl.problem_id, pids),
+          inArray(answerRecordColl.problem_id, visiblePids),
         ),
-    [pids],
+    [visiblePids],
   );
+
   // Index related data by problem ID
   const answerRecordsMap = useMemo(
     () => groupBy(answerRecords, (it) => it.problem_id),
@@ -135,9 +181,9 @@ const ProblemIndex = () => {
       q
         .from({ answerAnalysisColl })
         .where(({ answerAnalysisColl }) =>
-          inArray(answerAnalysisColl.problem_id, pids),
+          inArray(answerAnalysisColl.problem_id, visiblePids),
         ),
-    [pids],
+    [visiblePids],
   );
   const answerAnalysisesMap = useMemo(
     () => groupBy(answerAnalysises, (it) => it.problem_id),
@@ -149,9 +195,9 @@ const ProblemIndex = () => {
       q
         .from({ problemExplanationColl })
         .where(({ problemExplanationColl }) =>
-          inArray(problemExplanationColl.problem_id, pids),
+          inArray(problemExplanationColl.problem_id, visiblePids),
         ),
-    [pids],
+    [visiblePids],
   );
   const { data: problemCount = { count: 0 } } = useLiveQuery((q) =>
     q
@@ -281,6 +327,7 @@ const ProblemIndex = () => {
                         <ProblemCard
                           problem={p}
                           key={p.id}
+                          inChats={problemChatInfoMap[p.id]}
                           onCardContentClick={setActiveProblem}
                         />
                       ))}
@@ -300,8 +347,10 @@ const ProblemIndex = () => {
           </>
         )}
       </ContainerBody>
+
       <ProblemDetailDialog
         problem={activeProblem}
+        inChats={activeProblem?.id ? problemChatInfoMap[activeProblem.id] : []}
         onClose={() => setActiveProblem(null)}
       />
     </Container>

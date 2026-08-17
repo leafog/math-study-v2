@@ -8,7 +8,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "~/components/ui/tooltip";
-import { MessageResponse } from "~/components/ai-elements/message";
 import {
   Card,
   CardAction,
@@ -28,6 +27,7 @@ import {
 import { usePinnedProblems } from "~/store/pinned-problems-store";
 import { Tool } from "../ai-elements/tool";
 import CopyButton from "../common-ui/copy-button";
+import MathResBlock from "./math-res-block";
 
 export interface ProblemPreviewProps {
   problemId: string;
@@ -133,7 +133,7 @@ export function ProblemPreviewSimple({
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="max-h-48 overflow-y-auto  text-sm scrollbar-thin">
-          <MessageResponse>{problem.content}</MessageResponse>
+          <MathResBlock>{problem.content}</MathResBlock>
         </div>
       </CardContent>
     </Card>

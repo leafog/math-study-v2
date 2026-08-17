@@ -4,7 +4,13 @@ import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { KgTopic } from "~/db/db-zod-schema";
 
-import { kgTopicColl, kgEdgeColl, chatKgTopicColl } from "~/db/tdb-collections";
+import {
+  kgTopicColl,
+  kgEdgeColl,
+  chatKgTopicRelColl,
+  problemChatRelColl,
+  problemColl,
+} from "~/db/tdb-collections";
 import { initOrama, insertTopic, removeTopic } from "~/lib/similar/orama-index";
 import { useKgTopicsStore } from "~/store/kg-topics-store";
 
@@ -101,14 +107,39 @@ const useChatKgTopicsManager = (chatId: string) => {
   const { data: chatKgTopics } = useLiveQuery(
     (q) =>
       q
-        .from({ chatKgTopicColl })
-        .where(({ chatKgTopicColl }) => eq(chatKgTopicColl.chat_id, chatId)),
+        .from({ chatKgTopicRelColl })
+        .where(({ chatKgTopicRelColl }) =>
+          eq(chatKgTopicRelColl.chat_id, chatId),
+        ),
     [chatId],
   );
 
+  const { data: problemTags } = useLiveQuery(
+    (q) =>
+      q
+        .from({ problemChatRelColl })
+        .join({ problemColl }, ({ problemColl, problemChatRelColl }) =>
+          eq(problemColl.id, problemChatRelColl.pid),
+        )
+        .where(({ problemChatRelColl }) =>
+          eq(problemChatRelColl.chat_id, chatId),
+        )
+        .select(({ problemColl }) => {
+          return {
+            ...problemColl,
+          };
+        }),
+    [chatId],
+  );
+
+  const inProblemsTags = useMemo(() => {
+    return new Set(problemTags.flatMap((it) => it.tags ?? []));
+  }, [problemTags]);
+
   const chatKgTopicsIds = useMemo(
-    () => new Set(chatKgTopics.map((it) => it.topic_id)),
-    [chatKgTopics],
+    () =>
+      new Set([...chatKgTopics.map((it) => it.topic_id), ...inProblemsTags]),
+    [chatKgTopics, inProblemsTags],
   );
 
   // Build adjacency map: topic id → set of neighbor ids (cache to avoid O(n) edge scan)

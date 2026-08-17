@@ -23,7 +23,6 @@ export const useChatToolsManager = (
           .where(({ chatToolInstanceColl }) =>
             eq(chatToolInstanceColl.chat_id, chatId),
           ),
-      gcTime: 60_000,
     },
     [chatId],
   );
@@ -37,7 +36,6 @@ export const useChatToolsManager = (
             eq(chatToolsBarStateColl.id, chatId),
           )
           .findOne(),
-      gcTime: 60_000,
     },
     [chatId],
   );

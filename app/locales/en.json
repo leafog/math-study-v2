@@ -233,6 +233,7 @@
       "linkTopics": "Link Topics",
       "getKnowledgeGraph": "Get Knowledge Graph",
       "invokeCortex": "Compute",
+      "practiceProblem": "Practice Problem",
       "searchSimilarTopics": "Search Similar"
     },
     "creatingExplanation": "Generating explanation...",

@@ -10,13 +10,14 @@ const useProblemActions = (problem: Problem) => {
   const [, copyToClipboard] = useCopyToClipboard();
 
   const practice = () => {
+    if (problem.id) {
+      navigate(`/`, { state: { problemId: problem.id, action: "practice" } });
+    }
     // TODO: 练习流程尚未设计,后续补充具体行为
   };
 
-  const viewInChat = () => {
-    if (problem.chat_id) {
-      navigate(`/chat/${problem.chat_id}?problemId=${problem.id}`);
-    }
+  const viewInChat = (chat_id: string) => {
+    navigate(`/chat/${chat_id}?problemId=${problem.id}`);
   };
 
   const copy = async () => {

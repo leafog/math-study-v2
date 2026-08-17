@@ -101,6 +101,7 @@
         "zustand": "^5.0.14",
       },
       "devDependencies": {
+        "@playwright/test": "^1.62.1",
         "@react-router/dev": "8.1.0",
         "@tailwindcss/vite": "^4.3.2",
         "@types/canvas-confetti": "^1.9.0",
@@ -395,6 +396,8 @@
     "@pierre/theme": ["@pierre/theme@1.1.0", "", {}, "sha512-GC2OWTAfTIIWWYhPCygwG8t2EtePQkRfON4MI2rwIkJylmiyqIttJID2dCL8sUD8cNdEvYkEyfEHHKMeCiDLoQ=="],
 
     "@pierre/theming": ["@pierre/theming@0.0.2", "", { "peerDependencies": { "@pierre/theme": "^1.1.0", "@shikijs/themes": "^3.0.0 || ^4.0.0", "react": "^18.3.1 || ^19.0.0", "react-dom": "^18.3.1 || ^19.0.0", "shiki": "^3.0.0 || ^4.0.0" }, "optionalPeers": ["@pierre/theme", "@shikijs/themes", "react", "react-dom", "shiki"] }, "sha512-QM1M4stXfnzfaE8I8YbjXSApV8c+2dBsXJj8eYg9WTpBR/cTmCZIcfGnN4p13iRrYu2Br/R/OJfEL7uR8Qjctw=="],
+
+    "@playwright/test": ["@playwright/test@1.62.1", "", { "dependencies": { "playwright": "1.62.1" }, "bin": { "playwright": "cli.js" } }, "sha512-DTcUc8qii+cpHvtOwggMtBRMjKZHXYWdw8syRYu2vtzuq4Wxphqq4NfCs5Zt44L6mA8rfDfj+PHnxFc/FeK6mQ=="],
 
     "@powersync/common": ["@powersync/common@1.57.2", "https://registry.npmmirror.com/@powersync/common/-/common-1.57.2.tgz", { "dependencies": { "js-logger": "^1.6.1" } }, "sha512-cOsmvBFBK0yvpwjaI46Lm3xCMRaTaydQQ4RolED3Upj6/kawGZHhkh4Guve3nmOSQ/0sGCuiFOcl4Gv9Mp6dOA=="],
 
@@ -1956,6 +1959,10 @@
 
     "pkg-up": ["pkg-up@3.1.0", "https://registry.npmmirror.com/pkg-up/-/pkg-up-3.1.0.tgz", { "dependencies": { "find-up": "^3.0.0" } }, "sha512-nDywThFk1i4BQK4twPQ6TA4RT8bDY96yeuCVBWL3ePARCiEKDRSrNGbFIgUJpLp+XeIR65v8ra7WuJOFUBtkMA=="],
 
+    "playwright": ["playwright@1.62.1", "", { "dependencies": { "playwright-core": "1.62.1" }, "optionalDependencies": { "fsevents": "2.3.2" }, "bin": { "playwright": "cli.js" } }, "sha512-0M+L3LAD8/nm554LOla9Ayx0j0tmFZ0FBcoQ7F1VuVHpM/XpiC8RcDzBQB8W5+hA8L22THxELzeF+2WcUzvcLg=="],
+
+    "playwright-core": ["playwright-core@1.62.1", "", { "bin": { "playwright-core": "cli.js" } }, "sha512-wPYSwEBJY9GHraISXqyqtx0na0LpO3XEX7jNDhntbex7tzUS7kLnZsOlFruFJB4Hi/rhDMjXGqHewDZ68nYZVw=="],
+
     "png-chunk-text": ["png-chunk-text@1.0.0", "https://registry.npmmirror.com/png-chunk-text/-/png-chunk-text-1.0.0.tgz", {}, "sha512-DEROKU3SkkLGWNMzru3xPVgxyd48UGuMSZvioErCure6yhOc/pRH2ZV+SEn7nmaf7WNf3NdIpH+UTrRdKyq9Lw=="],
 
     "png-chunks-encode": ["png-chunks-encode@1.0.0", "https://registry.npmmirror.com/png-chunks-encode/-/png-chunks-encode-1.0.0.tgz", { "dependencies": { "crc-32": "^0.3.0", "sliced": "^1.0.1" } }, "sha512-J1jcHgbQRsIIgx5wxW9UmCymV3wwn4qCCJl6KYgEU/yHCh/L2Mwq/nMOkRPtmV79TLxRZj5w3tH69pvygFkDqA=="],
@@ -2653,6 +2660,8 @@
     "parse-entities/@types/unist": ["@types/unist@2.0.11", "https://registry.npmmirror.com/@types/unist/-/unist-2.0.11.tgz", {}, "sha512-CmBKiL6NNo/OqgmMn95Fk9Whlp2mtvIv+KNpQKN2F4SjvrEesubTRWGYSg+BnWZOnlCaSTU1sMpsBOzgbYhnsA=="],
 
     "parse5/entities": ["entities@6.0.1", "https://registry.npmmirror.com/entities/-/entities-6.0.1.tgz", {}, "sha512-aN97NXWF6AWBTahfVOIrB/NShkzi5H7F9r1s9mD3cDj4Ko5f2qhhVoYMibXF7GlLveb/D2ioWay8lxI97Ven3g=="],
+
+    "playwright/fsevents": ["fsevents@2.3.2", "", { "os": "darwin" }, "sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA=="],
 
     "points-on-path/points-on-curve": ["points-on-curve@0.2.0", "https://registry.npmmirror.com/points-on-curve/-/points-on-curve-0.2.0.tgz", {}, "sha512-0mYKnYYe9ZcqMCWhUjItv/oHjvgEsfKvnUTg8sAtnHr3GVy7rGkXCb6d5cSyqrWqL4k81b9CPg3urd+T7aop3A=="],
 

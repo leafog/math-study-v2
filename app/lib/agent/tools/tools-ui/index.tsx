@@ -10,6 +10,7 @@ import { CreateExplanation } from "./tool-ui-create-explanation";
 import { SearchSimilarTopics } from "./tool-ui-search-similar-topics";
 import { GetKnowledgeGraph } from "./tool-ui-get-knowledge-graph";
 import { InvokeCortex } from "./tool-ui-invoke-cortex";
+import { PracticeProblem } from "./tool-ui-practice-problem";
 
 type ToolKind = keyof ToolPartRenderMap;
 
@@ -23,6 +24,7 @@ const renderMap = {
   "tool-searchSimilarTopics": SearchSimilarTopics,
   "tool-getKnowledgeGraph": GetKnowledgeGraph,
   "tool-invokeCortex": InvokeCortex,
+  "tool-practiceProblem": PracticeProblem,
   "dynamic-tool": undefined,
 } satisfies ToolPartRenderMap;
 

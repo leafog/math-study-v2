@@ -1,8 +1,7 @@
 import { useTranslation } from "react-i18next";
 import type { ToolRendererProps } from "./types";
 import { ToolBlock } from "./_tool-common";
-import { MessageResponse } from "~/components/ai-elements/message";
-import { normalizeMathDelimiters } from "~/lib/utils";
+import MathResBlock from "~/components/math/math-res-block";
 
 export const InvokeCortex = ({
   part,
@@ -23,9 +22,9 @@ export const InvokeCortex = ({
                 {part.output.description}
               </p>
             )}
-            <MessageResponse>
-              {normalizeMathDelimiters(`$$${part.output.latex}$$`)}
-            </MessageResponse>
+            <MathResBlock>
+              {`$$${part.output.latex}$$`}
+            </MathResBlock>
           </div>
         ))}
     </ToolBlock>

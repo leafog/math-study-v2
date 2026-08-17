@@ -1,4 +1,4 @@
-import { MessageResponse } from "~/components/ai-elements/message";
+import MathRes from "../math-res";
 import {
   Card,
   CardAction,
@@ -12,18 +12,28 @@ import { Button } from "~/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { MoreHorizontal, NotebookPen, MessageSquare, Copy } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import useProblemActions from "~/hooks/use-problem-actions";
+import MathResInLine from "../math-res-inline";
+import MathResBlock from "../math-res-block";
 
 const ProblemCard = ({
   problem,
+  inChats = [],
   onCardContentClick,
 }: {
   problem: Problem;
+  inChats: {
+    chat_id: string;
+    title: string;
+  }[];
   onCardContentClick?: (problem: Problem) => void;
 }) => {
   const { t } = useTranslation();
@@ -34,40 +44,60 @@ const ProblemCard = ({
       <CardHeader>
         <CardTitle className="flex min-w-0 items-center gap-1.5">
           <StatusIcon status={problem.status} />
-          <span className="truncate">{problem.description}</span>
+          <MathResInLine>{problem.description}</MathResInLine>
         </CardTitle>
 
         <CardAction className="opacity-0 transition-opacity group-hover/card:opacity-100 focus-within:opacity-100">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon-sm">
+              <Button variant="secondary" size="icon-sm">
                 <MoreHorizontal />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={practice}>
-                <NotebookPen />
-                {t("problem.practice")}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={viewInChat}>
-                <MessageSquare />
-                {t("problem.viewInChat")}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={copy}>
-                <Copy />
-                {t("problem.copy")}
-              </DropdownMenuItem>
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={practice}>
+                  <NotebookPen />
+                  {t("problem.practice")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={copy}>
+                  <Copy />
+                  {t("problem.copy")}
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+
+              {inChats.length > 0 && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel>
+                      {t("problem.viewInChat")}
+                    </DropdownMenuLabel>
+                    {inChats.map(({ chat_id, title }) => (
+                      <DropdownMenuItem
+                        key={chat_id}
+                        onClick={(e) => {
+                          viewInChat(chat_id);
+                        }}
+                      >
+                        <MessageSquare />
+                        <span className=" truncate line-clamp-1">{title}</span>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuGroup>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </CardAction>
       </CardHeader>
       <CardContent
-        className="overflow-hidden m-auto hover:cursor-pointer"
+        className="overflow-hidden  h-full  hover:cursor-pointer"
         onClick={(e) => {
           onCardContentClick?.(problem);
         }}
       >
-        <MessageResponse>{problem.content}</MessageResponse>
+        <MathResBlock>{problem.content}</MathResBlock>
       </CardContent>
     </Card>
   );

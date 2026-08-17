@@ -28,7 +28,11 @@
       "Bash(grep -oE \"createElement\\\\\\([A-Za-z]+, *\\\\{[^}]{0,200}\" node_modules/streamdown/dist/chunk-BO2N2NFS.js)",
       "Bash(grep -oE \"function [A-Za-z]+\\\\\\([^\\)]*\\\\\\)\\\\{[^}]*data-streamdown=[^}]{0,80}\" node_modules/streamdown/dist/chunk-BO2N2NFS.js)",
       "Bash(grep -oE \"jsx\\\\\\(\\\\\"div\\\\\",\\\\{[^}]*className:[a-z][^}]{0,120}\" node_modules/streamdown/dist/chunk-BO2N2NFS.js)",
-      "Bash(grep -oE \"data-streamdown[^,]{0,40}\" node_modules/streamdown/dist/chunk-BO2N2NFS.js)"
+      "Bash(grep -oE \"data-streamdown[^,]{0,40}\" node_modules/streamdown/dist/chunk-BO2N2NFS.js)",
+      "Bash(grep -rn -i \"math\\\\|\\\\\\\\$\\\\\\\\$\\\\|delimiter\\\\|latex\\\\|公式\\\\|数学\\\\|表达式\\\\|$$\" app/lib/agent/ --include=\"*.ts\" --include=\"*.tsx\" -l)",
+      "Bash(grep -n -i \"math\\\\|\\\\\\\\$\\\\\\\\$\\\\|delimiter\\\\|latex\\\\|公式\\\\|数学\\\\|表达式\\\\|\\\\\\\\\\\\\\\\\\\\[\" app/lib/agent/sources.ts)",
+      "Bash(grep -rn \"format\\\\.math\\\\|\\\\\\\\$\\\\\\\\$\\\\|RULE #1\\\\|Math Formula Format\\\\|MATH FORMAT\" app/lib/agent/ --include=\"*.ts\" --include=\"*.tsx\")",
+      "Bash(grep -rn \"delimiter\\\\|\\\\\\\\$\\\\\\\\$\\\\|\\\\`\\\\$\\\\$\" app/lib/agent/ --include=\"*.ts\" --include=\"*.tsx\")"
     ],
     "additionalDirectories": [
       "/Users/yanfeiwuji/work/no1/math-study-v2/app/locales"

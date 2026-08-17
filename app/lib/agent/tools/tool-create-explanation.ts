@@ -15,9 +15,7 @@ export const createExplanation = tool({
       .string()
       .describe(
         "Standard solution/explanation in Markdown + LaTeX. " +
-          getPrompt("format.markdown") +
-          " " +
-          getPrompt("format.math"),
+          getPrompt("format.markdown"),
       ),
   }),
 

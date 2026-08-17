@@ -7,7 +7,9 @@ import {
   useRef,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { MessageContent, MessageResponse } from "../ai-elements/message";
+import { MessageContent } from "../ai-elements/message";
+import MathResBlock from "./math-res-block";
+import MathResInline from "./math-res-inline";
 import "katex/dist/katex.min.css";
 import {
   Card,
@@ -18,7 +20,7 @@ import {
   CardHeader,
 } from "../ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
-import { cn, normalizeMathDelimiters } from "~/lib/utils";
+import { cn } from "~/lib/utils";
 import { Badge } from "../ui/badge";
 import type { AnswerRecord } from "~/db/db-zod-schema";
 import {
@@ -187,7 +189,7 @@ const ProblemPreview = forwardRef<ProblemPreviewHandle, ProblemProps>(
         <CardHeader className="pb-1 pl-5">
           {description && (
             <CardDescription>
-              <MessageResponse>{description}</MessageResponse>
+              <MathResInline>{description}</MathResInline>
             </CardDescription>
           )}
           <CardAction>
@@ -218,9 +220,8 @@ const ProblemPreview = forwardRef<ProblemPreviewHandle, ProblemProps>(
         </CardHeader>
         <CardContent className="space-y-2 pl-5 min-w-0">
           <div className="text-base min-w-0">
-            <MessageResponse>{content}</MessageResponse>
+            <MathResBlock>{content}</MathResBlock>
           </div>
-
           {answers.length > 0 && (
             <Collapsible
               id={`problem-${id}-answers`}
@@ -269,9 +270,7 @@ const ProblemPreview = forwardRef<ProblemPreviewHandle, ProblemProps>(
                               <p className="text-xs text-muted-foreground mb-1">
                                 {t("problem.aiFeedback")}
                               </p>
-                              <MessageResponse>
-                                {normalizeMathDelimiters(analysis.content)}
-                              </MessageResponse>
+                              <MathResBlock>{analysis.content}</MathResBlock>
                             </HoverCardContent>
                           </HoverCard>
                         ) : (
@@ -285,9 +284,7 @@ const ProblemPreview = forwardRef<ProblemPreviewHandle, ProblemProps>(
                           />
                         )}
                         <div className="min-w-0 flex-1">
-                          <MessageResponse>
-                            {normalizeMathDelimiters(it.user_answer)}
-                          </MessageResponse>
+                          <MathResBlock>{it.user_answer}</MathResBlock>
                         </div>
                       </div>
                     </div>
@@ -317,9 +314,7 @@ const ProblemPreview = forwardRef<ProblemPreviewHandle, ProblemProps>(
                 {problemExplanations.map((exp, i) => (
                   <div key={exp.id}>
                     {i > 0 && <Separator className="my-2" />}
-                    <MessageResponse>
-                      {normalizeMathDelimiters(exp.content)}
-                    </MessageResponse>
+                    <MathResBlock>{exp.content}</MathResBlock>
                   </div>
                 ))}
               </CollapsibleContent>

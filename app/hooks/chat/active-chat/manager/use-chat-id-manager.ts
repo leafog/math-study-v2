@@ -30,7 +30,6 @@ export const useChatIdManager = () => {
               eq(conversationColl.id, chatIdFromUrl),
             )
             .findOne(),
-        gcTime: 60_000,
       },
       [chatIdFromUrl],
     );
@@ -41,7 +40,7 @@ export const useChatIdManager = () => {
     if (!hasChatIdInUrl) return;
     if (!conversationReady) return;
     if (currentConversation === undefined) {
-      navigate("/", { replace: true });
+      //  navigate("/", { replace: true });
     }
   }, [conversationReady, hasChatIdInUrl, currentConversation, navigate]);
 

@@ -12,11 +12,8 @@ import {
   useActiveChat,
   useActiveChatHelpers,
   useActiveChatToolsPanelStore,
-  useChatAgent,
 } from "~/hooks/chat/active-chat";
 import ChatPanelRight from "./chat-panel-right";
-import { Marker, MarkerContent, MarkerIcon } from "../ui/marker";
-import { Spinner } from "../ui/spinner";
 import { cn } from "~/lib/utils";
 import {
   useEffect,
@@ -33,15 +30,11 @@ import ChatPromptSuggestion from "./chat-prompt-suggestion";
 import { useChatPromptSuggestionStore } from "~/store/chat-prompt-suggestion-store";
 import { conversationColl } from "~/db/tdb-collections";
 import { useDebounceCallback } from "usehooks-ts";
-import {
-  Conversation,
-  ConversationContent,
-  ConversationScrollButton,
-} from "../ai-elements/conversation";
-import { withRef } from "~/lib/ref-utils";
-import useChatScrollHandler from "~/hooks/chat/use-chat-scroll-handler";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { ArrowDownIcon } from "lucide-react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
+import { useChatPromptProblems } from "~/store/chat-prompt-problems";
 
 interface ChatPanelProps {
   panelRef: React.RefObject<PanelImperativeHandle | null>;
@@ -60,7 +53,7 @@ const ChatInnerWrapper = ({
   style?: CSSProperties;
   menuShow: boolean;
   toolsShow: boolean;
-  className: string;
+  className?: string;
   innerClassName?: string;
 }>) => {
   return (
@@ -99,6 +92,8 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
   const showPinned = chatId && pinnedPid;
 
   const hasSuggestions = useChatPromptSuggestionStore.use.hasSuggestions();
+  const hasProblems = useChatPromptProblems.use.hasProblems();
+
   const showSuggestions = hasSuggestions && isNewChat;
 
   const [editingTitle, setEditingTitle] = useState(false);
@@ -123,24 +118,26 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
     setEditingTitle(false);
   };
 
-  const { stickRef } = useChatScrollHandler({
-    scrollPaddingTop: pinnedDivHeight,
-    scrollPaddingBottom: promptInputDivHeight,
-    showTop: Boolean(showPinned),
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const virtualizer = useVirtualizer({
+    count: messages.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => 72,
+    getItemKey: (index) => messages[index]!.id,
+    anchorTo: "end",
+    followOnAppend: true,
+    scrollEndThreshold: 80,
+    overscan: 3,
+    useFlushSync: false,
+    paddingStart: (showPinned ? (pinnedDivHeight ?? 0) : 0) + 16,
+    paddingEnd: promptInputDivHeight ?? 0,
   });
 
+  // Jump to the latest message when switching chats or on first mount.
   useEffect(() => {
-    if (pinnedDivHeight) {
-      withRef(stickRef, (it) => {
-        const scrollEl = it.scrollRef?.current;
-        if (scrollEl) {
-          scrollEl.style.scrollPaddingTop = showPinned
-            ? `${pinnedDivHeight + 16}px`
-            : "0px";
-        }
-      });
-    }
-  }, [pinnedDivHeight, showPinned]);
+    virtualizer.scrollToEnd();
+  }, [virtualizer, chatId]);
 
   return (
     <ResizablePanel
@@ -202,36 +199,41 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
           />
         </ChatInnerWrapper>
       )}
-      <Conversation contextRef={stickRef}>
-        <ConversationContent
-          className="flex flex-row "
-          scrollClassName={cn("scrollbar-thin scroll-fade")}
-        >
-          <div className="min-w-0 w-full mx-auto max-w-3xl ">
-            {showPinned && (
-              <div style={{ height: `${pinnedDivHeight}px` }}></div>
-            )}
-            {messages.map((message, i) => {
-              const isLast = i === messages.length - 1;
-
-              return (
-                <ChatMessage
-                  key={message.id}
-                  message={message}
-                  status={status}
-                  isAnimating={status === "streaming" && isLast}
-                />
-              );
-            })}
-            <ConversationScrollButton
-              className={cn(
-                menuShow && !toolsShow ? "-translate-x-[calc(50%+10rem)]" : "",
-              )}
-              style={{
-                bottom: `calc(1rem + ${promptInputDivHeight}px + 0.5rem)`,
-              }}
-            />
-            <div style={{ height: `${promptInputDivHeight}px` }}></div>
+      <div
+        ref={scrollRef}
+        className="relative flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scroll-fade "
+      >
+        <div className="flex flex-row min-h-full px-4">
+          <div className="min-w-0 w-full mx-auto max-w-3xl relative px-4">
+            <div
+              className="relative w-full"
+              style={{ height: virtualizer.getTotalSize() }}
+            >
+              {virtualizer.getVirtualItems().map((virtualRow) => {
+                const message = messages[virtualRow.index];
+                if (!message) return null;
+                return (
+                  <div
+                    key={virtualRow.key}
+                    data-index={virtualRow.index}
+                    ref={virtualizer.measureElement}
+                    className="absolute top-0 left-0 w-full"
+                    style={{
+                      transform: `translateY(${virtualRow.start}px)`,
+                      paddingBottom: "2rem",
+                    }}
+                  >
+                    <ChatMessage
+                      message={message}
+                      isAnimating={
+                        status === "streaming" &&
+                        virtualRow.index === messages.length - 1
+                      }
+                    />
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {menuShow && !toolsShow && (
@@ -239,8 +241,28 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
               <ChatPanelRight />
             </div>
           )}
-        </ConversationContent>
-      </Conversation>
+        </div>
+      </div>
+      {!virtualizer.isAtEnd() && (
+        <ChatInnerWrapper
+          menuShow={menuShow}
+          toolsShow={toolsShow}
+          className="items-center mx-auto"
+          innerClassName="mx-auto flex items-center justify-center"
+          style={{
+            bottom: `calc(1rem + ${promptInputDivHeight ?? 0}px)`,
+          }}
+        >
+          <Button
+            onClick={() => virtualizer.scrollToEnd({ behavior: "smooth" })}
+            size="icon"
+            type="button"
+            variant="outline"
+          >
+            <ArrowDownIcon className="size-4" />
+          </Button>
+        </ChatInnerWrapper>
+      )}
       {isNewChat && (
         <ChatInnerWrapper
           className={cn(

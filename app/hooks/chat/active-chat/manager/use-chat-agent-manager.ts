@@ -1,11 +1,10 @@
 import { useLiveQuery } from "@tanstack/react-db";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 
 import { settingModelConfigColl } from "~/db/tdb-collections";
 import type { SettingModelConfig } from "~/db/db-zod-schema";
 import { modelIconRecord } from "~/lib/agent";
 import type { ProviderId } from "~/lib/agent/types";
-import { useAgent } from "~/lib/agent/client-agent";
 
 const useChatAgentManager = () => {
   const { data: settings = [] } = useLiveQuery((q) =>

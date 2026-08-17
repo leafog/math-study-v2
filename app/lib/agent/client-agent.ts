@@ -19,12 +19,13 @@ import { createExplanation } from "./tools/tool-create-explanation";
 import { searchSimilarTopics } from "./tools/tool-search-similar-topics";
 import { getKnowledgeGraph } from "./tools/tool-get-knowledge-graph";
 import { instructions } from "./instructions";
-import {} from "./tools";
-import { genId, hashString } from "../id-utils";
+
+import { hashString } from "../id-utils";
 import { useTranslation } from "react-i18next";
 import { transports } from "./create-transport";
 import { useMemo } from "react";
 import { invokeCortex } from "./tools/tool-invoke-cortex";
+import { practiceProblem } from "./tools/tool-practice-problem";
 
 export const deepseek = createDeepSeek({
   apiKey: "",
@@ -47,6 +48,7 @@ export const agent = new ToolLoopAgent({
     searchSimilarTopics: "approved",
     getKnowledgeGraph: "approved",
     invokeCortex: "approved",
+    practiceProblem: "approved",
   },
   tools: {
     createTopic,
@@ -58,6 +60,7 @@ export const agent = new ToolLoopAgent({
     searchSimilarTopics,
     getKnowledgeGraph,
     invokeCortex,
+    practiceProblem,
   },
 });
 

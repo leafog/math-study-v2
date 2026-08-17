@@ -18,7 +18,7 @@ import {
   type PromptInputProps,
 } from "~/components/ai-elements/prompt-input";
 
-import { chatMessageColl } from "~/db/tdb-collections";
+import { chatMessageColl, problemColl } from "~/db/tdb-collections";
 import { genId } from "~/lib/id-utils";
 import {
   Attachment,
@@ -32,7 +32,7 @@ import {
 } from "../ui/attachment";
 import { Plus, X, XIcon } from "lucide-react";
 import { fileStore } from "~/db/indexdb-file-storage";
-import type { FileUIPart } from "ai";
+import { convertToModelMessages, type FileUIPart } from "ai";
 import {
   useToolSelectionStore,
   type ToolSelectionItem,
@@ -45,17 +45,17 @@ import {
   HoverCardTrigger,
   HoverCardContent,
 } from "../ui/hover-card";
-import { MessageResponse } from "../ai-elements/message";
+import MathRes from "../math/math-res";
 import { useEffect } from "react";
 import { useChatPromptInput } from "~/hooks/chat/active-chat/hooks";
 import { useChatPromptSuggestionStore } from "~/store/chat-prompt-suggestion-store";
+import { useChatPromptProblems } from "~/store/chat-prompt-problems";
 import { useEvent } from "~/event/use-event";
-import {
-  ModelSelector,
-  ModelSelectorTrigger,
-} from "../ai-elements/model-selector";
+
 import ChatPromptModelSelector from "./chat-prompt-model-selector";
 import ChatPromptModelThinkingEffort from "./chat-prompt-model-thinking-effort";
+import { useLocation } from "react-router";
+import { ProblemsAttachmentList } from "../math/problems-attachment-list";
 
 const DisplayAttachments = () => {
   const attachments = usePromptInputAttachments();
@@ -127,7 +127,7 @@ const DisplaySelectsMap = ({
             </Badge>
           </HoverCardTrigger>
           <HoverCardContent>
-            <MessageResponse>{item.content}</MessageResponse>
+            <MathRes>{item.content}</MathRes>
           </HoverCardContent>
         </HoverCard>
       ))}
@@ -141,10 +141,38 @@ const PruePromptInput = () => {
   const { isNewChat, createChat } = useActiveChat();
   const selectsMap = useToolSelectionStore.use.selectsMap();
 
+  const practcieProblems = useChatPromptProblems.use.problems();
+  const hasProblems = useChatPromptProblems.use.hasProblems();
+  const pushProblem = useChatPromptProblems.use.pushProblem();
+  const removeProblem = useChatPromptProblems.use.removeProblem();
+  const clearProblems = useChatPromptProblems.use.clearProblems();
+  const { state } = useLocation();
+
+  useEffect(() => {
+    if (!state) {
+      clearProblems();
+      return;
+    }
+    const ns = state as { problemId: string; action: "practice" };
+    if (ns.problemId && ns.action === "practice") {
+      const problem = problemColl.get(ns.problemId);
+      if (!problem) {
+        clearProblems();
+        return;
+      }
+      pushProblem(problem);
+    }
+  }, [state]);
+
+  useEffect(() => {
+    if (!isNewChat) {
+      clearProblems();
+    }
+  }, [isNewChat]);
   const onSubmit: PromptInputProps["onSubmit"] = async (message) => {
     const title = message.text;
     if (isNewChat) {
-      createChat(title);
+      createChat(title.slice(0, 40));
     }
     const fileParts = await Promise.all(
       message.files.map(async (file: FileUIPart) => {
@@ -177,19 +205,41 @@ const PruePromptInput = () => {
 
     const parts: any[] = [];
     parts.push({ text: fullText, type: "text" });
+
     if (fileParts.length > 0) {
       parts.push(...fileParts);
     }
 
+    // 练习题目作为隐藏的 HTML 注释发给模型：模型能看到，界面不渲染。
+    const practiceComments = practcieProblems
+      .map(
+        (p, i) =>
+          `<!-- practice-problem ${i + 1}\nid: ${p.id}\ndescription: ${p.description ?? ""}\ncontent:\n${p.content.replaceAll("--", "- -")}\n-->`,
+      )
+      .join("\n\n");
+
+    setTextInputValue("");
+    const endMessage = {
+      ...message,
+      text: practiceComments ? `${fullText}\n\n${practiceComments}` : fullText,
+      metadata: {
+        practiceProblems: practcieProblems,
+      },
+    };
+    const now = new Date();
     chatMessageColl.insert({
       chat_id: id,
       role: "user",
       id: genId(),
       parts,
-      created_at: new Date(),
+      metadata: {
+        created_at: now,
+        practiceProblems: practcieProblems,
+      },
+      created_at: now,
     });
-    setTextInputValue("");
-    sendMessage({ ...message, text: fullText });
+
+    sendMessage(endMessage);
   };
   const { textInput } = usePromptInputController();
   const textInputValue = useChatPromptInput().use.textInputValue();
@@ -220,6 +270,12 @@ const PruePromptInput = () => {
       className="bg-background"
     >
       <PromptInputHeader>
+        {hasProblems && (
+          <ProblemsAttachmentList
+            problems={practcieProblems}
+            handleRemove={removeProblem}
+          />
+        )}
         <DisplayAttachments />
         <DisplaySelectsMap selectsMap={selectsMap} />
       </PromptInputHeader>

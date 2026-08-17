@@ -8,8 +8,9 @@ import {
   XCircleIcon,
   Wrench,
 } from "lucide-react";
-import { type ToolPart } from "~/components/ai-elements/tool";
+import { Tool, type ToolPart } from "~/components/ai-elements/tool";
 import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
 
 const STATUS_I18N_KEYS: Record<ToolPart["state"], string> = {
   "approval-requested": "toolCall.status.approvalRequested",
@@ -62,8 +63,8 @@ export const ToolInline = ({
   title?: string;
 }>) => {
   return (
-    <div className="flex flex-row gap-2 items-center align-middle">
-      <ToolState title={title ?? ""} state={part.state}></ToolState>
+    <div className="flex  flex-row gap-2 h-8 items-center align-middle overflow-hidden">
+      <ToolState title={title ?? ""} state={part.state} />
       {part.state === "output-available" && children}
     </div>
   );
@@ -77,7 +78,7 @@ export const ToolBlock = ({
   title?: string;
 }>) => {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 ">
       <div className="w-full">
         <ToolState title={title ?? ""} state={part.state}></ToolState>
       </div>

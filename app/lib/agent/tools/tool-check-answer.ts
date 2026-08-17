@@ -26,10 +26,7 @@ export const checkAnswer = tool({
       .string()
       .optional()
       .describe(
-        "AI feedback/analysis on this answer. " +
-          getPrompt("format.markdown") +
-          " " +
-          getPrompt("format.math"),
+        "AI feedback/analysis on this answer. " + getPrompt("format.markdown"),
       ),
   }),
 

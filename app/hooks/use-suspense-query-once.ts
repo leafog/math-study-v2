@@ -49,7 +49,6 @@ export function useSuspenseQueryOnce<
   if (!collectionRef.current) {
     const collection = createLiveQueryCollection({
       query: (q: InitialQueryBuilder) => (queryFn as any)(q),
-      gcTime: 1,
     });
     collectionRef.current = collection;
 

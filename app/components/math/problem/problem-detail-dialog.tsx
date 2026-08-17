@@ -8,18 +8,27 @@ import {
 } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import StatusIcon from "../status-icon";
-import { MessageResponse } from "~/components/ai-elements/message";
+import MathResBlock from "../math-res-block";
+import MathResInline from "../math-res-inline";
 import { NotebookPen, MessageSquare, Copy } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import useProblemActions from "~/hooks/use-problem-actions";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
 
 interface ProblemDetailDialogProps {
   problem: Problem | null;
   onClose: () => void;
+  inChats: { chat_id: string; title: string }[];
 }
 
 const ProblemDetailDialog = ({
   problem,
+  inChats = [],
   onClose,
 }: ProblemDetailDialogProps) => {
   const { t } = useTranslation();
@@ -45,27 +54,42 @@ const ProblemDetailDialog = ({
           <DialogHeader>
             <DialogTitle className="flex min-w-0 items-center gap-1.5">
               <StatusIcon status={problem.status} />
-              <MessageResponse className="min-w-0 flex-1 [*_p]:truncate line-clamp-1">
-                {problem.description}
-              </MessageResponse>
+              <MathResInline>{problem.description}</MathResInline>
             </DialogTitle>
           </DialogHeader>
           <div className="-mx-4 no-scrollbar max-h-[70vh] overflow-y-auto px-4">
-            <MessageResponse>{problem.content}</MessageResponse>
+            <MathResBlock>{problem.content}</MathResBlock>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={copy}>
               <Copy />
               {t("problem.copy")}
             </Button>
-            <Button variant="outline" onClick={viewInChat}>
-              <MessageSquare />
-              {t("problem.viewInChat")}
-            </Button>
+
             <Button onClick={practice}>
               <NotebookPen />
               {t("problem.practice")}
             </Button>
+            {inChats.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant={"ghost"}>{t("problem.viewInChat")}</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  {inChats.map(({ chat_id, title }) => (
+                    <DropdownMenuItem
+                      key={chat_id}
+                      onClick={(e) => {
+                        viewInChat(chat_id);
+                      }}
+                    >
+                      <MessageSquare />
+                      <span className=" truncate line-clamp-1">{title}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </DialogFooter>
         </DialogContent>
       )}

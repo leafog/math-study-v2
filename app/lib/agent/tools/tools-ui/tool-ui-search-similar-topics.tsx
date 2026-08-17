@@ -6,7 +6,6 @@ export const SearchSimilarTopics = ({
   part,
 }: ToolRendererProps<"tool-searchSimilarTopics">) => {
   const { t } = useTranslation();
-
   return (
     <ToolInline title={t("toolCall.title.searchSimilarTopics")} part={part} />
   );

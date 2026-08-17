@@ -1,6 +1,7 @@
 import {
   memo,
   type ComponentProps,
+  type ReactNode,
   useMemo,
   useCallback,
   useEffect,
@@ -9,8 +10,8 @@ import {
   Message,
   MessageActions,
   MessageContent,
-  MessageResponse,
 } from "../ai-elements/message";
+import MathResBlock from "../math/math-res-block";
 import {
   Reasoning,
   ReasoningContent,
@@ -29,26 +30,35 @@ import { cn } from "~/lib/utils";
 import { Marker, MarkerContent, MarkerIcon } from "../ui/marker";
 import { Spinner } from "../ui/spinner";
 import type { ChatStatus } from "ai";
+import { ProblemsAttachmentList } from "../math/problems-attachment-list";
 
 export type MessageActionProps = ComponentProps<typeof Button> & {
   tooltip?: string;
   label?: string;
 };
 
+// 已完成消息的渲染结果缓存:切回已看过的会话时直接复用 React 元素,
+// React 对引用相等的元素会跳过整棵子树的重新渲染,从而跳过
+// Streamdown 解析与 KaTeX 数学公式的重复计算(长公式消息切换卡顿的主因)。
+// 只缓存非动画(已结束生成)的消息;消息 id 由 genId 生成,内容不可变。
+const renderedMessageCache = new Map<string, ReactNode>();
+const MAX_RENDERED_CACHE = 300;
+
 const PureChatMessage = memo(
   ({
     message,
     isAnimating = false,
-    status,
   }: {
     message: UIChatMessage;
     isAnimating?: boolean;
-    status: ChatStatus;
   }) => {
     const { t } = useTranslation();
 
     const isUser = message.role === "user";
     const align = isUser ? "end" : "start";
+    const practiceProblems = message.metadata?.practiceProblems ?? [];
+
+    const hasPracticeProblems = practiceProblems.length > 0;
 
     const getThinkingMessage = useCallback(
       (isStreaming: boolean, duration?: number) => {
@@ -113,7 +123,13 @@ const PureChatMessage = memo(
       );
     }
 
-    return (
+    // 缓存命中:已完成的消息直接复用之前的渲染结果
+    if (!isAnimating) {
+      const cached = renderedMessageCache.get(message.id);
+      if (cached) return cached;
+    }
+
+    const content = (
       <div className="group">
         <Message from={message.role} key={message.id}>
           {isThinking ? (
@@ -127,17 +143,22 @@ const PureChatMessage = memo(
             </Marker>
           ) : (
             <>
+              {hasPracticeProblems && (
+                <div className="ml-auto justify-end">
+                  <ProblemsAttachmentList problems={practiceProblems} />
+                </div>
+              )}
               {filteredParts.map((part, i) => {
                 const key = `message-${message.id}-part-${i}`;
                 if (part.type === "text") {
                   return (
                     <MessageContent key={key}>
-                      <MessageResponse
+                      <MathResBlock
                         isAnimating={part.state === "streaming"}
                         caret="block"
                       >
                         {part.text}
-                      </MessageResponse>
+                      </MathResBlock>
                     </MessageContent>
                   );
                 }
@@ -203,6 +224,18 @@ const PureChatMessage = memo(
         </MessageActions>
       </div>
     );
+
+    if (!isAnimating) {
+      renderedMessageCache.set(message.id, content);
+      if (renderedMessageCache.size > MAX_RENDERED_CACHE) {
+        const oldestKey = renderedMessageCache.keys().next().value;
+        if (oldestKey !== undefined) {
+          renderedMessageCache.delete(oldestKey);
+        }
+      }
+    }
+
+    return content;
   },
 );
 

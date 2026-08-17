@@ -1,5 +1,5 @@
 import { tool } from "ai";
-import { kgTopicColl, chatKgTopicColl } from "~/db/tdb-collections";
+import { kgTopicColl, chatKgTopicRelColl } from "~/db/tdb-collections";
 import { genId } from "~/lib/id-utils";
 
 import { CreateTopicOutputSchema, KgTopicSchema } from "~/db/db-zod-schema";
@@ -30,7 +30,7 @@ export const createTopic = tool({
 
     // 关联到当前会话
     if (chatId) {
-      chatKgTopicColl.insert({
+      chatKgTopicRelColl.insert({
         id: genId(),
         chat_id: chatId,
         topic_id: topic.id,

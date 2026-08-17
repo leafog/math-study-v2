@@ -12,7 +12,6 @@ export const useMessagesManager = (chatId: string) => {
           .orderBy(({ chatMessageColl }) => chatMessageColl.created_at, {
             direction: "asc",
           }),
-      gcTime: 60_000,
     },
     [chatId],
   );

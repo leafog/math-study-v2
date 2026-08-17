@@ -1,9 +1,18 @@
 import { tool } from "ai";
-import { problemColl, chatKgTopicColl } from "~/db/tdb-collections";
-import { CreateProblemOutputSchema, ProblemSchema } from "~/db/db-zod-schema";
+import {
+  problemColl,
+  chatKgTopicRelColl,
+  problemChatRelColl,
+} from "~/db/tdb-collections";
+import {
+  CreateProblemOutputSchema,
+  ProblemSchema,
+  type Problem,
+} from "~/db/db-zod-schema";
 import { genId } from "~/lib/id-utils";
 import { chatIdStore } from "~/store/chat-id-store";
 import { getPrompt } from "../instructions";
+import type { ProblemChatRel } from "../../../db/db-zod-schema";
 
 export const createProblem = tool({
   description: getPrompt("toolDesc.createProblem"),
@@ -14,34 +23,32 @@ export const createProblem = tool({
     status: true,
   }),
   execute: (input) => {
-    const chatId = chatIdStore.getState().chatId;
+    const chat_id = chatIdStore.getState().chatId;
     const now = new Date();
     const pid = genId();
     // 保存题目到 problem 表
-    const problem = {
+    const problem: Problem = {
       ...input,
       id: pid,
-      chat_id: chatId,
+      chat_id,
       status: "unanswered" as const,
       created_at: now,
       updated_at: now,
     };
+    const problemChatRel: ProblemChatRel = {
+      id: genId(),
+      pid,
+      chat_id,
+      created_at: now,
+      updated_at: now,
+    };
+    problemChatRelColl.insert(problemChatRel);
     problemColl.insert(problem);
-
-    // 保存 tags 到 chatKgTopic
-    for (const tagId of problem.tags) {
-      chatKgTopicColl.insert({
-        id: genId(),
-        chat_id: chatId,
-        topic_id: tagId,
-        created_at: now,
-      });
-    }
 
     return CreateProblemOutputSchema.parse({
       ...input,
       id: pid,
-      chat_id: chatId,
+      chat_id,
     });
   },
 });

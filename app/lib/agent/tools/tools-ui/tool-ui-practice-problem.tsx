@@ -3,46 +3,32 @@ import { ToolBlock } from "./_tool-common";
 import type { ToolRendererProps } from "./types";
 import ProblemPreview from "~/components/math/problem-preview";
 import { useChatKgTopics, useChatProblems } from "~/hooks/chat/active-chat";
-import { useEffect, useRef } from "react";
 
-export const CreateProblem = ({
+export const PracticeProblem = ({
   part,
-}: ToolRendererProps<"tool-createProblem">) => {
+}: ToolRendererProps<"tool-practiceProblem">) => {
   const { t } = useTranslation();
 
   return (
-    <ToolBlock title={t("toolCall.title.createProblem")} part={part}>
+    <ToolBlock title={t("toolCall.title.practiceProblem")} part={part}>
       {part.state === "output-available" && (
-        <div id={`problem-${part.output.id}`}>
-          <ConnectedProblemView
-            problemId={part.output.id}
-            chatId={part.output.chat_id ?? undefined}
-            tagIds={part.output.tags ?? []}
-          />
-        </div>
+        <ProblemByIdView problemId={part.output.id} />
       )}
     </ToolBlock>
   );
 };
 
-function ConnectedProblemView({
-  problemId,
-  chatId,
-}: Readonly<{
-  problemId: string;
-  chatId?: string;
-  tagIds: string[];
-}>) {
+function ProblemByIdView({ problemId }: Readonly<{ problemId: string }>) {
   const {
     problemsMap,
     answerRecordsMap,
     answerAnalysisesMap,
     problemExplanationsMap,
+    registerRef,
   } = useChatProblems();
 
   const { kgTopicsMap } = useChatKgTopics();
   const problem = problemsMap[problemId];
-  const { registerRef } = useChatProblems();
   if (!problem) return null;
 
   return (
@@ -55,7 +41,7 @@ function ConnectedProblemView({
         .map((it) => kgTopicsMap[it])
         .filter((it) => it !== undefined)}
       problemExplanations={problemExplanationsMap[problemId] ?? []}
-      chatId={chatId}
+      chatId={problem.chat_id ?? undefined}
     />
   );
 }

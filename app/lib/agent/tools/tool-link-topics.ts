@@ -1,7 +1,7 @@
 import { tool } from "ai";
 import { eq, queryOnce } from "@tanstack/react-db";
 import { z } from "zod";
-import { chatKgTopicColl } from "~/db/tdb-collections";
+import { chatKgTopicRelColl } from "~/db/tdb-collections";
 import { LinkTopicsOutputSchema } from "~/db/db-zod-schema";
 import { genId } from "~/lib/id-utils";
 import { chatIdStore } from "~/store/chat-id-store";
@@ -28,8 +28,8 @@ export const linkTopics = tool({
     // 查询当前会话已关联的知识点，避免重复关联
     const existing = await queryOnce((q) =>
       q
-        .from({ chatKgTopicColl })
-        .where(({ chatKgTopicColl }) => eq(chatKgTopicColl.chat_id, chatId)),
+        .from({ chatKgTopicRelColl })
+        .where(({ chatKgTopicRelColl }) => eq(chatKgTopicRelColl.chat_id, chatId)),
     );
     const existingTopicIds = new Set(existing.map((it) => it.topic_id));
 
@@ -40,7 +40,7 @@ export const linkTopics = tool({
         skipped.push(topicId);
         continue;
       }
-      chatKgTopicColl.insert({
+      chatKgTopicRelColl.insert({
         id: genId(),
         chat_id: chatId,
         topic_id: topicId,

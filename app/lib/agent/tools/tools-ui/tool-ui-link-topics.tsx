@@ -11,7 +11,7 @@ export const LinkTopics = ({ part }: ToolRendererProps<"tool-linkTopics">) => {
     <ToolInline title={t("toolCall.title.linkTopics")} part={part}>
       {topicIds && topicIds.length > 0 && (
         <div className="flex flex-row flex-wrap gap-1">
-          {topicIds.map((id) => (
+          {topicIds.slice(0, 3).map((id) => (
             <KgTopicInChatItem key={id} id={id} />
           ))}
         </div>

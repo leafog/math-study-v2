@@ -1,5 +1,5 @@
-import { useEffect, useMemo, type ReactNode } from "react";
-import { useChat } from "@ai-sdk/react";
+import { useEffect, useMemo, useRef, type ReactNode } from "react";
+import { Chat, useChat } from "@ai-sdk/react";
 import { useAgent } from "~/lib/agent/client-agent";
 import { genId } from "~/lib/id-utils";
 import { chatMessageColl } from "~/db/tdb-collections";
@@ -46,49 +46,92 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
     reasoning,
   );
 
-  const chatHelpersRaw = useChat<UIChatMessage>({
-    id: chatId,
-    transport: agentTransport!,
-    generateId: genId,
-    messages: initMessages,
-    throttle: 100,
-    onToolCall: async ({ toolCall }) => {},
-    onError: (error) => {
-      toast.error(error.message, { position: "top-center" });
-    },
-    onFinish: ({ message }) => {
-      const meta = message.metadata as Record<string, number> | undefined;
-      if (meta) {
-        // Collect reasoning start/end timestamps from Date.now()-based keys
-        const startKeys = Object.keys(meta)
-          .filter((k) => k.startsWith("reasoning-start:"))
-          .sort((a, b) => meta[a]! - meta[b]!);
-        const endKeys = Object.keys(meta)
-          .filter((k) => k.startsWith("reasoning-end:"))
-          .sort((a, b) => meta[a]! - meta[b]!);
-        const reasoningParts = message.parts?.filter(
-          (part) => part.type === "reasoning",
-        );
-        if (reasoningParts) {
-          reasoningParts.forEach((part, i) => {
-            if (i < startKeys.length && i < endKeys.length) {
-              const start = meta[startKeys[i]!];
-              const end = meta[endKeys[i]!];
-              if (start != null && end != null) {
-                (part as any)._duration = Math.ceil((end - start) / 1000);
+  // 每个会话持有独立的 Chat 实例,onFinish/onError 闭包在创建时绑定正确的 chatId。
+  // 若改用 useChat 的 id 选项,其内部 latestRef 会在切换会话后被更新为最新 render 的
+  // 回调,导致旧会话的孤儿流结束时把消息写进当前会话的数据库(数据串写)。
+  const transportRef = useRef(agentTransport);
+  transportRef.current = agentTransport;
+
+  const chatInstanceRef = useRef<Chat<UIChatMessage> | null>(null);
+  const pendingStopRef = useRef<(() => Promise<void>) | null>(null);
+
+  if (chatInstanceRef.current?.id !== chatId) {
+    if (chatInstanceRef.current) {
+      // 切换会话:把旧 Chat 的 stop 推迟到 effect 中执行,
+      // 中止旧会话仍在进行的 LLM 流(否则成为孤儿流,持续占用 CPU/内存/API)
+      pendingStopRef.current = chatInstanceRef.current.stop;
+    }
+    chatInstanceRef.current = new Chat<UIChatMessage>({
+      id: chatId,
+      transport: {
+        sendMessages: (opts) => transportRef.current!.sendMessages(opts),
+        reconnectToStream: (opts) =>
+          transportRef.current!.reconnectToStream(opts),
+      },
+      generateId: genId,
+      messages: initMessages,
+      onToolCall: async ({ toolCall }) => {},
+      onError: (error) => {
+        toast.error(error.message, { position: "top-center" });
+      },
+      onFinish: ({ message, isAbort }) => {
+        // 切换会话导致的中止:消息不完整且属于旧会话,不落库
+        if (isAbort) return;
+        const meta = message.metadata as Record<string, number> | undefined;
+        if (meta) {
+          // Collect reasoning start/end timestamps from Date.now()-based keys
+          const startKeys = Object.keys(meta)
+            .filter((k) => k.startsWith("reasoning-start:"))
+            .sort((a, b) => meta[a]! - meta[b]!);
+          const endKeys = Object.keys(meta)
+            .filter((k) => k.startsWith("reasoning-end:"))
+            .sort((a, b) => meta[a]! - meta[b]!);
+          const reasoningParts = message.parts?.filter(
+            (part) => part.type === "reasoning",
+          );
+          if (reasoningParts) {
+            reasoningParts.forEach((part, i) => {
+              if (i < startKeys.length && i < endKeys.length) {
+                const start = meta[startKeys[i]!];
+                const end = meta[endKeys[i]!];
+                if (start != null && end != null) {
+                  (part as any)._duration = Math.ceil((end - start) / 1000);
+                }
               }
-            }
-          });
+            });
+          }
         }
-      }
-      chatMessageColl.insert({
-        chat_id: chatId,
-        created_at: new Date(),
-        ...message,
-      });
-    },
-    // sendAutomaticallyWhen: () => true,
+        chatMessageColl.insert({
+          chat_id: chatId,
+          created_at: new Date(),
+          ...message,
+        });
+      },
+    });
+  }
+
+  useEffect(() => {
+    pendingStopRef.current?.();
+    pendingStopRef.current = null;
+  }, [chatId]);
+
+  const chatHelpersRaw = useChat<UIChatMessage>({
+    chat: chatInstanceRef.current,
+    throttle: 100,
   });
+
+  // 兜底:切到已有会话时,若 initMessages 在 Chat 创建之后才到达,
+  // 同步一次历史消息(仅在空闲且本会话未同步过时,避免与进行中的流冲突)
+  const syncedChatRef = useRef<string | null>(null);
+  const chatStatus = chatHelpersRaw.status;
+
+  useEffect(() => {
+    if (!initMessages?.length) return;
+    if (syncedChatRef.current === chatId) return;
+    if (chatStatus === "streaming" || chatStatus === "submitted") return;
+    chatHelpersRaw.setMessages(initMessages);
+    syncedChatRef.current = chatId;
+  }, [chatId, initMessages, chatStatus, chatHelpersRaw.setMessages]);
 
   const chatHelpers = useMemo(
     () => chatHelpersRaw,

@@ -7,6 +7,7 @@ import { useMeasure } from "@uidotdev/usehooks";
 import { cn } from "~/lib/utils";
 import { useChatPromptInput } from "~/hooks/chat/active-chat/hooks";
 import { bus } from "~/event/event-bus";
+import { useChatPromptProblems } from "~/store/chat-prompt-problems";
 
 interface WelcomeAction {
   id: keyof typeof chatIconMap;
@@ -111,6 +112,7 @@ const ChatWelcome = () => {
   const hasInputValue = textInputValue.trim().length > 0;
 
   const setSuggestions = useChatPromptSuggestionStore.use.setSuggestions();
+  const hasProblems = useChatPromptProblems.use.hasProblems();
 
   return (
     <div ref={ref} className="flex flex-col gap-8 items-center">
@@ -120,7 +122,7 @@ const ChatWelcome = () => {
       <div
         className={cn(
           "grid gap-4 w-full ",
-          hasInputValue && "opacity-0 pointer-events-none",
+          (hasInputValue || hasProblems) && "opacity-0 pointer-events-none",
         )}
         style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
       >

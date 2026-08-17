@@ -233,6 +233,7 @@
       "linkTopics": "关联知识点",
       "getKnowledgeGraph": "获取知识图谱",
       "invokeCortex": "计算",
+      "practiceProblem": "练习题目",
       "searchSimilarTopics": "搜索相似"
     },
     "creatingExplanation": "正在生成解析...",
