@@ -1,5 +1,5 @@
-import { DirectChatTransport, ToolLoopAgent } from "ai";
-import type { TransportFC } from "../types";
+import { DirectChatTransport, ToolLoopAgent, type ChatTransport } from "ai";
+import type { TransportFC, UIChatMessage } from "../types";
 import { getPrompt } from "../instructions";
 
 import { commonToolsConfig } from "../tools";
@@ -22,11 +22,15 @@ const createTransportOllama: TransportFC = (
     reasoning,
     ...commonToolsConfig,
   });
-  return new DirectChatTransport({
+  const transport = new DirectChatTransport({
     agent,
     sendReasoning: true,
     messageMetadata,
   });
+  return {
+    transport,
+    model: ollama,
+  };
 };
 
 export default createTransportOllama;

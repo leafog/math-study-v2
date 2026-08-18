@@ -18,11 +18,15 @@ const createTransportOpenAI: TransportFC = (config, model, options) => {
     instructions,
     ...commonToolsConfig,
   });
-  return new DirectChatTransport({
+  const transport = new DirectChatTransport({
     agent,
     sendReasoning: true,
     messageMetadata,
   });
+  return {
+    transport,
+    model: openai,
+  };
 };
 
 export default createTransportOpenAI;

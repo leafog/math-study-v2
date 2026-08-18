@@ -11,9 +11,8 @@ export const practiceProblem = tool({
   inputSchema: z.object({
     id: z.string().describe("ID of the problem the student is now practicing"),
   }),
-  // 轻量标记工具：输入题目 id，校验存在后回传 id，UI 侧通过 problemsMap[id] 渲染题目。
-  // 具体的练习记录（practiceLog / masteryScore）由后续流程按需写入。
-  execute: ({ id }) => {
+  execute: ({ id }, context) => {
+    const tool_call_id = context.toolCallId;
     const chat_id = chatIdStore.getState().chatId;
 
     if (!problemColl.has(id)) {
@@ -24,10 +23,11 @@ export const practiceProblem = tool({
       id: genId(),
       pid: id,
       chat_id,
+      tool_call_id,
       created_at: now,
       updated_at: now,
     };
-    console.log("hehe");
+    console.log(problemChatRel);
     problemChatRelColl.insert(problemChatRel);
     return { id };
   },

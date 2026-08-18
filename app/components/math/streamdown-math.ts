@@ -5,6 +5,7 @@ import remarkMath from "remark-math";
 import { SKIP, visitParents } from "unist-util-visit-parents";
 import type { Pluggable } from "unified";
 import type { MathPlugin } from "streamdown";
+import { remarkBracketMath } from "./bracket-math-extension";
 
 // 与 @streamdown/math 同构的 math 插件,但 rehype 阶段带公式级缓存:
 // katex.renderToString 是纯函数,按 (displayMode + 公式文本) 缓存渲染结果。
@@ -71,8 +72,14 @@ export const math: MathPlugin = {
   name: "katex",
   type: "math",
   // 与 @streamdown/math 保持相同的运行时配置(remark-math v6 类型不含
-  // singleDollarTextMath,原插件为 JS 未报错,这里按 Pluggable 断言)
-  remarkPlugin: [remarkMath, { singleDollarTextMath: false }] as Pluggable,
+  // singleDollarTextMath,原插件为 JS 未报错,这里按 Pluggable 断言)。
+  // 在 remark-math 之外叠加 bracket-math 扩展,额外支持 \( \) / \[ \]。
+  // remarkPlugin 本身就是插件列表,unified 会把 `[[remarkMath, opts], remarkBracketMath]`
+  // 依次 use;两个插件只在 data.micromarkExtensions 上追加,无顺序耦合。
+  remarkPlugin: [
+    [remarkMath, { singleDollarTextMath: false }],
+    remarkBracketMath,
+  ] as Pluggable,
   rehypePlugin: [
     cachedRehypeKatex,
     { errorColor: "var(--color-muted-foreground)" },

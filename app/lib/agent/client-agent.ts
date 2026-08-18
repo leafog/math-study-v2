@@ -7,6 +7,7 @@ import type {
   Locale,
   MessageMetadataFn,
   ProviderId,
+  TransportFCResult,
   TransportOptions,
   UIChatMessage,
 } from "./types";
@@ -83,7 +84,7 @@ const transport = new DirectChatTransport({
   messageMetadata,
 });
 
-const TransportMap = new Map<string, ChatTransport<UIChatMessage>>();
+const TransportMap = new Map<string, TransportFCResult>();
 
 const calcAgentKey = (
   providerId: ProviderId,
@@ -101,7 +102,7 @@ export const useAgent = (
   config: LLMConfig | undefined,
   model: string | undefined,
   reasoning?: LLMreasoning,
-): ChatTransport<UIChatMessage> | undefined => {
+): TransportFCResult | undefined => {
   const { i18n } = useTranslation();
   const locale: Locale = i18n.language?.startsWith("zh") ? "zh" : "en";
 

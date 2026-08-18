@@ -17,6 +17,7 @@ import ChatPanelRight from "./chat-panel-right";
 import { cn } from "~/lib/utils";
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -35,6 +36,7 @@ import { ArrowDownIcon } from "lucide-react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { useChatPromptProblems } from "~/store/chat-prompt-problems";
+import { useChatProblemScroll } from "./use-chat-problem-scroll";
 
 interface ChatPanelProps {
   panelRef: React.RefObject<PanelImperativeHandle | null>;
@@ -69,7 +71,7 @@ const ChatInnerWrapper = ({
         {children}
       </div>
       {menuShow && !toolsShow && (
-        <div className="sticky top-0  w-xs max-h-full   pr-4"></div>
+        <div className="sticky top-0  w-xs max-h-full   pr-4 "></div>
       )}
     </div>
   );
@@ -119,7 +121,8 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
   };
 
   const scrollRef = useRef<HTMLDivElement>(null);
-
+  const mt = (showPinned ? (pinnedDivHeight ?? 0) : 0) + 16;
+  const mb = (promptInputDivHeight ?? 0) + 36;
   const virtualizer = useVirtualizer({
     count: messages.length,
     getScrollElement: () => scrollRef.current,
@@ -127,17 +130,23 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
     getItemKey: (index) => messages[index]!.id,
     anchorTo: "end",
     followOnAppend: true,
-    scrollEndThreshold: 80,
+    scrollEndThreshold: mb + 36,
     overscan: 3,
     useFlushSync: false,
-    paddingStart: (showPinned ? (pinnedDivHeight ?? 0) : 0) + 16,
-    paddingEnd: promptInputDivHeight ?? 0,
+    scrollPaddingStart: mt,
+    scrollPaddingEnd: mb,
+    paddingStart: mt,
+    paddingEnd: mb,
   });
 
-  // Jump to the latest message when switching chats or on first mount.
-  useEffect(() => {
-    virtualizer.scrollToEnd();
-  }, [virtualizer, chatId]);
+  useLayoutEffect(() => {
+    virtualizer.scrollToEnd({
+      behavior: "instant",
+    });
+  }, [chatId]);
+
+  // 虚拟列表下的"点击题目滚动定位"(替换旧的 DOM scrollIntoView 方案)
+  useChatProblemScroll({ virtualizer, scrollRef, messages });
 
   return (
     <ResizablePanel
@@ -201,13 +210,15 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
       )}
       <div
         ref={scrollRef}
-        className="relative flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scroll-fade "
+        className="relative flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scroll-fade scrollbar-gutter-both px-4"
       >
-        <div className="flex flex-row min-h-full px-4">
-          <div className="min-w-0 w-full mx-auto max-w-3xl relative px-4">
+        <div className="flex flex-row min-h-full">
+          <div className="min-w-0 w-full mx-auto max-w-3xl relative ">
             <div
               className="relative w-full"
-              style={{ height: virtualizer.getTotalSize() }}
+              style={{
+                height: virtualizer.getTotalSize(),
+              }}
             >
               {virtualizer.getVirtualItems().map((virtualRow) => {
                 const message = messages[virtualRow.index];
@@ -237,7 +248,7 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
           </div>
 
           {menuShow && !toolsShow && (
-            <div className="  sticky top-2 h-full w-xs z-40 p-2 overflow-hidden">
+            <div className="sticky top-2 h-full w-xs z-40 p-2 overflow-hidden">
               <ChatPanelRight />
             </div>
           )}
@@ -250,7 +261,7 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
           className="items-center mx-auto"
           innerClassName="mx-auto flex items-center justify-center"
           style={{
-            bottom: `calc(1rem + ${promptInputDivHeight ?? 0}px)`,
+            bottom: `calc(2rem + ${promptInputDivHeight ?? 0}px)`,
           }}
         >
           <Button

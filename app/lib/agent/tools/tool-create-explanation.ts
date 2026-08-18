@@ -22,11 +22,10 @@ export const createExplanation = tool({
   execute: async (input) => {
     const chatId = chatIdStore.getState().chatId;
     const id = genId();
-    const content = normalizeMathDelimiters(input.content);
+
     problemExplanationColl.insert({
       id,
       ...input,
-      content,
       chat_id: chatId,
       created_at: new Date(),
     });

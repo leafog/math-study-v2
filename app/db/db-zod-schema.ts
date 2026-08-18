@@ -33,6 +33,7 @@ export const ProblemChatRelSchema = z.object({
   id: z.string(),
   pid: z.string(),
   chat_id: z.string(),
+  tool_call_id: z.string().optional(),
   created_at: z.date(),
   updated_at: z.date(),
 });

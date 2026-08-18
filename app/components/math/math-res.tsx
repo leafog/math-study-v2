@@ -4,7 +4,7 @@ import { Streamdown } from "streamdown";
 import { cjk } from "@streamdown/cjk";
 import { code } from "@streamdown/code";
 import { mermaid } from "@streamdown/mermaid";
-import { math } from "./streamdown-math";
+import { math } from "@streamdown/math";
 
 export type MathResProps = ComponentProps<typeof Streamdown>;
 

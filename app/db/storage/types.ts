@@ -22,7 +22,7 @@ export interface FileEntry {
  */
 export interface FileStore {
   /** 保存文件，返回带可消费 URL 的条目 */
-  save(file: File): Promise<FileEntry>;
+  save(file: File, id: string, metaData?: string): Promise<FileEntry>;
 
   /**
    * 根据 IndexedDB 文件路径获取可消费的 blob URL。

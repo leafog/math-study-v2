@@ -28,6 +28,7 @@
     "@lobehub/icons": "^5.15.0",
     "@orama/orama": "^3.1.18",
     "@orama/plugin-data-persistence": "^3.1.18",
+    "@paddleocr/paddleocr-js": "^0.4.2",
     "@powersync/web": "^1.39.0",
     "@radix-ui/react-use-controllable-state": "^1.2.3",
     "@react-router/fs-routes": "^8.1.0",

@@ -15,15 +15,18 @@ export class PowerSyncFileStore implements FileStore {
 
   constructor(private readonly queue: AttachmentQueue) {}
 
-  async save(file: File): Promise<FileEntry> {
+  async save(file: File, id: string, metaData?: string): Promise<FileEntry> {
     const ext = file.name.split(".").pop() ?? "";
     const data = await file.arrayBuffer();
 
     const record = await this.queue.saveFile({
+      id,
+      metaData,
       data,
       fileExtension: ext,
       mediaType: file.type || "application/octet-stream",
     });
+
     const mediaType =
       record.mediaType ?? (file.type || "application/octet-stream");
     const meta: FileMeta = {

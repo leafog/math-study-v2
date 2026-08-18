@@ -6,7 +6,7 @@ import { chatIdStore } from "~/store/chat-id-store";
 import { getOrPut } from "~/lib/map-utils";
 
 // 每个 chat 缓存一个引擎实例，复用符号表/声明，避免每次调用重复构造
-const ceCache = new Map<string, ComputeEngine>();
+const ceCache = new Map<string, ComputeEngine | Promise<ComputeEngine>>();
 
 // 资源上限：防止恶意/幻觉的 source 把主线程卡死
 const PRECISION = 20; // 数值精度（有效数字）

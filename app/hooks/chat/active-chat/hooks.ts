@@ -1,4 +1,5 @@
 import { useContext } from "react";
+import type { LanguageModel } from "ai";
 import {
   ActiveChatContext,
   ChatHelpersContext,
@@ -8,6 +9,7 @@ import {
   ChatKgTopicsContext,
   ChatPromptInputContext,
   ChatAgentContext,
+  ChatModelContext,
 } from "./context";
 
 export const useActiveChat = () => {
@@ -92,3 +94,10 @@ export const useChatAgent = () => {
 
   return ctx;
 };
+
+/**
+ * 取当前激活的 LanguageModel 实例。与其它 hook 不同:null 是合法状态
+ * (尚未选模型),子组件据此禁用「生成对象」入口,而不是抛错。
+ */
+export const useChatModel = (): LanguageModel | null =>
+  useContext(ChatModelContext);

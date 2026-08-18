@@ -20,10 +20,6 @@ import {
   answerRecordColl,
   problemExplanationColl,
 } from "~/db/tdb-collections";
-import {
-  scrollToProblemAndOpenAnswerRecords,
-  scrollToProblemAndOpenExplanation,
-} from "./scroll-utils";
 import { usePinnedProblems } from "~/store/pinned-problems-store";
 import { Tool } from "../ai-elements/tool";
 import CopyButton from "../common-ui/copy-button";
@@ -87,13 +83,7 @@ export function ProblemPreviewSimple({
             {hasAnswers && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => {
-                      scrollToProblemAndOpenAnswerRecords(problemId);
-                    }}
-                  >
+                  <Button variant="ghost" size="icon-sm" onClick={() => {}}>
                     <Clock className="size-4" />
                   </Button>
                 </TooltipTrigger>
@@ -103,13 +93,7 @@ export function ProblemPreviewSimple({
             {hasExplanation && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => {
-                      scrollToProblemAndOpenExplanation(problemId);
-                    }}
-                  >
+                  <Button variant="ghost" size="icon-sm" onClick={() => {}}>
                     <BadgeQuestionMark className="size-4" />
                   </Button>
                 </TooltipTrigger>

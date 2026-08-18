@@ -1,4 +1,5 @@
 import { createContext } from "react";
+import type { LanguageModel } from "ai";
 import type { UseChatHelpers } from "@ai-sdk/react";
 import type { UIChatMessage } from "~/lib/agent/types";
 import type { ChatToolsPanelStore } from "~/store/chat-tools-panel-store";
@@ -39,3 +40,10 @@ export const ChatPromptInputContext = createContext<ChatPromptInput | null>(
 
 export type ChatAgentState = ReturnType<typeof useChatAgentManager>;
 export const ChatAgentContext = createContext<ChatAgentState | null>(null);
+
+/**
+ * 当前会话激活的 LanguageModel 实例(供子组件做独立于聊天的生成,
+ * 如 generateObject({ model, schema, prompt }))。
+ * 值为 null 表示尚未选中可用模型(合法状态,非 Provider 缺失)。
+ */
+export const ChatModelContext = createContext<LanguageModel | null>(null);

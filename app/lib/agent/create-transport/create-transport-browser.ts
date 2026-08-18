@@ -21,11 +21,15 @@ const createTransportBrowser: TransportFC = (
     reasoning: "none",
   });
 
-  return new DirectChatTransport({
+  const transport = new DirectChatTransport({
     agent,
     sendReasoning: true,
     messageMetadata,
   }) as unknown as ChatTransport<UIChatMessage>;
+  return {
+    transport,
+    model: browser,
+  };
 };
 
 export default createTransportBrowser;

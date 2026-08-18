@@ -1,7 +1,8 @@
 import { normalizeMathDelimiters } from "~/lib/utils";
-import MathRes, { type MathResProps } from "./math-res";
+import { type MessageResponseProps } from "../ai-elements/message";
+import MathRes from "./math-res";
 
-const MathResInLine = ({ children }: MathResProps) => {
+const MathResInLine = ({ children }: MessageResponseProps) => {
   return (
     <MathRes className="min-w-0 flex-1 [*_p]:truncate line-clamp-1">
       {normalizeMathDelimiters(children)}

@@ -9,11 +9,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useActiveChat, useChatProblems } from "~/hooks/chat/active-chat";
 
-import {
-  scrollToProblem,
-  scrollToProblemAndOpenAnswerRecords,
-  scrollToProblemAndOpenExplanation,
-} from "~/components/math/scroll-utils";
+import { scrollToProblem } from "~/components/math/scroll-utils";
 import { usePinnedProblems } from "~/store/pinned-problems-store";
 import StatusIcon from "~/components/math/status-icon";
 
@@ -50,7 +46,11 @@ const ChatProblemsList = () => {
           >
             <button
               type="button"
-              onClick={() => scrollToProblem(p.id)}
+              onClick={() => {
+                if (p.tool_call_id) {
+                  scrollToProblem(p.id, p.tool_call_id);
+                }
+              }}
               className="relative flex items-center gap-2 flex-1 min-w-0 text-left"
             >
               <StatusIcon status={p.status} />
@@ -68,7 +68,6 @@ const ChatProblemsList = () => {
                     onClick={(e) => {
                       e.stopPropagation();
                       e.preventDefault();
-                      scrollToProblemAndOpenAnswerRecords(p.id);
                     }}
                     className="shrink-0 rounded p-0.5 hover:bg-muted cursor-pointer"
                     role="button"
@@ -82,7 +81,6 @@ const ChatProblemsList = () => {
                     onClick={(e) => {
                       e.stopPropagation();
                       e.preventDefault();
-                      scrollToProblemAndOpenExplanation(p.id);
                     }}
                     className="shrink-0 rounded p-0.5 hover:bg-muted cursor-pointer"
                     role="button"

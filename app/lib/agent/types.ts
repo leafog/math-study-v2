@@ -115,11 +115,14 @@ export interface TransportOptions {
   reasoning?: LLMreasoning;
 }
 
+export type TransportFCResult = {
+  transport: ChatTransport<UIChatMessage>;
+  model: LanguageModel;
+};
 export type TransportFC = (
   config: LLMConfig,
   model: string,
-
   options: TransportOptions,
-) => ChatTransport<UIChatMessage>;
+) => TransportFCResult;
 
 export type Transports = Partial<Record<ProviderId, TransportFC>>;

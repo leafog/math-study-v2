@@ -18,7 +18,11 @@ import {
   type PromptInputProps,
 } from "~/components/ai-elements/prompt-input";
 
-import { chatMessageColl, problemColl } from "~/db/tdb-collections";
+import {
+  attachmentColl,
+  chatMessageColl,
+  problemColl,
+} from "~/db/tdb-collections";
 import { genId } from "~/lib/id-utils";
 import {
   Attachment,
@@ -29,10 +33,11 @@ import {
   AttachmentGroup,
   AttachmentMedia,
   AttachmentTitle,
+  AttachmentTrigger,
 } from "../ui/attachment";
 import { Plus, X, XIcon } from "lucide-react";
-import { fileStore } from "~/db/indexdb-file-storage";
-import { convertToModelMessages, type FileUIPart } from "ai";
+import { fileStore, attachmentQueue } from "~/db/indexdb-file-storage";
+import { type FileUIPart } from "ai";
 import {
   useToolSelectionStore,
   type ToolSelectionItem,
@@ -46,7 +51,7 @@ import {
   HoverCardContent,
 } from "../ui/hover-card";
 import MathRes from "../math/math-res";
-import { useEffect } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useChatPromptInput } from "~/hooks/chat/active-chat/hooks";
 import { useChatPromptSuggestionStore } from "~/store/chat-prompt-suggestion-store";
 import { useChatPromptProblems } from "~/store/chat-prompt-problems";
@@ -56,31 +61,175 @@ import ChatPromptModelSelector from "./chat-prompt-model-selector";
 import ChatPromptModelThinkingEffort from "./chat-prompt-model-thinking-effort";
 import { useLocation } from "react-router";
 import { ProblemsAttachmentList } from "../math/problems-attachment-list";
+import { ocrResultToMarkdown, useOcr } from "~/lib/ocr";
+import { blobUrlToBlob } from "~/lib/blob-utils";
+import { Spinner } from "../ui/spinner";
+import { inArray, queryOnce } from "@tanstack/react-db";
+import { useImmer } from "use-immer";
+import { z } from "zod";
+import type { OcrResult } from "@paddleocr/paddleocr-js";
+import { useGenerateObject } from "~/hooks/chat/active-chat/use-generate-object";
+
+/** 模型清洗 OCR 结果后要输出的结构化对象。 */
+const ocrMarkdownSchema = z.object({
+  markdown: z.string(),
+  dropped: z.array(z.string()).optional(),
+});
+
+/**
+ * 把 PaddleOCR 原始结果转成 Markdown。
+ *
+ * 优先交给模型清洗(按阅读顺序重排、凭上下文纠错、剔除低置信度乱码片段);
+ * 无可用模型或模型调用失败时,回退到几何拼接(ocrResultToMarkdown),不阻塞。
+ */
+const toMarkdownWithModel = async (
+  input: OcrResult | OcrResult[],
+  generate: (
+    prompt: string,
+  ) => Promise<{ markdown: string; dropped?: string[] } | null>,
+): Promise<string> => {
+  const fallback = () => ocrResultToMarkdown(input);
+
+  const results = Array.isArray(input) ? input : [input];
+  const items = results
+    .flatMap((r) => r.items ?? [])
+    .filter((it) => (it.text ?? "").trim())
+    .map((it) => {
+      const xs = it.poly.map(([x]) => x);
+      const ys = it.poly.map(([, y]) => y);
+      const top = ys.length ? Math.min(...ys) : 0;
+      const left = xs.length ? Math.min(...xs) : 0;
+      return {
+        text: it.text,
+        score: Math.round(it.score * 100),
+        top: Math.round(top),
+        left: Math.round(left),
+      };
+    })
+    .sort((a, b) => a.top - b.top || a.left - b.left);
+
+  if (items.length === 0) return fallback();
+
+  const prompt = `下面是一个数学题图片的 OCR 识别结果,每一项含 文本(text)、置信度(score,0-100)、位置(top/left,像素)。
+请把它重写成一段干净、通顺、完整保留原意的 Markdown。要求:
+1. 按正常阅读顺序重排,不要拆断算式或公式;
+2. 明显识别错误/乱码,能凭上下文改对的就改正;
+3. 置信度很低且无法辨认的片段,放到 dropped 里,不要进 markdown;
+4. 只输出图片里实际有的内容,不要凭空添加讲解或题目。
+OCR 结果:
+${JSON.stringify(items)}`;
+
+  const obj = await generate(prompt);
+  if (!obj) return fallback();
+  const md = obj.markdown.trim();
+  return md || fallback();
+};
 
 const DisplayAttachments = () => {
-  const attachments = usePromptInputAttachments();
-  if (attachments.files.length === 0) {
+  const { files, remove } = usePromptInputAttachments();
+
+  const handleRemove = (id: string) => {
+    remove(id);
+  };
+  const urls = files.map((it) => it.url).join(",");
+  const ocr = useOcr();
+  const { generate } = useGenerateObject(ocrMarkdownSchema);
+
+  const [handlering, setHandlering] = useImmer(new Set());
+  const [handlerResult, setHandlerResult] = useImmer(new Map<string, string>());
+
+  useEffect(() => {
+    if (ocr === null) return;
+    setHandlering((draft) => {
+      draft.clear();
+      return draft;
+    });
+    setHandlerResult((draft) => {
+      draft.clear();
+      return draft;
+    });
+    const ids = files.map((it) => it.id);
+
+    queryOnce((q) =>
+      q
+        .from({ attachmentColl })
+        .where(({ attachmentColl }) => inArray(attachmentColl.id, ids)),
+    ).then((it) => {
+      setHandlerResult((draft) => {
+        it.forEach(({ id, meta_data }) => {
+          draft.set(id, meta_data ?? "");
+        });
+        return draft;
+      });
+
+      const indbIdsSet = new Set(it.map((it) => it.id));
+      const needHandlerFiles = files.filter((it) => !indbIdsSet.has(it.id));
+
+      setHandlering((draft) => {
+        draft.clear();
+        needHandlerFiles.forEach((it) => draft.add(it.id));
+        return draft;
+      });
+      const handlers = needHandlerFiles.map(({ url, id, filename }) => {
+        const handler = async () => {
+          const blob = await blobUrlToBlob(url);
+          const res = await ocr.predict(blob);
+          const resultText = await ocrResultToMarkdown(res);
+
+          await fileStore.save(
+            new File([blob], filename ?? genId(), {
+              type: blob.type,
+            }),
+            id,
+            resultText,
+          );
+          setHandlering((draft) => {
+            draft.delete(id);
+            return draft;
+          });
+          setHandlerResult((draft) => {
+            draft.set(id, resultText);
+            return draft;
+          });
+        };
+        return handler;
+      });
+      Promise.all(handlers.map((h) => h()));
+    });
+  }, [urls, ocr, generate]);
+
+  if (files.length === 0) {
     return null;
   }
-  const handleRemove = (id: string) => {
-    attachments.remove(id);
-  };
   return (
-    <div>
-      <AttachmentGroup>
-        {attachments.files.map(({ id, url, filename, mediaType }) => {
+    <div className="w-full">
+      <AttachmentGroup className="w-full overflow-scroll ">
+        {files.map(({ id, url, filename, mediaType }) => {
           return (
-            <Attachment key={id}>
+            <Attachment
+              key={id}
+              orientation={"vertical"}
+              className="focus-within:ring-0"
+            >
               <AttachmentMedia>
-                <Plus />
+                <img src={url} alt={filename}></img>
+                {handlering.has(id) && (
+                  <Spinner className="z-40 bg-red-50 absolute top-1/2" />
+                )}
               </AttachmentMedia>
               <AttachmentContent>
                 <AttachmentTitle>{filename}</AttachmentTitle>
                 <AttachmentDescription>{mediaType}</AttachmentDescription>
+                {/* {handlerResult.has(id) && (
+                  <AttachmentDescription className="whitespace-pre-wrap break-all text-muted-foreground">
+                    {handlerResult.get(id)}
+                  </AttachmentDescription>
+                )} */}
               </AttachmentContent>
               <AttachmentActions>
                 <AttachmentAction
                   aria-label={`Remove ${filename}`}
+                  type="button"
                   onClick={() => handleRemove(id)}
                 >
                   <XIcon />
@@ -148,6 +297,8 @@ const PruePromptInput = () => {
   const clearProblems = useChatPromptProblems.use.clearProblems();
   const { state } = useLocation();
 
+  const ocr = useOcr();
+
   useEffect(() => {
     if (!state) {
       clearProblems();
@@ -174,16 +325,6 @@ const PruePromptInput = () => {
     if (isNewChat) {
       createChat(title.slice(0, 40));
     }
-    const fileParts = await Promise.all(
-      message.files.map(async (file: FileUIPart) => {
-        const response = await fetch(file.url);
-        const blob = await response.blob();
-        const { meta, url } = await fileStore.save(
-          new File([blob], file.filename ?? "file", { type: file.mediaType }),
-        );
-        return { ...file, url } as FileUIPart;
-      }),
-    );
 
     const selections = Object.values(selectsMap).filter(
       (it) => it.type === "markdown",
@@ -206,9 +347,9 @@ const PruePromptInput = () => {
     const parts: any[] = [];
     parts.push({ text: fullText, type: "text" });
 
-    if (fileParts.length > 0) {
-      parts.push(...fileParts);
-    }
+    // if (fileParts.length > 0) {
+    //   parts.push(...fileParts);
+    // }
 
     // 练习题目作为隐藏的 HTML 注释发给模型：模型能看到，界面不渲染。
     const practiceComments = practcieProblems
@@ -277,7 +418,7 @@ const PruePromptInput = () => {
           />
         )}
         <DisplayAttachments />
-        <DisplaySelectsMap selectsMap={selectsMap} />
+        {/* <DisplaySelectsMap selectsMap={selectsMap} /> */}
       </PromptInputHeader>
       <PromptInputBody>
         <PromptInputTextarea

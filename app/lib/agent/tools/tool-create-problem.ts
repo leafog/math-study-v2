@@ -22,10 +22,11 @@ export const createProblem = tool({
     updated_at: true,
     status: true,
   }),
-  execute: (input) => {
+  execute: (input, context) => {
     const chat_id = chatIdStore.getState().chatId;
     const now = new Date();
     const pid = genId();
+    const tool_call_id = context.toolCallId;
     // 保存题目到 problem 表
     const problem: Problem = {
       ...input,
@@ -35,10 +36,12 @@ export const createProblem = tool({
       created_at: now,
       updated_at: now,
     };
+
     const problemChatRel: ProblemChatRel = {
       id: genId(),
       pid,
       chat_id,
+      tool_call_id,
       created_at: now,
       updated_at: now,
     };

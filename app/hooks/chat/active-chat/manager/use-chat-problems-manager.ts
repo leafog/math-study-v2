@@ -1,12 +1,12 @@
 import { useLiveQuery, eq } from "@tanstack/react-db";
-import { keyBy, groupBy } from "lodash-es";
+import { keyBy, groupBy, uniqBy } from "lodash-es";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useSearchParams } from "react-router";
 import {
   toStateColor,
   type ProblemPreviewHandle,
 } from "~/components/math/problem-preview";
-import { scrollToProblem } from "~/components/math/scroll-utils";
+import { bus } from "~/event/event-bus";
 import type { ProblemStateColor } from "~/components/math/type";
 import { ProblemSchema } from "~/db/db-zod-schema";
 import {
@@ -17,6 +17,12 @@ import {
   problemChatRelColl,
 } from "~/db/tdb-collections";
 import { useEvent } from "~/event/use-event";
+import z from "zod";
+
+const ProblemWithPosInfo = ProblemSchema.extend({
+  chat_id: z.string().optional(),
+  tool_call_id: z.string().optional(),
+});
 
 const useChatProblemsManager = (chatId: string) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -35,18 +41,21 @@ const useChatProblemsManager = (chatId: string) => {
         .orderBy(({ problemColl: col }) => col.created_at, {
           direction: "asc",
         })
-        .select(({ problemColl }) => ({ ...problemColl })),
+        .select(({ problemColl, problemChatRelColl }) => ({
+          ...problemColl,
+          chat_id: problemChatRelColl.chat_id,
+          tool_call_id: problemChatRelColl.tool_call_id,
+        })),
     [chatId],
   );
 
   // 过滤掉空/失效的题目：rel 行可能指向已删除的 problem，或 content 为空。
-  const problems = useMemo(
-    () =>
-      (problemsQuery ?? [])
-        .filter((it) => it !== undefined)
-        .map((it) => ProblemSchema.parse(it)),
-    [problemsQuery],
-  );
+  const problems = useMemo(() => {
+    const res = (problemsQuery ?? [])
+      .filter((it) => it !== undefined)
+      .map((it) => ProblemWithPosInfo.parse(it));
+    return uniqBy(res, "id");
+  }, [problemsQuery]);
 
   const problemsMap = useMemo(() => keyBy(problems, (it) => it.id), [problems]);
 
@@ -102,12 +111,6 @@ const useChatProblemsManager = (chatId: string) => {
     [],
   );
 
-  useEvent("problem:open-explanation", (pid) => {
-    refs.current.get(pid)?.openExplanation();
-  });
-  useEvent("problem:open-answer-record", (pid) => {
-    refs.current.get(pid)?.openAnswerRecord();
-  });
   useEvent("problem:scroll-to", (pid) => {
     refs.current.get(pid)?.highlight();
   });
@@ -124,18 +127,22 @@ const useChatProblemsManager = (chatId: string) => {
     },
     [problemExplanationsMap],
   );
-  const to = problemId ? refs.current.get(problemId) : undefined;
-
+  // URL ?problemId= 初始定位:发命令给 ChatPanel 的虚拟滚动处理
+  // (消息未加载时由 useChatProblemScroll 缓存,到达后自动执行)
   useEffect(() => {
     if (problemId) {
-      scrollToProblem(problemId);
+      bus.emit("chat:scroll-to-problem", {
+        pid: problemId,
+        toolCallId: "",
+        behavior: "auto",
+      });
       setSearchParams((prev) => {
         const next = new URLSearchParams(prev);
         next.delete("problemId");
         return next;
       });
     }
-  }, [to]);
+  }, [problemId, setSearchParams]);
 
   return {
     problems,

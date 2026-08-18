@@ -190,13 +190,13 @@ const PureChatMessage = memo(
                       key={key}
                       isStreaming={part.state === "streaming"}
                       duration={(part as any)._duration}
-                      className="w-full"
+                      className="w-full items-center my-auto"
                     >
                       <ReasoningTrigger
                         getThinkingMessage={getThinkingMessage}
                         className="[&>p]:m-0"
                       />
-                      <ReasoningContent>{(part as any).text}</ReasoningContent>
+                      <ReasoningContent>{part.text}</ReasoningContent>
                     </Reasoning>
                   );
                 }

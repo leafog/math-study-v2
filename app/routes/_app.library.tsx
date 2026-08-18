@@ -28,7 +28,7 @@ function formatSize(bytes?: number | null): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function FileCard({ item }: { item: Record<string, unknown> }) {
+function FileCard({ item }: Readonly<{ item: Record<string, unknown> }>) {
   const id = item.id as string;
   const mediaType = item.media_type as string | undefined;
   const localUri = item.local_uri as string | undefined;
@@ -104,6 +104,9 @@ const Library = () => {
     },
     [hasNextPage, isFetchingNextPage, fetchNextPage],
   );
+  useEffect(() => {
+    console.log(data);
+  }, [data]);
 
   useEffect(() => {
     const el = sentinelRef.current;

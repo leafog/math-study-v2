@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
-import { Chat, useChat } from "@ai-sdk/react";
+import { Chat, useChat, useObject } from "@ai-sdk/react";
 import { useAgent } from "~/lib/agent/client-agent";
 import { genId } from "~/lib/id-utils";
 import { chatMessageColl } from "~/db/tdb-collections";
@@ -14,6 +14,7 @@ import {
   ChatKgTopicsContext,
   ChatPromptInputContext,
   ChatAgentContext,
+  ChatModelContext,
 } from "./context";
 import { useChatIdManager } from "./manager/use-chat-id-manager";
 import { useMessagesManager } from "./manager/use-messages-manager";
@@ -23,6 +24,7 @@ import useChatKgTopicsManager from "./manager/use-chat-kg-topics-manager";
 import useChatPromptInputManager from "./manager/use-chat-prompt-input-manager";
 import useChatAgentManager from "./manager/use-chat-agent-manager";
 import { toast } from "sonner";
+import type { LanguageModel } from "ai";
 
 export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
   // const { chatId, isNewChat, createChat } = useChatIdManager();
@@ -45,10 +47,8 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
     model_name,
     reasoning,
   );
+  const model: LanguageModel | null = agentTransport?.model ?? null;
 
-  // 每个会话持有独立的 Chat 实例,onFinish/onError 闭包在创建时绑定正确的 chatId。
-  // 若改用 useChat 的 id 选项,其内部 latestRef 会在切换会话后被更新为最新 render 的
-  // 回调,导致旧会话的孤儿流结束时把消息写进当前会话的数据库(数据串写)。
   const transportRef = useRef(agentTransport);
   transportRef.current = agentTransport;
 
@@ -64,9 +64,10 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
     chatInstanceRef.current = new Chat<UIChatMessage>({
       id: chatId,
       transport: {
-        sendMessages: (opts) => transportRef.current!.sendMessages(opts),
+        sendMessages: (opts) =>
+          transportRef.current!.transport.sendMessages(opts),
         reconnectToStream: (opts) =>
-          transportRef.current!.reconnectToStream(opts),
+          transportRef.current!.transport.reconnectToStream(opts),
       },
       generateId: genId,
       messages: initMessages,
@@ -161,7 +162,9 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
               <ChatProblemsContext.Provider value={chatProblemState}>
                 <ChatKgTopicsContext.Provider value={chatKgTopicsState}>
                   <ChatPromptInputContext.Provider value={chatPromptInputStore}>
-                    {children}
+                    <ChatModelContext.Provider value={model}>
+                      {children}
+                    </ChatModelContext.Provider>
                   </ChatPromptInputContext.Provider>
                 </ChatKgTopicsContext.Provider>
               </ChatProblemsContext.Provider>
