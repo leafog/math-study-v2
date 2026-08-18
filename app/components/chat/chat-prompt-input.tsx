@@ -1,5 +1,9 @@
 import { useTranslation } from "react-i18next";
-import { useActiveChat, useActiveChatHelpers } from "~/hooks/chat/active-chat";
+import {
+  useActiveChat,
+  useActiveChatHelpers,
+  useChatModel,
+} from "~/hooks/chat/active-chat";
 import {
   PromptInput,
   PromptInputActionAddAttachments,
@@ -21,6 +25,7 @@ import {
 import {
   attachmentColl,
   chatMessageColl,
+  conversationColl,
   problemColl,
 } from "~/db/tdb-collections";
 import { genId } from "~/lib/id-utils";
@@ -69,71 +74,24 @@ import { useImmer } from "use-immer";
 import { z } from "zod";
 import type { OcrResult } from "@paddleocr/paddleocr-js";
 import { useGenerateObject } from "~/hooks/chat/active-chat/use-generate-object";
+import { getPrompt } from "~/lib/agent/instructions";
+import AttachmentDialog from "./attachment-dialog";
+import { DialogContent, DialogTitle } from "../ui/dialog";
+import MathResBlock from "../math/math-res-block";
 
-/** 模型清洗 OCR 结果后要输出的结构化对象。 */
-const ocrMarkdownSchema = z.object({
-  markdown: z.string(),
-  dropped: z.array(z.string()).optional(),
+const OCRInfoSchema = z.object({
+  markdown: z.string().describe("ocr markdown"),
 });
-
-/**
- * 把 PaddleOCR 原始结果转成 Markdown。
- *
- * 优先交给模型清洗(按阅读顺序重排、凭上下文纠错、剔除低置信度乱码片段);
- * 无可用模型或模型调用失败时,回退到几何拼接(ocrResultToMarkdown),不阻塞。
- */
-const toMarkdownWithModel = async (
-  input: OcrResult | OcrResult[],
-  generate: (
-    prompt: string,
-  ) => Promise<{ markdown: string; dropped?: string[] } | null>,
-): Promise<string> => {
-  const fallback = () => ocrResultToMarkdown(input);
-
-  const results = Array.isArray(input) ? input : [input];
-  const items = results
-    .flatMap((r) => r.items ?? [])
-    .filter((it) => (it.text ?? "").trim())
-    .map((it) => {
-      const xs = it.poly.map(([x]) => x);
-      const ys = it.poly.map(([, y]) => y);
-      const top = ys.length ? Math.min(...ys) : 0;
-      const left = xs.length ? Math.min(...xs) : 0;
-      return {
-        text: it.text,
-        score: Math.round(it.score * 100),
-        top: Math.round(top),
-        left: Math.round(left),
-      };
-    })
-    .sort((a, b) => a.top - b.top || a.left - b.left);
-
-  if (items.length === 0) return fallback();
-
-  const prompt = `下面是一个数学题图片的 OCR 识别结果,每一项含 文本(text)、置信度(score,0-100)、位置(top/left,像素)。
-请把它重写成一段干净、通顺、完整保留原意的 Markdown。要求:
-1. 按正常阅读顺序重排,不要拆断算式或公式;
-2. 明显识别错误/乱码,能凭上下文改对的就改正;
-3. 置信度很低且无法辨认的片段,放到 dropped 里,不要进 markdown;
-4. 只输出图片里实际有的内容,不要凭空添加讲解或题目。
-OCR 结果:
-${JSON.stringify(items)}`;
-
-  const obj = await generate(prompt);
-  if (!obj) return fallback();
-  const md = obj.markdown.trim();
-  return md || fallback();
-};
-
 const DisplayAttachments = () => {
   const { files, remove } = usePromptInputAttachments();
+  const model = useChatModel();
+  const { generate: generateOCRInfo } = useGenerateObject(OCRInfoSchema);
 
   const handleRemove = (id: string) => {
     remove(id);
   };
   const urls = files.map((it) => it.url).join(",");
   const ocr = useOcr();
-  const { generate } = useGenerateObject(ocrMarkdownSchema);
 
   const [handlering, setHandlering] = useImmer(new Set());
   const [handlerResult, setHandlerResult] = useImmer(new Map<string, string>());
@@ -174,7 +132,22 @@ const DisplayAttachments = () => {
         const handler = async () => {
           const blob = await blobUrlToBlob(url);
           const res = await ocr.predict(blob);
-          const resultText = await ocrResultToMarkdown(res);
+          const items = res[0].items
+            .filter((it) => it.text?.trim())
+            .map((it) => ({
+              text: it.text,
+              score: Math.round(it.score * 100),
+              top: Math.round(Math.min(...it.poly.map(([, y]) => y))), // 最小 y
+              left: Math.round(Math.min(...it.poly.map(([x]) => x))), // 最小 x
+            }));
+
+          const prompt = getPrompt("ocr.toMarkdown", {
+            vars: { ocr: JSON.stringify(items) },
+          });
+          console.log(res);
+          const gen = await generateOCRInfo(prompt);
+
+          const resultText = gen?.markdown?.trim() || JSON.stringify(res);
 
           await fileStore.save(
             new File([blob], filename ?? genId(), {
@@ -196,7 +169,7 @@ const DisplayAttachments = () => {
       });
       Promise.all(handlers.map((h) => h()));
     });
-  }, [urls, ocr, generate]);
+  }, [urls, ocr]);
 
   if (files.length === 0) {
     return null;
@@ -220,11 +193,6 @@ const DisplayAttachments = () => {
               <AttachmentContent>
                 <AttachmentTitle>{filename}</AttachmentTitle>
                 <AttachmentDescription>{mediaType}</AttachmentDescription>
-                {/* {handlerResult.has(id) && (
-                  <AttachmentDescription className="whitespace-pre-wrap break-all text-muted-foreground">
-                    {handlerResult.get(id)}
-                  </AttachmentDescription>
-                )} */}
               </AttachmentContent>
               <AttachmentActions>
                 <AttachmentAction
@@ -235,6 +203,16 @@ const DisplayAttachments = () => {
                   <XIcon />
                 </AttachmentAction>
               </AttachmentActions>
+
+              <AttachmentDialog>
+                <DialogContent>
+                  <DialogTitle>{filename}</DialogTitle>
+                  <img src={url}></img>
+                  <div>
+                    <MathResBlock>{handlerResult.get(id)}</MathResBlock>
+                  </div>
+                </DialogContent>
+              </AttachmentDialog>
             </Attachment>
           );
         })}
@@ -285,9 +263,10 @@ const DisplaySelectsMap = ({
 };
 
 const PruePromptInput = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { id, sendMessage, status } = useActiveChatHelpers();
   const { isNewChat, createChat } = useActiveChat();
+  const model = useChatModel();
   const selectsMap = useToolSelectionStore.use.selectsMap();
 
   const practcieProblems = useChatPromptProblems.use.problems();
@@ -320,6 +299,7 @@ const PruePromptInput = () => {
       clearProblems();
     }
   }, [isNewChat]);
+
   const onSubmit: PromptInputProps["onSubmit"] = async (message) => {
     const title = message.text;
     if (isNewChat) {

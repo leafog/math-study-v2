@@ -19,6 +19,7 @@ import type { Problem } from "~/db/db-zod-schema";
 import MathResInline from "./math-res-inline";
 import MathResBlock from "./math-res-block";
 import StatusIcon from "./status-icon";
+import AttachmentDialog from "../chat/attachment-dialog";
 
 /**
  * Render problems as a list of attachments. Used in the prompt input (with a
@@ -59,10 +60,8 @@ export const ProblemsAttachmentList = ({
                 </AttachmentAction>
               </AttachmentActions>
             )}
-            <Dialog>
-              <DialogTrigger asChild>
-                <AttachmentTrigger />
-              </DialogTrigger>
+
+            <AttachmentDialog>
               <DialogContent>
                 <DialogTitle className="flex gap-1.5 items-center">
                   <StatusIcon status={it.status} />
@@ -72,7 +71,7 @@ export const ProblemsAttachmentList = ({
                   <MathResBlock>{it.content}</MathResBlock>
                 </div>
               </DialogContent>
-            </Dialog>
+            </AttachmentDialog>
           </Attachment>
         ))}
       </AttachmentGroup>

@@ -7,4 +7,5 @@ export {
   useChatProblems,
   useChatKgTopics,
   useChatAgent,
+  useChatModel,
 } from "./hooks";

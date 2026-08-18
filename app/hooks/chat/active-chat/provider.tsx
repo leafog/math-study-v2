@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { Chat, useChat, useObject } from "@ai-sdk/react";
 import { useAgent } from "~/lib/agent/client-agent";
 import { genId } from "~/lib/id-utils";
-import { chatMessageColl } from "~/db/tdb-collections";
+import { chatMessageColl, conversationColl } from "~/db/tdb-collections";
 import { createChatToolsPanelStore } from "~/store/chat-tools-panel-store";
 import type { ProviderId, UIChatMessage } from "~/lib/agent/types";
 import {
@@ -25,12 +25,27 @@ import useChatPromptInputManager from "./manager/use-chat-prompt-input-manager";
 import useChatAgentManager from "./manager/use-chat-agent-manager";
 import { toast } from "sonner";
 import type { LanguageModel } from "ai";
+import { useGenerateObject } from "./use-generate-object";
 
+import z from "zod";
+import { useTranslation } from "react-i18next";
+import { getPrompt } from "~/lib/agent/instructions";
+const ChatTitleSchema = z.object({
+  title: z.string(),
+});
+
+/** 提取消息 parts 里的纯文本(type 为 "text" 的部分)。 */
+const partsToText = (parts?: Array<{ type?: string; text?: string }>): string =>
+  (parts ?? [])
+    .filter((p) => p.type === "text" && typeof p.text === "string")
+    .map((p) => p.text)
+    .join(" ")
+    .trim();
 export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
   // const { chatId, isNewChat, createChat } = useChatIdManager();
 
   const activeChatState = useChatIdManager();
-
+  const { i18n } = useTranslation();
   const { chatId, isNewChat, createChat } = activeChatState;
 
   const initMessages = useMessagesManager(chatId);
@@ -49,6 +64,11 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
   );
   const model: LanguageModel | null = agentTransport?.model ?? null;
 
+  const { generate: generateChatTitle } = useGenerateObject(
+    ChatTitleSchema,
+    model,
+  );
+
   const transportRef = useRef(agentTransport);
   transportRef.current = agentTransport;
 
@@ -57,8 +77,6 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
 
   if (chatInstanceRef.current?.id !== chatId) {
     if (chatInstanceRef.current) {
-      // 切换会话:把旧 Chat 的 stop 推迟到 effect 中执行,
-      // 中止旧会话仍在进行的 LLM 流(否则成为孤儿流,持续占用 CPU/内存/API)
       pendingStopRef.current = chatInstanceRef.current.stop;
     }
     chatInstanceRef.current = new Chat<UIChatMessage>({
@@ -75,7 +93,7 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
       onError: (error) => {
         toast.error(error.message, { position: "top-center" });
       },
-      onFinish: ({ message, isAbort }) => {
+      onFinish: ({ message, isAbort, messages }) => {
         // 切换会话导致的中止:消息不完整且属于旧会话,不落库
         if (isAbort) return;
         const meta = message.metadata as Record<string, number> | undefined;
@@ -101,6 +119,27 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
               }
             });
           }
+        }
+
+        if (messages.length === 2) {
+          const [userMsg, assistantMsg] = messages;
+          const conversation = JSON.stringify({
+            user: partsToText(userMsg.parts),
+            assistant: partsToText(assistantMsg.parts),
+          });
+          const language = i18n.language?.toLowerCase().startsWith("zh")
+            ? "Chinese"
+            : "English";
+          const prompt = getPrompt("title.generate", {
+            vars: { language, conversation },
+          });
+          generateChatTitle(prompt).then((it) => {
+            if (it?.title) {
+              conversationColl.update(chatId, (draft) => {
+                draft.title = it.title;
+              });
+            }
+          });
         }
         chatMessageColl.insert({
           chat_id: chatId,

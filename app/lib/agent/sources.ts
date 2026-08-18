@@ -144,4 +144,34 @@ Pass the problem ID. After calling the tool, help the student solve it.`,
     template:
       "Use Markdown for readability when it helps, but keep the response concise and conversational. Do not add headings or lists for their own sake; prefer short, direct answers.",
   },
+  "title.generate": {
+    description: "Generate a concise chat title from the first user message and the AI's first reply.",
+    template: `You are naming a study chat in a math learning app. You receive a JSON with the first exchange:
+- "user": the user's first message
+- "assistant": the AI assistant's first reply
+
+Write a short, descriptive title based on BOTH.
+
+Rules:
+- Write in {language}
+- A few words, not a full sentence (roughly 6-20 characters)
+- Capture the core topic or question
+- No quotes, no trailing punctuation, no explanation — output only the title
+
+Conversation (JSON):
+{conversation}`,
+  },
+  "ocr.toMarkdown": {
+    description: "Convert a raw PaddleOCR result into clean Markdown.",
+    template: `You are an OCR cleanup assistant for math problem screenshots. Below is a PaddleOCR result (JSON) for a math problem image. Each item has text, score, top, left.
+
+Rewrite it into clean, fluent Markdown that faithfully preserves the meaning. Requirements:
+1. Reorder into natural reading order; do not break up equations or formulas.
+2. Fix obvious recognition errors or garbled text when the surrounding context makes the correction clear.
+3. Drop fragments with very low confidence that cannot be recovered; do not output them.
+4. Only output content that actually appears in the image — do not add explanations or problems that are not there.
+
+OCR result (JSON):
+{ocr}`,
+  },
 };
