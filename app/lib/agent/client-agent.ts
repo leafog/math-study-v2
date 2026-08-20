@@ -93,7 +93,7 @@ const calcAgentKey = (
   { locale = "en", reasoning = "none" }: TransportOptions,
 ) => {
   return hashString(
-    `${providerId}:${config.apiKey}:${config.baseUrl}:${model}:${locale}:${reasoning}`,
+    `${providerId}:${config.apiKey}:${config.baseURL}:${model}:${locale}:${reasoning}`,
   );
 };
 

@@ -1,4 +1,4 @@
-import type { PanelImperativeHandle, PanelSize } from "react-resizable-panels";
+import type { PanelImperativeHandle } from "react-resizable-panels";
 import { ResizablePanel } from "../ui/resizable";
 
 import ChatHeaderContainer from "./chat-header-container";
@@ -18,6 +18,7 @@ import { cn } from "~/lib/utils";
 import {
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -35,7 +36,6 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { ArrowDownIcon } from "lucide-react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { useChatPromptProblems } from "~/store/chat-prompt-problems";
 import { useChatProblemScroll } from "./use-chat-problem-scroll";
 
 interface ChatPanelProps {
@@ -61,17 +61,17 @@ const ChatInnerWrapper = ({
   return (
     <div
       className={cn(
-        "flex flex-row gap-8 absolute w-full z-40  scrollbar-gutter-both   overflow-auto px-4",
+        "flex flex-row  absolute w-full z-40  scrollbar-gutter-stable   overflow-auto px-4 ",
         className,
       )}
       ref={ref}
       style={style}
     >
-      <div className={cn("min-w-0 w-full mx-auto max-w-3xl", innerClassName)}>
+      <div className={cn("min-w-0 w-full mx-auto max-w-3xl ", innerClassName)}>
         {children}
       </div>
       {menuShow && !toolsShow && (
-        <div className="sticky top-0  w-xs max-h-full   pr-4 "></div>
+        <div className="sticky top-0  w-xs max-h-full   "></div>
       )}
     </div>
   );
@@ -94,7 +94,6 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
   const showPinned = chatId && pinnedPid;
 
   const hasSuggestions = useChatPromptSuggestionStore.use.hasSuggestions();
-  const hasProblems = useChatPromptProblems.use.hasProblems();
 
   const showSuggestions = hasSuggestions && isNewChat;
 
@@ -121,8 +120,15 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
   };
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  const mt = (showPinned ? (pinnedDivHeight ?? 0) : 0) + 16;
-  const mb = (promptInputDivHeight ?? 0) + 36;
+  const mt = useMemo(
+    () => (showPinned ? (pinnedDivHeight ?? 0) : 0) + 16,
+    [showPinned, pinnedDivHeight],
+  );
+  const mb = useMemo(
+    () => (promptInputDivHeight ?? 0) + 8,
+    [promptInputDivHeight],
+  );
+
   const virtualizer = useVirtualizer({
     count: messages.length,
     getScrollElement: () => scrollRef.current,
@@ -130,11 +136,10 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
     getItemKey: (index) => messages[index]!.id,
     anchorTo: "end",
     followOnAppend: true,
-    scrollEndThreshold: mb + 36,
+    scrollEndThreshold: mb + 8,
     overscan: 3,
     useFlushSync: false,
     scrollPaddingStart: mt,
-    scrollPaddingEnd: mb,
     paddingStart: mt,
     paddingEnd: mb,
   });
@@ -145,7 +150,6 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
     });
   }, [chatId]);
 
-  // 虚拟列表下的"点击题目滚动定位"(替换旧的 DOM scrollIntoView 方案)
   useChatProblemScroll({ virtualizer, scrollRef, messages });
 
   return (
@@ -210,9 +214,9 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
       )}
       <div
         ref={scrollRef}
-        className="relative flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scroll-fade scrollbar-gutter-both px-4"
+        className="relative flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scroll-fade scrollbar-gutter-stable "
       >
-        <div className="flex flex-row min-h-full">
+        <div className="flex flex-row min-h-full px-4">
           <div className="min-w-0 w-full mx-auto max-w-3xl relative ">
             <div
               className="relative w-full"
@@ -301,7 +305,7 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
         ref={promptInputDivRef}
         menuShow={menuShow}
         toolsShow={toolsShow}
-        className="bottom-4"
+        className="bottom-4 "
         innerClassName="py-2"
       >
         <ChatPromptInput />

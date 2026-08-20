@@ -439,6 +439,49 @@ export const ConversationSchema = z.object({
 });
 export type Conversation = z.infer<typeof ConversationSchema>;
 
+/**
+ * PowerSync AttachmentTable schema (localOnly, used for attachment sync).
+ * Keys use snake_case to match PowerSync's SQL column names.
+ * @see AttachmentTable from @powersync/web
+ */
+export const AttachmentSchema = z.object({
+  id: z.string(),
+  filename: z.string().optional(),
+  local_uri: z.string().optional(),
+  timestamp: z.number().optional(),
+  size: z.number().optional(),
+  media_type: z.string().optional(),
+  state: z.number().int().min(0).max(4).optional(),
+  has_synced: z.boolean().optional(),
+  meta_data: z.string().optional(),
+});
+/**
+ *
+ */
+export const AttachmentMetaDataSchema = z.object({
+  ocr_result: z.string(),
+  filename: z.string(),
+});
+export type AttachmentMetaData = z.infer<typeof AttachmentMetaDataSchema>;
+export type Attachment = z.infer<typeof AttachmentSchema>;
+
+/**
+ * 会话-附件关联（记录 attachment 属于哪个会话）。
+ * Keys 沿用 snake_case，与 PowerSync AttachmentTable 列名风格一致。
+ */
+export const AttachmentChatRelSchema = z.object({
+  id: z.string(),
+  attachment_id: z.string().describe("FK to Attachment"),
+  chat_id: z.string().describe("FK to Conversation"),
+  message_id: z.string().optional(),
+  message_created_date: z.date(),
+  sort_order: z.number().optional(),
+  created_at: z.date(),
+  updated_at: z.date(),
+});
+
+export type AttachmentChatRel = z.infer<typeof AttachmentChatRelSchema>;
+
 export const ChatMessageSchema = z.object({
   id: z.string(),
   chat_id: z.string().nullish(),
@@ -449,6 +492,8 @@ export const ChatMessageSchema = z.object({
       created_at: z.date().optional(),
       reasonings_start_end: z.array(z.string()).optional(),
       practiceProblems: z.array(ProblemSchema).optional(),
+      attachmentIds: z.array(z.string()).optional(),
+      message_id: z.string().optional(), // 用户信息在这里取
     })
     .catchall(z.any())
     .optional(),
@@ -486,24 +531,6 @@ export const AlbumSchema = z.object({
 });
 
 export type Album = z.infer<typeof AlbumSchema>;
-
-/**
- * PowerSync AttachmentTable schema (localOnly, used for attachment sync).
- * Keys use snake_case to match PowerSync's SQL column names.
- * @see AttachmentTable from @powersync/web
- */
-export const AttachmentSchema = z.object({
-  id: z.string(),
-  filename: z.string().optional(),
-  local_uri: z.string().optional(),
-  timestamp: z.number().optional(),
-  size: z.number().optional(),
-  media_type: z.string().optional(),
-  state: z.number().int().min(0).max(4).optional(),
-  has_synced: z.boolean().optional(),
-  meta_data: z.string().optional(),
-});
-export type Attachment = z.infer<typeof AttachmentSchema>;
 
 /** 工具运行时产生的数据（如绘图、笔记等），按 chatId 隔离 */
 export const ToolDataSchema = z.object({

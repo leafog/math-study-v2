@@ -152,6 +152,7 @@ export const colls = zipObject(collKeys, collValues) as unknown as CollMap;
 export const {
   problemColl,
   problemChatRelColl,
+  attachmentChatRelColl,
   answerRecordColl,
   studyNoteColl,
   knowledgePointColl,

@@ -1,4 +1,3 @@
-import MathRes from "../math-res";
 import {
   Card,
   CardAction,

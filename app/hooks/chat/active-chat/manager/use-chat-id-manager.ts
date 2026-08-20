@@ -1,11 +1,10 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { eq, useLiveQuery } from "@tanstack/react-db";
 import { chatToolsBarStateColl, conversationColl } from "~/db/tdb-collections";
 import { genId } from "~/lib/id-utils";
 import { createTx } from "~/db/tx";
 import { chatIdStore } from "~/store/chat-id-store";
-import { useStore } from "zustand";
 
 const chatRegExp = new RegExp(/\/chat\/([^/]+)/);
 
@@ -44,17 +43,27 @@ export const useChatIdManager = () => {
     }
   }, [conversationReady, hasChatIdInUrl, currentConversation, navigate]);
 
-  const newChatIdRef = useRef(genId());
+  // 用 getState 非响应式读写，避免在渲染期 setState 触发本组件自身重渲的告警。
+  // newChatId 只在渲染时同步读一次（本地已赋值），无需订阅响应式更新。
+  const { newChatId, setNewChatId, resetNewChatId, setChatId } =
+    chatIdStore.getState();
 
-  // 新聊天时生成新 ID，移到 effect 避免 render 副作用
+  // 惰性初始化到 store：store 为模块级单例，StrictMode 的模拟卸载不会重置它，
+  // 故两次挂载读到同一个 id，避免二次生成与 chatId 跳变。
+  // 首帧用局部变量同步取值，避免出现空 chatId 的一帧。
+  let id = newChatId;
+  if (isNewChat && !id) {
+    id = genId();
+    setNewChatId(id);
+  }
+  const chatId = chatIdFromUrl ?? id;
+
+  // 离开新聊天时清空，下次进入时重新生成（保证每次新聊天一个全新的稳定 id）
   useEffect(() => {
-    if (isNewChat) {
-      newChatIdRef.current = genId();
+    if (!isNewChat) {
+      resetNewChatId();
     }
   }, [isNewChat]);
-
-  const chatId = chatIdFromUrl ?? newChatIdRef.current;
-  const setChatId = useStore(chatIdStore).setChatId;
 
   useEffect(() => {
     setChatId(chatId);

@@ -13,6 +13,8 @@ type CurrentModel = {
 
 type ChatPromptInputState = {
   textInputValue: string;
+  fileIds: string[];
+  hasAny: boolean;
   currentModel: CurrentModel | null;
   reasoning: LLMreasoning;
 };
@@ -21,23 +23,79 @@ type ChatPromptInputAction = {
   setTextInputValue: (input: string) => void;
   setCurrentModel: (model: CurrentModel) => void;
   setReasoning: (reasoning: LLMreasoning) => void;
-  clearTextInput: () => void;
+  setFileIds: (ids: string[]) => void;
+  addFileIds: (ids: string[]) => void;
+  addFileId: (id: string) => void;
 
+  removeFileId: (id: string) => void;
+  clearFileIds: () => void;
+  clearTextInput: () => void;
   reset: () => void;
 };
 
 const chatPromptInputStateDefault: ChatPromptInputState = {
   textInputValue: "",
+  fileIds: [],
+  hasAny: false,
   currentModel: null,
   reasoning: "none",
 };
 
+// 只要 textInput 或 fileIds 有值即为 true
+const computeHasAnyCount = (
+  textInputValue: string,
+  fileIds: string[],
+): boolean => textInputValue !== "" || fileIds.length > 0;
+
 const chatPromptInputStoreCreator = (init: ChatPromptInputState) =>
   combine<ChatPromptInputState, ChatPromptInputAction>({ ...init }, (set) => ({
-    setTextInputValue: (textInputValue) => set({ textInputValue }),
+    setTextInputValue: (textInputValue) =>
+      set((state) => ({
+        textInputValue,
+        hasAny: computeHasAnyCount(textInputValue, state.fileIds),
+      })),
     setCurrentModel: (currentModel) => set({ currentModel }),
     setReasoning: (reasoning) => set({ reasoning }),
-    clearTextInput: () => set({ textInputValue: "" }),
+    setFileIds: (ids) =>
+      set((state) => ({
+        fileIds: ids,
+        hasAny: computeHasAnyCount(state.textInputValue, ids),
+      })),
+    addFileIds: (ids) =>
+      set((state) => {
+        const fileIds = Array.from(new Set([...state.fileIds, ...ids]));
+        return {
+          fileIds,
+          hasAny: computeHasAnyCount(state.textInputValue, fileIds),
+        };
+      }),
+    addFileId: (id) =>
+      set((state) => {
+        if (state.fileIds.includes(id)) return state;
+        const fileIds = [...state.fileIds, id];
+        return {
+          fileIds,
+          hasAny: computeHasAnyCount(state.textInputValue, fileIds),
+        };
+      }),
+    removeFileId: (id) =>
+      set((state) => {
+        const fileIds = state.fileIds.filter((fileId) => fileId !== id);
+        return {
+          fileIds,
+          hasAny: computeHasAnyCount(state.textInputValue, fileIds),
+        };
+      }),
+    clearFileIds: () =>
+      set((state) => ({
+        fileIds: [],
+        hasAny: computeHasAnyCount(state.textInputValue, []),
+      })),
+    clearTextInput: () =>
+      set((state) => ({
+        textInputValue: "",
+        hasAny: computeHasAnyCount("", state.fileIds),
+      })),
     reset: () => set(chatPromptInputStateDefault),
   }));
 

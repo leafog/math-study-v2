@@ -20,16 +20,7 @@ import {
 } from "~/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { Button } from "~/components/ui/button";
-import { Command } from "~/components/ui/command";
-import {
-  ModelSelectorInput,
-  ModelSelectorList,
-  ModelSelectorEmpty,
-  ModelSelectorGroup,
-  ModelSelectorItem,
-  ModelSelectorLogo,
-  ModelSelectorName,
-} from "~/components/ai-elements/model-selector";
+
 import {
   Item,
   ItemContent,

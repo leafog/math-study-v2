@@ -42,8 +42,6 @@ const partsToText = (parts?: Array<{ type?: string; text?: string }>): string =>
     .join(" ")
     .trim();
 export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
-  // const { chatId, isNewChat, createChat } = useChatIdManager();
-
   const activeChatState = useChatIdManager();
   const { i18n } = useTranslation();
   const { chatId, isNewChat, createChat } = activeChatState;
@@ -54,11 +52,11 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
   const chatPromptInputStore = useChatPromptInputManager(isNewChat, chatId);
   const { id, model_name } = chatPromptInputStore.use.currentModel() ?? {};
   const reasoning = chatPromptInputStore.use.reasoning();
-  const config = chatAgentState.settings.find((it) => it.id === id);
+  const config = chatAgentState.getConfigById(id);
 
   const agentTransport = useAgent(
     config?.provider_id as ProviderId | undefined,
-    config ? { apiKey: config.api_key, baseUrl: config.base_url } : undefined,
+    config ? { apiKey: config.api_key, baseURL: config.base_url } : undefined,
     model_name,
     reasoning,
   );
@@ -97,6 +95,7 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
         // 切换会话导致的中止:消息不完整且属于旧会话,不落库
         if (isAbort) return;
         const meta = message.metadata as Record<string, number> | undefined;
+        console.log(message.id);
         if (meta) {
           // Collect reasoning start/end timestamps from Date.now()-based keys
           const startKeys = Object.keys(meta)
@@ -144,7 +143,7 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
         chatMessageColl.insert({
           chat_id: chatId,
           created_at: new Date(),
-          ...message,
+          ...{ ...message, metadata: {} },
         });
       },
     });

@@ -112,7 +112,7 @@ const ChatWelcome = () => {
   const hasInputValue = textInputValue.trim().length > 0;
 
   const setSuggestions = useChatPromptSuggestionStore.use.setSuggestions();
-  const hasProblems = useChatPromptProblems.use.hasProblems();
+  const hasAny = useChatPromptInput().use.hasAny();
 
   return (
     <div ref={ref} className="flex flex-col gap-8 items-center">
@@ -122,7 +122,7 @@ const ChatWelcome = () => {
       <div
         className={cn(
           "grid gap-4 w-full ",
-          (hasInputValue || hasProblems) && "opacity-0 pointer-events-none",
+          hasAny && "opacity-0 pointer-events-none",
         )}
         style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
       >

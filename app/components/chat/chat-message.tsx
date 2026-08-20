@@ -4,7 +4,6 @@ import {
   type ReactNode,
   useMemo,
   useCallback,
-  useEffect,
 } from "react";
 import {
   Message,
@@ -31,6 +30,12 @@ import { Marker, MarkerContent, MarkerIcon } from "../ui/marker";
 import { Spinner } from "../ui/spinner";
 import type { ChatStatus } from "ai";
 import { ProblemsAttachmentList } from "../math/problems-attachment-list";
+import { AttachmentGroup } from "../ui/attachment";
+import { eq, inArray, queryOnce, useLiveQuery } from "@tanstack/react-db";
+import { attachmentChatRelColl, attachmentColl } from "~/db/tdb-collections";
+import AttachmentsReadonlyList from "./attachments-readonly-list";
+
+import { AttachmentSchema, type Attachment } from "../../db/db-zod-schema";
 
 export type MessageActionProps = ComponentProps<typeof Button> & {
   tooltip?: string;
@@ -57,6 +62,31 @@ const PureChatMessage = memo(
     const isUser = message.role === "user";
     const align = isUser ? "end" : "start";
     const practiceProblems = message.metadata?.practiceProblems ?? [];
+    const messageId = message.metadata?.message_id ?? message.id;
+
+    const attachmentIds = message.metadata?.attachmentIds ?? [];
+    const { data: attachments = [] } = useLiveQuery(
+      (q) => {
+        console.log(attachmentIds);
+        if (attachmentIds.length === 0) return undefined;
+        return q
+          .from({ attachmentChatRelColl })
+          .join(
+            { attachmentColl },
+            ({ attachmentChatRelColl, attachmentColl }) =>
+              eq(attachmentChatRelColl.attachment_id, attachmentColl.id),
+          )
+          .where(({ attachmentChatRelColl }) =>
+            eq(attachmentChatRelColl.message_id, messageId),
+          )
+          .orderBy(
+            ({ attachmentChatRelColl }) => attachmentChatRelColl.sort_order,
+            "asc",
+          )
+          .select(({ attachmentColl }) => ({ ...attachmentColl }));
+      },
+      [attachmentIds],
+    );
 
     const hasPracticeProblems = practiceProblems.length > 0;
 
@@ -146,6 +176,13 @@ const PureChatMessage = memo(
               {hasPracticeProblems && (
                 <div className="ml-auto justify-end">
                   <ProblemsAttachmentList problems={practiceProblems} />
+                </div>
+              )}
+              {attachmentIds.length > 0 && (
+                <div className="ml-auto justify-end">
+                  <AttachmentsReadonlyList
+                    attachments={attachments as Attachment[]}
+                  />
                 </div>
               )}
               {filteredParts.map((part, i) => {

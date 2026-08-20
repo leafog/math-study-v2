@@ -89,7 +89,7 @@ export type CreateChatTranSportAgentFC = (
   config: SettingModelConfig,
 ) => ChatTransport<UIChatMessage>;
 
-export type LLMConfig = { apiKey: string; baseUrl: string };
+export type LLMConfig = { apiKey: string; baseURL: string };
 
 export type CreateLLMFC = (config: LLMConfig, model: string) => LanguageModel;
 

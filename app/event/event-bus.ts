@@ -10,6 +10,7 @@ export type AppEvents = {
   "chat:scroll-to-problem": ScrollToProblemCommand;
   "topic:in-chat-view-topic": string;
   "push-prompt-input": string;
+  "image:show-light-box": string;
 };
 
 export const bus = mitt<AppEvents>();

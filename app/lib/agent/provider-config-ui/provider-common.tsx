@@ -177,7 +177,7 @@ const ProviderCommon: FC<ProviderCommonProps> = ({
       const result = await testFn(
         {
           apiKey,
-          baseUrl: form.getFieldValue("base_url") || defaultBaseUrl,
+          baseURL: form.getFieldValue("base_url") || defaultBaseUrl,
         },
         allModels[0],
       );

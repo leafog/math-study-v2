@@ -9,6 +9,7 @@ import {
   ItemContent,
   ItemTitle,
   ItemActions,
+  ItemGroup,
 } from "~/components/ui/item";
 import {
   Container,
@@ -17,6 +18,7 @@ import {
   ContainerBody,
 } from "~/components/layout/Container";
 import ModelConfig from "~/components/settings/model-config";
+import ModelConfigPage from "~/components/settings/model-config-page";
 
 const THEME_OPTIONS = [
   { value: "light" as const, icon: Sun, label: "settings.light" },
@@ -58,7 +60,7 @@ const Settings = () => {
       </ContainerSticky>
       <ContainerBody>
         {tab === "general" ? (
-          <div className="space-y-4 py-2">
+          <ItemGroup>
             <Item variant="outline" size="sm">
               <ItemContent>
                 <ItemTitle>{t("settings.theme")}</ItemTitle>
@@ -95,10 +97,10 @@ const Settings = () => {
                 ))}
               </ItemActions>
             </Item>
-          </div>
+          </ItemGroup>
         ) : (
           <div className="py-2">
-            <ModelConfig />
+            <ModelConfigPage />
           </div>
         )}
       </ContainerBody>

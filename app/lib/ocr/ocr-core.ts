@@ -9,7 +9,7 @@ const LANG_MAP: Record<string, string> = {
 };
 
 const CREATE_OPTS = {
-  ocrVersion: "PP-OCRv5",
+  ocrVersion: "PP-OCRv6",
   worker: true,
   ortOptions: {
     backend: "wasm",

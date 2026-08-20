@@ -6,14 +6,8 @@ import {
   AttachmentGroup,
   AttachmentMedia,
   AttachmentTitle,
-  AttachmentTrigger,
 } from "~/components/ui/attachment";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogTrigger,
-} from "~/components/ui/dialog";
+import { DialogContent, DialogTitle } from "~/components/ui/dialog";
 import { XIcon } from "lucide-react";
 import type { Problem } from "~/db/db-zod-schema";
 import MathResInline from "./math-res-inline";

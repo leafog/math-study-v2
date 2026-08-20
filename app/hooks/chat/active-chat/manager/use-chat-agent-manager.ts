@@ -1,10 +1,11 @@
 import { useLiveQuery } from "@tanstack/react-db";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 
 import { settingModelConfigColl } from "~/db/tdb-collections";
 import type { SettingModelConfig } from "~/db/db-zod-schema";
 import { modelIconRecord } from "~/lib/agent";
 import type { ProviderId } from "~/lib/agent/types";
+import { useAgent } from "~/lib/agent/client-agent";
 
 const useChatAgentManager = () => {
   const { data: settings = [] } = useLiveQuery((q) =>
@@ -16,6 +17,13 @@ const useChatAgentManager = () => {
           direction: "desc",
         },
       ),
+  );
+
+  const getConfigById = useCallback(
+    (id: string | undefined) => {
+      return settings.find((it) => it.id === id);
+    },
+    [settings],
   );
 
   const validProviders = useMemo(
@@ -70,6 +78,7 @@ const useChatAgentManager = () => {
     updateConfig,
     deleteConfig,
     currentProviders,
+    getConfigById,
   };
 };
 
