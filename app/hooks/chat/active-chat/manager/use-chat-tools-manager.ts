@@ -10,6 +10,7 @@ import { useImmer } from "use-immer";
 import { hasToolKind } from "~/components/chat/tools";
 import { keyBy, without } from "lodash-es";
 import { moveToEnd } from "~/lib/coll-utils";
+import { useEvent } from "~/event/use-event";
 
 export const useChatToolsManager = (
   chatId: string,
@@ -75,13 +76,14 @@ export const useChatToolsManager = (
       Array.from(tool_order ?? []).map((it) => availableToolInstancesMap[it]),
     [tool_order, availableToolInstancesMap],
   );
+
   const mountedTools = useMemo(
     () => tools.filter(({ id }) => mountedToolsIds.has(id)),
     [tools, mountedToolsIds],
   );
 
   const open = useCallback(
-    async (kind: string, title?: string) => {
+    async (kind: string, title?: string, refId?: string) => {
       onOpenBefore?.(kind, title);
       const instanceId = genId();
       const now = new Date();
@@ -90,6 +92,7 @@ export const useChatToolsManager = (
         chat_id: chatId,
         kind,
         title: title ?? kind,
+        ref_id: refId,
         data: "",
         created_at: now,
         updated_at: now,
@@ -111,6 +114,18 @@ export const useChatToolsManager = (
     },
     [chatId, onOpenBefore],
   );
+
+  useEvent("open:tool", ({ kind, title, refId }) => {
+    // @TODO 打开了 聚焦
+    const instance = chatToolInstances.find(
+      (it) => it.kind === kind && it.ref_id === refId,
+    );
+    if (instance) {
+      active(instance.id);
+    } else {
+      open(kind, title, refId);
+    }
+  });
 
   const close = async (instanceId: string) => {
     chatToolInstanceColl.delete(instanceId);

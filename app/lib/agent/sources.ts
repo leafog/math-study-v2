@@ -161,6 +161,11 @@ Rules:
 Conversation (JSON):
 {conversation}`,
   },
+  "ocr.vision": {
+    description: "Vision-model OCR: turn an image into clean Markdown.",
+    template: `You are an OCR engine. Recognize the mathematical content in the image and convert it to Markdown.
+- Output only the recognized result, with no explanation.`,
+  },
   "ocr.toMarkdown": {
     description: "Convert a raw PaddleOCR result into clean Markdown.",
     template: `You are an OCR cleanup assistant for math problem screenshots. Below is a PaddleOCR result (JSON) for a math problem image. Each item has text, score, top, left.

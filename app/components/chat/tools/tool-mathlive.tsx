@@ -2,7 +2,7 @@ import { useRef, useEffect, useState } from "react";
 
 import { Pi } from "lucide-react";
 import { MathfieldElement } from "mathlive";
-import type { ToolDefinition, ToolPanelProps } from "./types";
+import type { ToolPanelProps } from "./types";
 
 declare global {
   namespace React.JSX {
@@ -23,7 +23,7 @@ declare global {
 
 MathfieldElement.fontsDirectory = "/fonts";
 
-const Panel = ({}: ToolPanelProps) => {
+const MathLivePanel = ({}: ToolPanelProps) => {
   const mfRef = useRef<MathfieldElement>(null);
   const keyboardRef = useRef<HTMLDivElement>(null);
 
@@ -70,10 +70,4 @@ const Panel = ({}: ToolPanelProps) => {
   );
 };
 
-const mathliveTool: ToolDefinition = {
-  kind: "mathlive",
-  Icon: Pi,
-  Panel,
-};
-
-export default mathliveTool;
+export default MathLivePanel;

@@ -41,7 +41,7 @@ function FileCard({ item }: Readonly<{ item: Record<string, unknown> }>) {
   useEffect(() => {
     if (!localUri || !isImage) return;
     let cancelled = false;
-    fileStore.getUrl(localUri, mediaType).then((url) => {
+    fileStore.getUrl(localUri).then((url) => {
       if (!cancelled) setBlobUrl(url);
     });
     return () => {
@@ -104,9 +104,6 @@ const Library = () => {
     },
     [hasNextPage, isFetchingNextPage, fetchNextPage],
   );
-  useEffect(() => {
-    console.log(data);
-  }, [data]);
 
   useEffect(() => {
     const el = sentinelRef.current;

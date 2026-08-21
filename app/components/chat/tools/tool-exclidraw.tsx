@@ -1,23 +1,18 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  Excalidraw,
-  serializeAsJSON,
-  restoreElements,
-  restoreAppState,
-} from "@excalidraw/excalidraw";
+import { Excalidraw, serializeAsJSON } from "@excalidraw/excalidraw";
 import "@excalidraw/excalidraw/index.css";
-import { Pen } from "lucide-react";
+
 import type {
   ExcalidrawImperativeAPI,
   ExcalidrawProps,
 } from "@excalidraw/excalidraw/types";
-import type { ToolDefinition, ToolPanelProps } from "./types";
+import type { ToolPanelProps } from "./types";
 import { useTheme } from "next-themes";
 import { eq, and, queryOnce } from "@tanstack/react-db";
 import { toolDataColl } from "~/db/tdb-collections";
 import { useDebounceCallback } from "usehooks-ts";
 
-const Panel = ({ chatId, id, kind }: ToolPanelProps) => {
+const ExclidrawPanel = ({ chatId, id, kind }: ToolPanelProps) => {
   const apiRef = useRef<ExcalidrawImperativeAPI>(null);
   const { resolvedTheme } = useTheme();
   const [initialData, setInitialData] = useState();
@@ -44,7 +39,7 @@ const Panel = ({ chatId, id, kind }: ToolPanelProps) => {
   const onChange: ExcalidrawProps["onChange"] = async (e, app, f) => {
     const data = serializeAsJSON(e, app, f, "database");
     const existing = toolDataColl.get(id);
-    const now = new Date();
+
     if (existing) {
       toolDataColl.update(existing.id, (it) => {
         it.data = data;
@@ -69,10 +64,4 @@ const Panel = ({ chatId, id, kind }: ToolPanelProps) => {
   );
 };
 
-const exclidrawTool: ToolDefinition = {
-  kind: "excalidraw",
-  Icon: Pen,
-  Panel,
-};
-
-export default exclidrawTool;
+export default ExclidrawPanel;

@@ -1,14 +1,8 @@
 import { useIsMobile } from "~/hooks/use-mobile";
 import { SidebarTrigger } from "../ui/sidebar";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select";
+
 import { Button } from "../ui/button";
-import { ArrowDown, ArrowDown01, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 
 import { Item, ItemContent, ItemGroup, ItemTitle } from "../ui/item";

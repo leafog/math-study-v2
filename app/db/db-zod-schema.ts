@@ -455,15 +455,35 @@ export const AttachmentSchema = z.object({
   has_synced: z.boolean().optional(),
   meta_data: z.string().optional(),
 });
-/**
- *
- */
+
+export type Attachment = z.infer<typeof AttachmentSchema>;
+
 export const AttachmentMetaDataSchema = z.object({
-  ocr_result: z.string(),
-  filename: z.string(),
+  id: z.string(),
+  origin_filename: z.string(),
 });
 export type AttachmentMetaData = z.infer<typeof AttachmentMetaDataSchema>;
-export type Attachment = z.infer<typeof AttachmentSchema>;
+
+/**
+ * 附件处理任务表（localOnly）。
+ *
+ * 处理流程通过 status 表达：pending → processing → done / error。
+ * 任务与 attachment 解耦 —— 先插入任务行，再异步处理并回填 result，
+ * 从而避免 attachmentColl.update() 跑在 attachment 行还没插入的竞态。
+ */
+export const AttachmentTasksSchema = z.object({
+  id: z.string(),
+  attachment_id: z.string().describe("FK to Attachment"),
+  task_type: z.enum(["extract_text", "extract_image"]),
+  status: z.enum(["pending", "processing", "done", "error"]),
+  origin_filename: z.string().optional(),
+  result: z.string().optional(),
+  error: z.string().optional(),
+  created_at: z.date(),
+  updated_at: z.date(),
+});
+
+export type AttachmentTask = z.infer<typeof AttachmentTasksSchema>;
 
 /**
  * 会话-附件关联（记录 attachment 属于哪个会话）。
@@ -548,6 +568,7 @@ export const ChatToolInstanceSchema = z.object({
   chat_id: z.string().nullish(), // 关联到 conversation
   kind: z.string(), // "excalidraw" | "calculator" | "reference-viewer"
   title: z.string(), // tab 上显示的标题
+  ref_id: z.string().optional(), // 定位：工具绑定的业务对象 (problem/attachment/topic...)，自由画布类工具可空
   data: z.any(), // JSON — 工具自己的数据，按 kind 不同结构不同
   created_at: z.date(),
   updated_at: z.date(),

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Plus } from "lucide-react";
 import { Button } from "../ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { toolRegistry } from "./tools";
+import { openableTools } from "./tools";
 import { useChatTools } from "~/hooks/chat/active-chat";
 
 const ToolsBarOpenBtn = () => {
@@ -24,7 +24,7 @@ const ToolsBarOpenBtn = () => {
         </div>
       </PopoverTrigger>
       <PopoverContent className="p-1 gap-1">
-        {toolRegistry.map(({ kind, Icon }) => (
+        {openableTools.map(({ kind, Icon }) => (
           <Button
             className="w-full justify-start"
             size="lg"

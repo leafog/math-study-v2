@@ -1,10 +1,17 @@
-import { AttachmentMetaDataSchema, type Attachment } from "~/db/db-zod-schema";
+import { AttachmentMetaDataSchema, AttachmentSchema } from "~/db/db-zod-schema";
 import * as typer from "media-typer";
 import { Empty } from "../ui/empty";
 import { fileStore } from "~/db/indexdb-file-storage";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import type z from "zod";
 
-const IndexedUrlImage = ({ src, alt }: { src: string; alt: string }) => {
+export const AttachmentWithMetaDataSchema = AttachmentSchema.extend({
+  meta_data: AttachmentMetaDataSchema.optional(),
+});
+export type AttachmentWithMetaData = z.infer<
+  typeof AttachmentWithMetaDataSchema
+>;
+export const IndexedUrlImage = ({ src, alt }: { src: string; alt: string }) => {
   const [realSrc, setRealSrc] = useState("");
   useEffect(() => {
     fileStore.getUrl(src).then((it) => {
@@ -12,23 +19,31 @@ const IndexedUrlImage = ({ src, alt }: { src: string; alt: string }) => {
     });
   }, [src]);
 
+  if (realSrc.length === 0) {
+    return null;
+  }
   return <img src={realSrc} alt={alt}></img>;
 };
 
-const IndexedUrlPreview = ({ attachment }: { attachment: Attachment }) => {
+const IndexedUrlPreview = ({
+  attachment,
+}: {
+  attachment: AttachmentWithMetaData;
+}) => {
   const { local_uri = "", media_type = "", meta_data = "{}" } = attachment;
-  const { filename, ocr_result } = useMemo(
-    () => AttachmentMetaDataSchema.parse(JSON.parse(meta_data)),
-    [meta_data],
-  );
-  console.log(meta_data);
+
   const p = typer.parse(media_type);
 
   if (local_uri === "") {
     return <Empty />;
   }
   if (p.type === "image")
-    return <IndexedUrlImage src={local_uri} alt={filename} />;
+    return (
+      <IndexedUrlImage
+        src={local_uri}
+        alt={attachment?.meta_data?.origin_filename ?? ""}
+      />
+    );
 };
 
 export default IndexedUrlPreview;

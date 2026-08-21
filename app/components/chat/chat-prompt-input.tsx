@@ -21,8 +21,9 @@ import {
 import {
   attachmentChatRelColl,
   attachmentColl,
+  attachmentMetaDataColl,
+  attachmentTasksColl,
   chatMessageColl,
-  conversationColl,
   problemColl,
 } from "~/db/tdb-collections";
 import { genId } from "~/lib/id-utils";
@@ -42,7 +43,7 @@ import {
   useToolSelectionStore,
   type ToolSelectionItem,
 } from "./tools/store/tool-selection";
-import { isEmpty, isUndefined, values } from "lodash-es";
+import { isEmpty, isUndefined, keyBy, values } from "lodash-es";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import {
@@ -64,7 +65,14 @@ import { ProblemsAttachmentList } from "../math/problems-attachment-list";
 import { ocrResultToMarkdown, useOcr } from "~/lib/ocr";
 import { blobUrlToBlob } from "~/lib/blob-utils";
 import { Spinner } from "../ui/spinner";
-import { eq, inArray, queryOnce, useLiveQuery } from "@tanstack/react-db";
+import {
+  and,
+  eq,
+  inArray,
+  queryOnce,
+  useLiveQuery,
+  type InitialQueryBuilder,
+} from "@tanstack/react-db";
 import { useImmer } from "use-immer";
 import { z } from "zod";
 
@@ -74,21 +82,49 @@ import Counter from "yet-another-react-lightbox/plugins/counter";
 
 import "yet-another-react-lightbox/plugins/counter.css";
 import "yet-another-react-lightbox/styles.css";
-import {
-  AttachmentMetaDataSchema,
-  type AttachmentMetaData,
-} from "~/db/db-zod-schema";
+import { type AttachmentTask } from "~/db/db-zod-schema";
 import { useBoolean } from "usehooks-ts";
 import { X, XIcon } from "lucide-react";
 import { bus } from "~/event/event-bus";
-import useVersion from "~/lib/agent/version-agent";
 import { useSync } from "~/hooks/use-sync";
-import IndexedUrlPreview from "../common-ui/indexed-url-preview";
 import BlobUrlPreview from "../common-ui/blob-url-preview";
+import { extractFileText } from "~/lib/file";
+import IndexedUrlPreview, {
+  IndexedUrlImage,
+} from "../common-ui/indexed-url-preview";
 
 const OCRInfoSchema = z.object({
   markdown: z.string().describe("ocr markdown"),
 });
+
+/** 附件文本抽取任务查询：按附件 id 过滤，updated_at 倒序（最近一次在前） */
+const buildAttachmentTasksQuery = (q: InitialQueryBuilder, fileIds: string[]) =>
+  q
+    .from({ attachmentTasksColl })
+    .where(({ attachmentTasksColl }) =>
+      and(
+        inArray(attachmentTasksColl.attachment_id, fileIds),
+        eq(attachmentTasksColl.task_type, "extract_text"),
+      ),
+    )
+    .orderBy(
+      ({ attachmentTasksColl }) => attachmentTasksColl.updated_at,
+      "desc",
+    );
+
+/**
+ * 从（已按 updated_at 倒序的）任务列表里，为每个 attachment_id 取最近一次任务。
+ */
+const toLatestTaskMap = (tasks: AttachmentTask[]) => {
+  const seen = new Set<string>();
+  const map = new Map<string, AttachmentTask>();
+  tasks.forEach((task) => {
+    if (seen.has(task.attachment_id)) return;
+    seen.add(task.attachment_id);
+    map.set(task.attachment_id, task);
+  });
+  return map;
+};
 
 const DisplayAttachments = () => {
   const { files, remove, addItemWithId } = usePromptInputAttachments();
@@ -97,27 +133,9 @@ const DisplayAttachments = () => {
   const setFileIds = useChatPromptInput().use.setFileIds();
   const [lightBoxIndex, setLightBoxIndex] = useState(0);
 
-  const [slidesInDbMap, setSlidesInDbMap] = useImmer(
-    new Map<string, SlideImage>(),
-  );
-  useEffect(() => {
-    console.log(files);
-  }, [files]);
-
   const exFileIds = useMemo(() => files.map((it) => it.id), [files]);
 
   useSync(exFileIds, setFileIds);
-  console.log(fileIds);
-
-  const slidesInInputMap = useMemo(() => {
-    return new Map(
-      files.map<[string, SlideImage]>(({ id, url }) => [id, { src: url }]),
-    );
-  }, [files]);
-
-  const mergedMap = useMemo(() => {
-    return new Map([...slidesInDbMap, ...slidesInInputMap]);
-  }, [slidesInDbMap, slidesInInputMap]);
 
   const {
     value: lightBoxShow,
@@ -149,46 +167,35 @@ const DisplayAttachments = () => {
         })),
     [chatId],
   );
-  const slides = useMemo(() => {
-    const sort_ids = [
-      ...attachmentsInDb.map((it) => it.id).filter((it) => !isUndefined(it)),
-      ...fileIds,
-    ];
-    return sort_ids
-      .map((it) => mergedMap.get(it))
-      .filter((it) => !isUndefined(it));
-  }, [attachmentsInDb, fileIds]);
-  const sort_ids = [
-    ...attachmentsInDb.map((it) => it.id).filter((it) => !isUndefined(it)),
-    ...fileIds,
-  ];
 
-  useEffect(() => {
-    setSlidesInDbMap((draft) => {
-      draft.clear();
-    });
-    const handlers = attachmentsInDb
-      .filter((it) => it.local_uri !== undefined)
-      .map(({ id, local_uri }) => {
-        const handler = async () => {
-          console.log(local_uri);
-          const url = await fileStore.getUrl(local_uri!);
-          setSlidesInDbMap((draft) => {
-            draft.set(id!, { src: url });
-          });
-        };
-        return handler;
-      });
-    Promise.all(handlers.map((h) => h()));
-  }, [attachmentsInDb]);
+  const { slides, slideIdToIndex } = useMemo(() => {
+    const withSlide = [
+      ...attachmentsInDb
+        .filter((it) => it.media_type?.startsWith("image/"))
+        .map((it) => ({ id: it.id, slide: { src: it.local_uri } }))
+        .filter((it) => !isUndefined(it)),
+      ...files
+        .filter((it) => it.mediaType.startsWith("image/"))
+        .map((it) => ({ id: it.id, slide: { src: it.url } })),
+    ];
+
+    return {
+      slides: withSlide.map((it) => it.slide) as SlideImage[],
+      slideIdToIndex: new Map(withSlide.map((it, index) => [it.id, index])),
+    };
+  }, [attachmentsInDb, fileIds]);
+
+  useEvent("image:show-light-box", (id) => {
+    openLightBox();
+    const index = slideIdToIndex.get(id) ?? -1;
+    setLightBoxIndex(index);
+  });
 
   const handleRemove = (id: string) => {
     remove(id);
   };
 
   const urls = files.map((it) => it.url).join(",");
-  const ocr = useOcr();
-  const { predict } = useVersion();
 
   useEffect(() => {
     const ids = new Set(fileIds);
@@ -211,109 +218,104 @@ const DisplayAttachments = () => {
       });
   }, [chatId]);
 
-  const [handlering, setHandlering] = useImmer(new Set());
-  const [handlerResult, setHandlerResult] = useImmer(
-    new Map<string, AttachmentMetaData>(),
+  const { data: attachmentTasks = [] } = useLiveQuery(
+    (q) => {
+      if (fileIds.length === 0) return undefined;
+      return buildAttachmentTasksQuery(q, fileIds);
+    },
+    [fileIds],
   );
-  useEvent("image:show-light-box", (id) => {
-    openLightBox();
-    const index = [...mergedMap.keys()].indexOf(id);
-    console.log(id, [...mergedMap.keys()].indexOf(id));
-    setLightBoxIndex(index);
-  });
+
+  // 每个附件最近一次任务（供渲染展示处理结果）
+  const latestTaskByAttachment = useMemo(
+    () => toLatestTaskMap(attachmentTasks),
+    [attachmentTasks],
+  );
 
   useEffect(() => {
-    if (ocr === null) return;
-    setHandlering((draft) => {
-      draft.clear();
-      return draft;
-    });
-    setHandlerResult((draft) => {
-      draft.clear();
-      return draft;
-    });
     const ids = files.map((it) => it.id);
+    if (ids.length === 0) return;
 
-    queryOnce((q) =>
-      q
-        .from({ attachmentColl })
-        .where(({ attachmentColl }) => inArray(attachmentColl.id, ids)),
-    ).then((it) => {
-      setHandlerResult((draft) => {
-        it.forEach(({ id, meta_data }) => {
-          const result = AttachmentMetaDataSchema.safeParse(
-            JSON.parse(meta_data ?? "{}"),
-          );
-          draft.set(
-            id,
-            result.success
-              ? result.data
-              : {
-                  filename: "",
-                  ocr_result: "",
-                },
-          );
-        });
-        return draft;
-      });
+    // 复用同一查询：取每个附件最近一次任务（updated_at 倒序取第一条）
+    queryOnce((q) => buildAttachmentTasksQuery(q, ids)).then((tasks) => {
+      if (!tasks) return;
+      const latest = toLatestTaskMap(tasks);
 
-      const indbIdsSet = new Set(it.map((it) => it.id));
-      const needHandlerFiles = files.filter((it) => !indbIdsSet.has(it.id));
+      // 最近一次任务为 done 的附件，跳过不再处理
+      const doneAttachmentIds = new Set(
+        files
+          .map((it) => latest.get(it.id))
+          .filter((task) => task?.status === "done")
+          .map((task) => task!.attachment_id),
+      );
 
-      setHandlering((draft) => {
-        draft.clear();
-        needHandlerFiles.forEach((it) => draft.add(it.id));
-        return draft;
-      });
+      const needHandlerFiles = files.filter(
+        (it) => !doneAttachmentIds.has(it.id),
+      );
+
       const handlers = needHandlerFiles.map(
         ({ url, id, filename, mediaType }) => {
           const handler = async () => {
-            console.log(mediaType);
-            // @TODO 根据 media_type 去做不同的处理方法 😅
+            const taskId = genId();
+            const now = new Date();
+
+            attachmentTasksColl.insert({
+              id: taskId,
+              attachment_id: id,
+              task_type: "extract_text",
+              status: "pending",
+              origin_filename: filename,
+              created_at: now,
+              updated_at: now,
+            });
+
             const blob = await blobUrlToBlob(url);
 
-            const fileEntry = await fileStore.save(
+            await fileStore.save(
               new File([blob], filename ?? genId(), {
                 type: blob.type,
               }),
               id,
             );
 
-            const res = await predict(blob);
-            console.log(res);
-            // const resultText = ocrResultToMarkdown(res);
-            const resultText = res;
-            const meta_data: AttachmentMetaData = {
-              filename: filename ?? "",
-              ocr_result: resultText,
-            };
-
-            attachmentColl.update(id, (draft) => {
-              draft.meta_data = JSON.stringify(meta_data);
+            attachmentMetaDataColl.insert({
+              id,
+              origin_filename: filename ?? "",
             });
 
-            setHandlering((draft) => {
-              draft.delete(id);
-              return draft;
-            });
-            setHandlerResult((draft) => {
-              draft.set(id, meta_data);
-              return draft;
-            });
+            try {
+              const file_text = await extractFileText(blob, mediaType);
+              attachmentTasksColl.update(taskId, (draft) => {
+                draft.status = "done";
+                draft.result = file_text;
+                draft.updated_at = new Date();
+              });
+            } catch (err) {
+              attachmentTasksColl.update(taskId, (draft) => {
+                draft.status = "error";
+                draft.error = String(err);
+                draft.updated_at = new Date();
+              });
+            }
           };
           return handler;
         },
       );
       Promise.all(handlers.map((h) => h()));
     });
-  }, [urls, ocr]);
+  }, [urls]);
+
+  const toTaskStatus = (fileId: string) => {
+    const task = latestTaskByAttachment.get(fileId);
+    if (!task) return null;
+    const status = task.status;
+    if (status === "pending") {
+      return <Spinner className="bg-red-50 absolute top-[calc(50%-1rem)]" />;
+    }
+  };
 
   return (
     <div className="w-full">
-      {fileIds.map((it) => it).join("---")}
-      {JSON.stringify([...slidesInDbMap.values()])}
-      "00000"
-      {JSON.stringify([...slidesInInputMap.values()])}
       <AttachmentGroup className="w-full overflow-scroll ">
         {files.map((file) => {
           const { id, url, filename, mediaType } = file;
@@ -325,9 +327,7 @@ const DisplayAttachments = () => {
             >
               <AttachmentMedia>
                 <BlobUrlPreview file={file} />
-                {handlering.has(id) && (
-                  <Spinner className="z-40 bg-red-50 absolute top-1/2" />
-                )}
+                {toTaskStatus(id)}
               </AttachmentMedia>
 
               <AttachmentActions>
@@ -350,18 +350,26 @@ const DisplayAttachments = () => {
           );
         })}
       </AttachmentGroup>
-      <Lightbox
+      {/* <Lightbox
         open={lightBoxShow}
         plugins={[Counter]}
         close={closeLightBox}
         index={lightBoxIndex}
         slides={slides}
+        render={{
+          slide({ slide }) {
+            if (slide.src.startsWith("blob"))
+              return <img src={slide.src} alt=""></img>;
+            if (slide.src.startsWith("index"))
+              return <IndexedUrlImage src={slide.src} alt="" />;
+          },
+        }}
         styles={{
           root: {
             "--yarl__color_backdrop": "rgba(0, 0, 0, 0.6)",
           },
         }}
-      ></Lightbox>
+      ></Lightbox> */}
     </div>
   );
 };
@@ -424,8 +432,6 @@ const PruePromptInput = () => {
   const clearProblems = useChatPromptProblems.use.clearProblems();
   const { state } = useLocation();
 
-  const clearFileIds = useChatPromptInput().use.clearFileIds();
-
   useEffect(() => {
     if (!state) {
       clearProblems();
@@ -480,17 +486,12 @@ const PruePromptInput = () => {
       "practice-problem",
       practcieProblems,
     );
-
     const attachments = await queryOnce((q) => {
-      return q
-        .from({ attachmentColl })
-        .where(({ attachmentColl }) => inArray(attachmentColl.id, fileIds));
+      return buildAttachmentTasksQuery(q, fileIds);
     });
-    const ocrResult = attachments.map((it) => it.meta_data);
-
     const attachmentText = toLabelledComment(
       "attachment-ocr-result",
-      ocrResult,
+      [...toLatestTaskMap(attachments).values()].map((it) => it.result),
     );
     const messageId = genId();
     const endMessage = {

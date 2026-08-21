@@ -1,10 +1,4 @@
-import {
-  memo,
-  type ComponentProps,
-  type ReactNode,
-  useMemo,
-  useCallback,
-} from "react";
+import { memo, type ComponentProps, useMemo, useCallback } from "react";
 import {
   Message,
   MessageActions,
@@ -32,22 +26,19 @@ import type { ChatStatus } from "ai";
 import { ProblemsAttachmentList } from "../math/problems-attachment-list";
 import { AttachmentGroup } from "../ui/attachment";
 import { eq, inArray, queryOnce, useLiveQuery } from "@tanstack/react-db";
-import { attachmentChatRelColl, attachmentColl } from "~/db/tdb-collections";
+import {
+  attachmentChatRelColl,
+  attachmentColl,
+  attachmentMetaDataColl,
+} from "~/db/tdb-collections";
 import AttachmentsReadonlyList from "./attachments-readonly-list";
-
-import { AttachmentSchema, type Attachment } from "../../db/db-zod-schema";
+import type { Attachment } from "~/db/db-zod-schema";
+import type { AttachmentWithMetaData } from "../common-ui/indexed-url-preview";
 
 export type MessageActionProps = ComponentProps<typeof Button> & {
   tooltip?: string;
   label?: string;
 };
-
-// 已完成消息的渲染结果缓存:切回已看过的会话时直接复用 React 元素,
-// React 对引用相等的元素会跳过整棵子树的重新渲染,从而跳过
-// Streamdown 解析与 KaTeX 数学公式的重复计算(长公式消息切换卡顿的主因)。
-// 只缓存非动画(已结束生成)的消息;消息 id 由 genId 生成,内容不可变。
-const renderedMessageCache = new Map<string, ReactNode>();
-const MAX_RENDERED_CACHE = 300;
 
 const PureChatMessage = memo(
   ({
@@ -67,7 +58,6 @@ const PureChatMessage = memo(
     const attachmentIds = message.metadata?.attachmentIds ?? [];
     const { data: attachments = [] } = useLiveQuery(
       (q) => {
-        console.log(attachmentIds);
         if (attachmentIds.length === 0) return undefined;
         return q
           .from({ attachmentChatRelColl })
@@ -76,6 +66,11 @@ const PureChatMessage = memo(
             ({ attachmentChatRelColl, attachmentColl }) =>
               eq(attachmentChatRelColl.attachment_id, attachmentColl.id),
           )
+          .join(
+            { attachmentMetaDataColl },
+            ({ attachmentColl, attachmentMetaDataColl }) =>
+              eq(attachmentColl.id, attachmentMetaDataColl.id),
+          )
           .where(({ attachmentChatRelColl }) =>
             eq(attachmentChatRelColl.message_id, messageId),
           )
@@ -83,7 +78,10 @@ const PureChatMessage = memo(
             ({ attachmentChatRelColl }) => attachmentChatRelColl.sort_order,
             "asc",
           )
-          .select(({ attachmentColl }) => ({ ...attachmentColl }));
+          .select(({ attachmentColl, attachmentMetaDataColl }) => ({
+            ...attachmentColl,
+            meta_data: attachmentMetaDataColl,
+          }));
       },
       [attachmentIds],
     );
@@ -136,11 +134,7 @@ const PureChatMessage = memo(
       return null;
     }
 
-    if (
-      isThinking &&
-      message.parts.length === 1 &&
-      message.parts[0].type === "step-start"
-    ) {
+    if (isThinking) {
       return (
         <Marker role="status">
           <MarkerIcon>
@@ -151,12 +145,6 @@ const PureChatMessage = memo(
           </MarkerContent>
         </Marker>
       );
-    }
-
-    // 缓存命中:已完成的消息直接复用之前的渲染结果
-    if (!isAnimating) {
-      const cached = renderedMessageCache.get(message.id);
-      if (cached) return cached;
     }
 
     const content = (
@@ -181,7 +169,7 @@ const PureChatMessage = memo(
               {attachmentIds.length > 0 && (
                 <div className="ml-auto justify-end">
                   <AttachmentsReadonlyList
-                    attachments={attachments as Attachment[]}
+                    attachments={attachments as AttachmentWithMetaData[]}
                   />
                 </div>
               )}
@@ -261,16 +249,6 @@ const PureChatMessage = memo(
         </MessageActions>
       </div>
     );
-
-    if (!isAnimating) {
-      renderedMessageCache.set(message.id, content);
-      if (renderedMessageCache.size > MAX_RENDERED_CACHE) {
-        const oldestKey = renderedMessageCache.keys().next().value;
-        if (oldestKey !== undefined) {
-          renderedMessageCache.delete(oldestKey);
-        }
-      }
-    }
 
     return content;
   },

@@ -27,7 +27,6 @@ export const practiceProblem = tool({
       created_at: now,
       updated_at: now,
     };
-    console.log(problemChatRel);
     problemChatRelColl.insert(problemChatRel);
     return { id };
   },

@@ -12,6 +12,9 @@ import { ActiveChatProvider } from "~/hooks/chat/active-chat";
 
 import { initWorkerApi } from "~/lib/similar";
 import { cn } from "~/lib/utils";
+import i18n from "~/lib/i18n";
+import { useSync } from "~/hooks/use-sync";
+import { useI18nStore } from "~/store/i18n-store";
 
 // 页面加载时立即启动 Worker（WASM 预热 + IndexedDB 加载），
 // 避免首次 AI 工具调用时冷启动延迟
@@ -27,6 +30,12 @@ const AppLayout = () => {
       .where(({ zustandStorageColl }) => eq(zustandStorageColl.id, "none"))
       .findOne();
   }, []);
+
+  const { i18n } = useTranslation();
+
+  const setLocale = useI18nStore.use.setLocale();
+  // 外部获取
+  useSync(i18n.language, setLocale);
 
   const hiddenRoutes = ["/library", "/graph", "/problem", "/settings"];
   return (

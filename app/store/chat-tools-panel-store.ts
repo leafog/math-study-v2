@@ -19,6 +19,7 @@ type ChatToolsPanelAction = {
   onChatResize: (size: PanelSize) => void;
   zenModeToggle: VoidFunction;
   toolsShowToggle: VoidFunction;
+  openToolsShow: () => void;
   menuShowToggle: VoidFunction;
   menuShowSet: (value: boolean) => void;
 };
@@ -63,6 +64,7 @@ const chatToolsPanelStoreCreator = (init: ChatToolsPanelState) =>
         set(({ toolsShow }) => ({
           toolsShow: !toolsShow,
         })),
+      openToolsShow: () => set({ toolsShow: true }),
       menuShowToggle: () =>
         set(({ menuShow }) => ({
           menuShow: !menuShow,

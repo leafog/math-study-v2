@@ -208,10 +208,6 @@ const ProblemIndex = () => {
       .findOne(),
   );
 
-  useEffect(() => {
-    console.log(problemCount.count);
-  }, [problemCount]);
-
   const problemExplanationsMap = useMemo(
     () => groupBy(problemExplanations, (it) => it.problem_id),
     [problemExplanations],

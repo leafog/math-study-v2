@@ -30,6 +30,7 @@ import { useGenerateObject } from "./use-generate-object";
 import z from "zod";
 import { useTranslation } from "react-i18next";
 import { getPrompt } from "~/lib/agent/instructions";
+import { useEvent } from "~/event/use-event";
 const ChatTitleSchema = z.object({
   title: z.string(),
 });
@@ -95,7 +96,7 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
         // 切换会话导致的中止:消息不完整且属于旧会话,不落库
         if (isAbort) return;
         const meta = message.metadata as Record<string, number> | undefined;
-        console.log(message.id);
+
         if (meta) {
           // Collect reasoning start/end timestamps from Date.now()-based keys
           const startKeys = Object.keys(meta)
@@ -168,6 +169,7 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
     if (!initMessages?.length) return;
     if (syncedChatRef.current === chatId) return;
     if (chatStatus === "streaming" || chatStatus === "submitted") return;
+
     chatHelpersRaw.setMessages(initMessages);
     syncedChatRef.current = chatId;
   }, [chatId, initMessages, chatStatus, chatHelpersRaw.setMessages]);
@@ -180,8 +182,10 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
   const chatToolsPanelStore = useMemo(() => {
     return createChatToolsPanelStore(isNewChat, chatId);
   }, [isNewChat, chatId]);
+  const openToolsShow = chatToolsPanelStore.use.openToolsShow();
+  useEvent("open:tool", () => openToolsShow());
 
-  const onOpenBefore = (kind: string, title?: string) => {
+  const onOpenBefore = (kind: string, title?: string, _refId?: string) => {
     if (isNewChat) {
       createChat(title ?? kind);
     }

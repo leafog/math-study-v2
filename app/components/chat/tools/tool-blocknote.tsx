@@ -1,5 +1,5 @@
 import { Notebook } from "lucide-react";
-import type { ToolDefinition, ToolPanelProps } from "./types";
+import type { ToolPanelProps } from "./types";
 import {
   SuggestionMenuController,
   useCreateBlockNote,
@@ -27,7 +27,7 @@ import {
 } from "./create-math";
 import { useToolSelectionStore } from "./store/tool-selection";
 
-const Panel = ({ chatId, kind, id }: ToolPanelProps) => {
+const BlockNotePanel = ({ chatId, kind, id }: ToolPanelProps) => {
   const keyboardRef = useRef<HTMLDivElement>(null);
   const { i18n } = useTranslation();
   const lang = i18n.language.split("-")[0];
@@ -126,11 +126,4 @@ const Panel = ({ chatId, kind, id }: ToolPanelProps) => {
     </div>
   );
 };
-
-const exclidrawTool: ToolDefinition = {
-  kind: "blocknote",
-  Icon: Notebook,
-  Panel,
-};
-
-export default exclidrawTool;
+export default BlockNotePanel;

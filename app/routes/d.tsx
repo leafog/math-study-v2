@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import { extractFileText } from "~/lib/file";
 import { getOcr } from "~/lib/ocr";
 
 /** OCR 识别 demo:上传图片 → 下方显示识别结果 */

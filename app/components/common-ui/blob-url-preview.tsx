@@ -5,7 +5,8 @@ const BlobUrlPreview = ({ file }: { file: FileUIPart & { id: string } }) => {
   const { url, mediaType, filename } = file;
   const media = parse(mediaType);
 
-  if (media.type === "image") return <img src={url} alt={filename ?? ""}></img>;
+  if (media.type === "image" && url.length > 0)
+    return <img src={url} alt={filename ?? ""}></img>;
   return <div>{mediaType}</div>;
 };
 

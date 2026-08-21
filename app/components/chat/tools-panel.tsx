@@ -26,11 +26,13 @@ const ToolPanelContent = ({
   chatId,
   kind,
   id,
+  refId,
   init,
 }: {
   id: string;
   chatId: string;
   kind: string;
+  refId?: string;
   init: unknown;
 }) => {
   const { Panel } = kindToTool(kind)!;
@@ -44,6 +46,7 @@ const ToolPanelContent = ({
       kind={kind}
       id={id}
       chatId={chatId}
+      refId={refId}
       init={init}
       onChange={handleChange}
     />
@@ -82,7 +85,7 @@ const ToolsPanel = ({ panelRef }: ToolsPanelProps) => {
         {!hasTools ? (
           <ToolsGreeting />
         ) : (
-          mountedTools.map(({ kind, id, data }) => {
+          mountedTools.map(({ kind, id, data, ref_id }) => {
             const isActive = id === activeId;
             return (
               <div
@@ -96,6 +99,7 @@ const ToolsPanel = ({ panelRef }: ToolsPanelProps) => {
                   chatId={chatId}
                   kind={kind}
                   id={id}
+                  refId={ref_id}
                   init={data}
                 />
               </div>

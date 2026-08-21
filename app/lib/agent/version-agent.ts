@@ -4,7 +4,9 @@ import { useVisionModel } from "~/store/chat-vision-model";
 import { getOrPut } from "../map-utils";
 import { useCallback, useMemo } from "react";
 import { createLLMs } from "./create-llm/index";
+import { getPrompt } from "./instructions";
 import type { ProviderId } from "./types";
+import { settingModelConfigColl } from "~/db/tdb-collections";
 
 const modelCache = new Map<string, LanguageModel>();
 
@@ -17,30 +19,55 @@ const blobToDataUrl = (blob: Blob): Promise<string> =>
     reader.readAsDataURL(blob);
   });
 
-/**
- * 视觉模型 OCR：把图片识别成 Markdown。
- * 输出契约与项目现有 OCR 链路一致 —— 数学表达式用 $$...$$ 包裹。
- */
-const OCR_PROMPT = `你是 OCR 引擎。识别图片中的数学内容并转为 Markdown。
-规则：
-- 保留原有段落与公式结构
-- 数学表达式一律用 $$...$$ 包裹（行内用 $...$）
-- 只输出识别结果，不要解释`;
+export const llmPredict = async (blob: Blob): Promise<string> => {
+  const visionModel = useVisionModel.getState().visionModel;
+
+  if (!visionModel?.id) return "";
+  const config = settingModelConfigColl.get(visionModel.id);
+  if (!config) return "";
+  // use openai
+  const createLLMFC = createLLMs["openai"];
+  if (!createLLMFC) return "";
+  const model = getOrPut(
+    modelCache,
+    `${config.id}:${visionModel.model_name}`,
+    () => {
+      return createLLMFC(
+        { apiKey: config.api_key ?? "", baseURL: config.base_url ?? "" },
+        visionModel.model_name,
+      );
+    },
+  );
+  const dataUrl = await blobToDataUrl(blob);
+
+  const { text } = await generateText({
+    model,
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "image",
+            image: dataUrl,
+            mediaType: blob.type || "image/png",
+          },
+          { type: "text", text: getPrompt("ocr.vision") },
+        ],
+      },
+    ],
+  });
+  return text;
+};
 
 const useVersion = () => {
   const { getConfigById } = useChatAgent();
   const visionModel = useVisionModel.use.visionModel();
   const config = getConfigById(visionModel?.id);
   const model = useMemo(() => {
-    console.log("sss");
     if (!config) return;
-    console.log(config, "sss");
     if (!visionModel) return;
-    console.log(visionModel, "sss");
     const createLLMFC = createLLMs[config.provider_id as ProviderId];
-    console.log(createLLMFC, "sss");
     if (!createLLMFC) return;
-
     return getOrPut(
       modelCache,
       `${config.id}:${visionModel.model_name}`,
@@ -53,10 +80,6 @@ const useVersion = () => {
     );
   }, [config, visionModel]);
 
-  /**
-   * 识别单张图片，返回 Markdown。
-   * 模型未就绪时抛错，调用方自行降级（如回退到本地 PaddleOCR）。
-   */
   const predict = useCallback(
     async (blob: Blob): Promise<string> => {
       if (!model) {
@@ -69,12 +92,12 @@ const useVersion = () => {
           {
             role: "user",
             content: [
+              { type: "text", text: getPrompt("ocr.vision") },
               {
                 type: "file",
                 data: dataUrl,
                 mediaType: blob.type || "image/png",
               },
-              { type: "text", text: OCR_PROMPT },
             ],
           },
         ],

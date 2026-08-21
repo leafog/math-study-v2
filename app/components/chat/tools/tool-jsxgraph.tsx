@@ -2,10 +2,10 @@ import { useRef, useEffect } from "react";
 
 import { ChartScatter } from "lucide-react";
 
-import type { ToolDefinition, ToolPanelProps } from "./types";
+import type { ToolPanelProps } from "./types";
 
 import FunctionGraph from "~/components/math/jsx-graph/function-graph";
-const Panel = ({}: ToolPanelProps) => {
+const JsxGraphPanel = ({}: ToolPanelProps) => {
   const keyboardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -26,10 +26,4 @@ const Panel = ({}: ToolPanelProps) => {
   );
 };
 
-const jsxgraphTool: ToolDefinition = {
-  kind: "jsxgraph",
-  Icon: ChartScatter,
-  Panel,
-};
-
-export default jsxgraphTool;
+export default JsxGraphPanel;

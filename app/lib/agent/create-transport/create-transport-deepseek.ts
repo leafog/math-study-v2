@@ -15,7 +15,6 @@ const createTransportDeepseek: TransportFC = (
   const instructions = getPrompt("system", {
     vars: { language: locale },
   });
-
   const agent = new ToolLoopAgent({
     model: deepseek,
     instructions,

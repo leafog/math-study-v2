@@ -53,7 +53,9 @@ const useChatProblemsManager = (chatId: string) => {
   const problems = useMemo(() => {
     const res = (problemsQuery ?? [])
       .filter((it) => it !== undefined)
-      .map((it) => ProblemWithPosInfo.parse(it));
+      .map((it) => ProblemWithPosInfo.safeParse(it))
+      .filter((it) => it.success)
+      .map((it) => it.data);
     return uniqBy(res, "id");
   }, [problemsQuery]);
 

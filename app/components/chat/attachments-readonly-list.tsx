@@ -1,7 +1,3 @@
-import type { Attachment as AttachmentSchema } from "~/db/db-zod-schema";
-
-import { fileStore } from "~/db/indexdb-file-storage";
-import { useEffect, useState } from "react";
 import {
   Attachment,
   AttachmentGroup,
@@ -9,21 +5,16 @@ import {
   AttachmentTrigger,
 } from "../ui/attachment";
 import { bus } from "~/event/event-bus";
-import IndexedUrlPreview from "../common-ui/indexed-url-preview";
+import IndexedUrlPreview, {
+  type AttachmentWithMetaData,
+} from "../common-ui/indexed-url-preview";
+import type { z } from "zod";
 
 const AttachmentItemMedia = ({
   attachment,
 }: {
-  attachment: AttachmentSchema;
+  attachment: AttachmentWithMetaData;
 }) => {
-  const [url, setUrl] = useState("");
-  useEffect(() => {
-    if (!attachment.local_uri) return;
-    fileStore.getUrl(attachment.local_uri).then((it) => {
-      setUrl(it);
-    });
-  }, [attachment.local_uri]);
-
   return (
     <>
       <AttachmentMedia key={attachment.id}>
@@ -31,8 +22,11 @@ const AttachmentItemMedia = ({
       </AttachmentMedia>
       <AttachmentTrigger
         onClick={(e) => {
-          console.log(attachment.id);
-          bus.emit("image:show-light-box", attachment.id);
+          bus.emit("open:tool", {
+            kind: "showAttachment",
+            refId: attachment.id,
+            title: attachment?.meta_data?.origin_filename ?? "",
+          });
         }}
       ></AttachmentTrigger>
     </>
@@ -41,7 +35,7 @@ const AttachmentItemMedia = ({
 const AttachmentsReadonlyList = ({
   attachments,
 }: {
-  attachments: AttachmentSchema[];
+  attachments: AttachmentWithMetaData[];
 }) => {
   return (
     <AttachmentGroup>
