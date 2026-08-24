@@ -97,8 +97,8 @@ const BlockNotePanel = ({ chatId, kind, id }: ToolPanelProps) => {
 
   return (
     <div
-      className="grid  grid-cols-1 content-between flex-1 min-h-0"
       ref={keyboardRef}
+      className="grid grid-cols-1 content-between flex-1 min-h-0"
     >
       <BlockNoteView
         className="grow min-h-0 overflow-auto scrollbar-thin w-full"

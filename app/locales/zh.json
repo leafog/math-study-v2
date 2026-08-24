@@ -239,6 +239,11 @@
       "practiceProblem": "练习题目",
       "searchSimilarTopics": "搜索相似"
     },
+    "tab": {
+      "code": "代码",
+      "output": "结果"
+    },
+    "calculating": "正在计算...",
     "creatingExplanation": "正在生成解析...",
     "explanationCreated": "解析已生成",
     "createExplanationFailed": "生成解析失败",

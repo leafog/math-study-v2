@@ -12,8 +12,10 @@
 
 @import "katex/dist/katex.min.css";
 @import "./typeset.css";
-@source "../node_modules/@streamdown/math/dist/*.js";
+
 @source "../node_modules/@blocknote/shadcn";
+
+@source "../node_modules/streamdown/dist/*.js";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -179,7 +181,6 @@ body {
 @utility scrollbar-thin {
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
-
   &::-webkit-scrollbar {
     width: 6px;
   }

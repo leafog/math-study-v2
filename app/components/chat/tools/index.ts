@@ -1,5 +1,12 @@
 import { lazy } from "react";
-import { Pen, Pi, ChartScatter, Notebook, Paperclip } from "lucide-react";
+import {
+  Pen,
+  Pi,
+  ChartScatter,
+  Notebook,
+  Paperclip,
+  ComputerIcon,
+} from "lucide-react";
 import type { Tools } from "./types";
 
 const tools = {
@@ -30,8 +37,14 @@ const tools = {
   showAttachment: {
     kind: "showAttachment" as const,
     Icon: Paperclip,
-    showInOpen: true,
+    showInOpen: false,
     Panel: lazy(() => import("./tool-show-attachment")),
+  },
+  epsli: {
+    kind: "epsli" as const,
+    Icon: ComputerIcon,
+    showInOpen: true,
+    Panel: lazy(() => import("./tool-epsli")),
   },
 } satisfies Tools;
 

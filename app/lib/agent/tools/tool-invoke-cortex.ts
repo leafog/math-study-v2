@@ -66,6 +66,11 @@ export const invokeCortex = tool({
       .describe(
         "A concise explanation (in the user's language) of what this program computes and what its result means. It is shown to the user next to the computed value so they understand what the number/expression represents.",
       ),
+    title: z
+      .string()
+      .describe(
+        'A short label (in the user\'s language) shown in the UI header for this computation, e.g. "Solve x^2-4=0" or "Simplify the fraction". Keep it under ~40 characters.',
+      ),
   }),
   execute: ({ source, description }) => {
     const chatId = chatIdStore.getState().chatId;
@@ -78,7 +83,7 @@ export const invokeCortex = tool({
       );
       return {
         description,
-        result: result.value.toString(),
+        result: result.value.toJSON(),
         latex: result.value.latex,
         diagnostics: result.diagnostics,
       };

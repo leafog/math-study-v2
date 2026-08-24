@@ -6,6 +6,7 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
+import { TanStackDevtools } from "@tanstack/react-devtools";
 
 import { useEffect } from "react";
 import type { Route } from "./+types/root";
@@ -16,6 +17,7 @@ import { TooltipProvider } from "./components/ui/tooltip";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "./components/ui/sonner";
 import { enableMapSet } from "immer";
+import { EPSIL_TOKEN_STYLES } from "./lib/highlight/epsil-highlight";
 
 enableMapSet();
 
@@ -44,12 +46,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
+        {/* epsil 源码高亮的 th-* token 样式,顶层注入一次 */}
+        <style dangerouslySetInnerHTML={{ __html: EPSIL_TOKEN_STYLES }} />
       </head>
       <body>
         {children}
         <Toaster />
         <ScrollRestoration />
         <Scripts />
+        <TanStackDevtools></TanStackDevtools>
       </body>
     </html>
   );

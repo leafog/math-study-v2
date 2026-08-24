@@ -239,6 +239,11 @@
       "practiceProblem": "Practice Problem",
       "searchSimilarTopics": "Search Similar"
     },
+    "tab": {
+      "code": "Code",
+      "output": "Output"
+    },
+    "calculating": "Calculating...",
     "creatingExplanation": "Generating explanation...",
     "explanationCreated": "Explanation generated",
     "createExplanationFailed": "Failed to generate explanation",

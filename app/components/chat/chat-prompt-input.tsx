@@ -310,7 +310,7 @@ const DisplayAttachments = () => {
     if (!task) return null;
     const status = task.status;
     if (status === "pending") {
-      return <Spinner className="bg-red-50 absolute top-[calc(50%-1rem)]" />;
+      return <Spinner className="absolute top-[calc(50%-1rem)]" />;
     }
   };
 
@@ -329,7 +329,6 @@ const DisplayAttachments = () => {
                 <BlobUrlPreview file={file} />
                 {toTaskStatus(id)}
               </AttachmentMedia>
-
               <AttachmentActions>
                 <AttachmentAction
                   aria-label={`Remove ${filename}`}
@@ -343,7 +342,11 @@ const DisplayAttachments = () => {
                 aria-label="Preview research-summary.pdf"
 
                 onClick={() => {
-                  bus.emit("image:show-light-box", id);
+                  bus.emit("open:tool", {
+                    kind: "showAttachment",
+                    title: filename ?? "",
+                    refId: id,
+                  });
                 }}
               />
             </Attachment>

@@ -53,10 +53,28 @@
       "Bash(awk 'NR>=3745 && NR<=3760' node_modules/ai/dist/index.d.ts)",
       "Bash(bunx eslint *)",
       "Bash(ls -la /Users/yanfeiwuji/Downloads/ 2>/dev/null | head -5)",
-      "Read(//Users/yanfeiwuji/Downloads/**)"
+      "Read(//Users/yanfeiwuji/Downloads/**)",
+      "Bash(ls -la | grep -i \"playwright\\\\|test\\\\|vitest\" ; echo \"=== config files ===\" ; ls playwright.config.* 2>/dev/null; echo \"=== routes ===\" ; ls app/routes/ | head -40; echo \"=== browsers installed? ===\"; ls ~/Library/Caches/ms-playwright 2>/dev/null | head)",
+      "Read(//Users/yanfeiwuji/Library/Caches/ms-playwright/**)",
+      "Bash(cat app/routes/_app.tsx | head -60; echo \"=== root ===\"; cat app/root.tsx 2>/dev/null | head -40; echo \"=== chat route ===\"; cat app/routes/_app.chat.\\\\$id.tsx | head -40)",
+      "Bash(bunx playwright *)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({**d.get\\('dependencies',{}\\), **d.get\\('devDependencies',{}\\)}, indent=1\\)\\)\")",
+      "Bash(grep -nE \"transformInline|MathExtension|\\\\$\" inline.js)",
+      "Bash(node -e \"const s=require\\('shiki'\\); console.log\\(typeof s.languagesBundled, Array.isArray\\(s.languagesBundled\\)\\); console.log\\(s.languagesBundled.map\\(l=>l.id\\).filter\\(x=>/text|plain|txt|tex|log/.test\\(x\\)\\).join\\(', '\\)\\)\")",
+      "Bash(node -e \"const s=require\\('shiki'\\); const ids=Object.keys\\(s.bundledLanguages||{}\\); console.log\\('total', ids.length\\); console.log\\(ids.filter\\(x=>/text|plain|txt|log/.test\\(x\\)\\).join\\(', '\\)\\)\")",
+      "Bash(node -e \"const l=require\\('@shikijs/langs'\\); console.log\\(Object.keys\\(l\\).filter\\(k=>/text|plain|txt|log/.test\\(k\\)\\).join\\(', '\\)\\)\")",
+      "Bash(sed -i '' 's/language=\"plaintext\"/language=\"log\"/g' app/lib/agent/tools/tools-ui/tool-ui-invoke-cortex.tsx && grep -n \"language=\" app/lib/agent/tools/tools-ui/tool-ui-invoke-cortex.tsx)",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\('version',p.version\\); console.log\\(JSON.stringify\\(p.dependencies||{},null,1\\)\\)\")",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\(JSON.stringify\\(p.exports||{},null,1\\)\\)\")",
+      "Bash(python3 -c \"import json,sys; p=json.load\\(sys.stdin\\); print\\('version',p.get\\('version'\\)\\); print\\('exports', json.dumps\\(p.get\\('exports'\\),indent=1\\)\\)\")",
+      "Bash(cd /Users/yanfeiwuji/work/no1/math-study-v2/node_modules/@tanstack/highlight/dist; cat react.d.ts 2>/dev/null | head -30; echo \"=== theme usage / styles? ===\"; grep -rln \"themes\\\\|theme\" ../dist/react.js 2>/dev/null)",
+      "Read(//Users/yanfeiwuji/work/no1/dist/**)",
+      "Bash(cd /Users/yanfeiwuji/work/no1/math-study-v2/node_modules/@tanstack/highlight/dist; echo \"=== theme.d.ts ===\"; cat theme.d.ts 2>/dev/null | head -20; echo \"=== does highlightToHtml emit inline style or class? ===\"; grep -rn \"style\\\\|class\\\\|dangerously\" ../dist/react.js 2>/dev/null | head; echo \"=== sample output structure ===\"; grep -rn \"className\" internal/*.js 2>/dev/null | head)",
+      "Bash(node node_modules/@cortex-js/compute-engine/dist/esm-min/cli/epsil.js --help)"
     ],
     "additionalDirectories": [
-      "/Users/yanfeiwuji/work/no1/math-study-v2/app/locales"
+      "/Users/yanfeiwuji/work/no1/math-study-v2/app/locales",
+      "/Users/yanfeiwuji/work/no1/math-study-v2/app/lib/agent/tools/tools-ui"
     ]
   }
 }

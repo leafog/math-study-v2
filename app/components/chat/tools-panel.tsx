@@ -91,8 +91,8 @@ const ToolsPanel = ({ panelRef }: ToolsPanelProps) => {
               <div
                 key={`${chatId}-${id}`}
                 className={cn(
-                  "absolute inset-0 flex flex-col transition-opacity duration-300",
-                  isActive ? "opacity-100" : "opacity-0 pointer-events-none",
+                  "absolute inset-0 flex flex-col",
+                  isActive ? "" : "hidden",
                 )}
               >
                 <ToolPanelContent

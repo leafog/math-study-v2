@@ -50,15 +50,24 @@ export class PowerSyncFileStore implements FileStore {
     return bf;
   }
 
-  async getUrl(uri: string): Promise<string> {
-    // 一个文件一条缓存：同一 uri 复用同一个 Blob URL
-    const cached = fileLRU.get(uri);
+  async getUrl(
+    uri: string,
+    opts?: { force?: boolean },
+  ): Promise<string> {
+    // 一个文件一条缓存：同一 uri 复用同一个 Blob URL；
+    // force 时绕过缓存,用于缓存里的 URL 已被 revoke、需要重建的场景
+    const cached = opts?.force ? undefined : fileLRU.get(uri);
     if (cached) {
       return cached;
     }
 
     const bf = await this.queue.localStorage.readFile(uri);
     const url = URL.createObjectURL(new Blob([bf]));
+    // 若缓存里有一条旧的(可能已被外部 revoke),回收它,避免泄漏
+    const stale = fileLRU.get(uri);
+    if (stale && stale !== url) {
+      URL.revokeObjectURL(stale);
+    }
     fileLRU.set(uri, url);
     return url;
   }
