@@ -32,7 +32,7 @@ const ProblemDetailDialog = ({
   onClose,
 }: ProblemDetailDialogProps) => {
   const { t } = useTranslation();
-  const { practice, viewInChat, copy } = useProblemActions(problem!);
+  const { startChat, viewInChat, copy } = useProblemActions(problem!);
 
   return (
     <Dialog
@@ -66,7 +66,7 @@ const ProblemDetailDialog = ({
               {t("problem.copy")}
             </Button>
 
-            <Button onClick={practice}>
+            <Button onClick={startChat}>
               <NotebookPen />
               {t("problem.practice")}
             </Button>

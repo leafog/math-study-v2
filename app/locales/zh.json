@@ -91,7 +91,8 @@
     "noFile": "没有可下载的文件",
     "rename": "重命名",
     "viewResult": "查看识别结果",
-    "addLabel": "添加照片或文件"
+    "addLabel": "添加照片或文件",
+    "startChat": "开始聊天"
   },
   "problem": {
     "title": "题库",

@@ -1,12 +1,24 @@
 import { useMemo } from "react";
+import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { fileStore } from "~/db/indexdb-file-storage";
 import { attachmentMetaDataColl } from "~/db/tdb-collections";
 import type { AttachmentRow } from "~/routes/_app.library";
+import { useActiveChat } from "~/hooks/chat/active-chat";
+import { useChatPromptInput } from "~/hooks/chat/active-chat/hooks";
 
 const useAttachmentActions = (row: AttachmentRow) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const setFileIds = useChatPromptInput().use.setFileIds();
+
+  // 用当前文件开始聊天：把文件 id 写入 prompt 草稿后跳到聊天
+  const startChat = () => {
+    if (!row.id) return;
+    setFileIds([row.id]);
+    navigate("/", { state: { fileIds: [row.id] } });
+  };
 
   const download = async () => {
     const { filename = "", media_type = "application/octet-stream" } = row;
@@ -51,7 +63,7 @@ const useAttachmentActions = (row: AttachmentRow) => {
     await fileStore.delete(row.id);
   };
 
-  return { download, remove, rename };
+  return { download, remove, rename, startChat };
 };
 
 export default useAttachmentActions;

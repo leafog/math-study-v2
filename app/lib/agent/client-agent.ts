@@ -66,7 +66,7 @@ export const agent = new ToolLoopAgent({
 });
 
 export const messageMetadata: MessageMetadataFn = ({ part }) => {
-  if (part.type === "start") {
+  if (part.type === "start-step") {
     return { created_at: new Date() };
   }
   if (part.type === "reasoning-start") {

@@ -57,7 +57,7 @@ const ProblemCard = ({
   ...cardProps
 }: ProblemCardProps) => {
   const { t } = useTranslation();
-  const { practice, viewInChat, copy } = useProblemActions(problem);
+  const { startChat, viewInChat, copy } = useProblemActions(problem);
 
   return (
     <Card
@@ -90,7 +90,7 @@ const ProblemCard = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuGroup>
-                <DropdownMenuItem onClick={practice}>
+                <DropdownMenuItem onClick={startChat}>
                   <NotebookPen />
                   {t("problem.startChat")}
                 </DropdownMenuItem>

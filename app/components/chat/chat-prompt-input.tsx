@@ -555,6 +555,15 @@ const PruePromptInput = () => {
 
   const { state } = useLocation();
 
+  // 从题库「开始聊天」带过来的题目 id，落到草稿
+  useEffect(() => {
+    if (!state) return;
+    const ns = state as { problemIds?: string[] };
+    if (Array.isArray(ns.problemIds) && ns.problemIds.length > 0) {
+      addProblemIds(ns.problemIds);
+    }
+  }, [state]);
+
   const onSubmit: PromptInputProps["onSubmit"] = async (message) => {
     console.log(hasAny);
     if (!hasAny) return;

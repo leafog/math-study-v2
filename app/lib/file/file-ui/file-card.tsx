@@ -18,6 +18,7 @@ import {
   Eye,
   FileIcon,
   MoreHorizontal,
+  NotebookPen,
   PencilLine,
   Trash2,
 } from "lucide-react";
@@ -71,7 +72,7 @@ const FileCard = ({
   ...cardProps
 }: FileCardProps) => {
   const { t } = useTranslation();
-  const { download, remove, rename } = useAttachmentActions(row);
+  const { download, remove, rename, startChat } = useAttachmentActions(row);
 
   // 按文件类别取统一图标，无法归类回退通用文件图标
   const fileType = getFileType(row?.media_type ?? "");
@@ -127,6 +128,10 @@ const FileCard = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuGroup>
+                <DropdownMenuItem onClick={startChat}>
+                  <NotebookPen />
+                  {t("attachment.startChat")}
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={download}>
                   <Download />
                   {t("attachment.download")}

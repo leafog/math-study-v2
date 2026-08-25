@@ -91,7 +91,8 @@
     "noFile": "There's no file to download",
     "rename": "Rename",
     "viewResult": "View Extracted Text",
-    "addLabel": "Add photos or files"
+    "addLabel": "Add photos or files",
+    "startChat": "Start chat"
   },
   "problem": {
     "title": "Problem Bank",

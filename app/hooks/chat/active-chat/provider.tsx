@@ -146,7 +146,7 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
         chatMessageColl.insert({
           chat_id: chatId,
           created_at: new Date(),
-          ...{ ...message, metadata: {} },
+          ...message,
         });
       },
     });

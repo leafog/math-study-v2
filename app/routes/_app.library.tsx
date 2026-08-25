@@ -201,7 +201,7 @@ const Library = () => {
 
   // Only fire on the false -> true edge, so each scroll loads exactly one page
   // instead of cascading through all remaining pages at once.
-  const addFileIds = useChatPromptInput().use.addFileIds();
+  const setFileIds = useChatPromptInput().use.setFileIds();
   const { isNewChat } = useActiveChat();
   const lastIntersectingRef = useRef(false);
   const navigate = useNavigate();
@@ -217,7 +217,7 @@ const Library = () => {
 
   const startChat = () => {
     if (isNewChat) {
-      addFileIds([...selecteds]);
+      setFileIds([...selecteds]);
       navigate("/", {
         state: { fileIds: selecteds },
       });
