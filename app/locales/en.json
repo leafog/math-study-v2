@@ -41,7 +41,8 @@
       "xhigh": "Maximum"
     },
     "noModelConfigured": "No model configured",
-    "goToModelSettings": "Go to settings to configure"
+    "goToModelSettings": "Go to settings to configure",
+    "selectModelToUse": "Select a model"
   },
   "routes": {
     "files": "Files",
@@ -71,7 +72,26 @@
   },
   "library": {
     "totalFiles": "{{count}} files",
-    "empty": "No files yet"
+    "empty": "No files yet",
+    "end": "No more files",
+    "filter": {
+      "all": "All",
+      "image": "Images",
+      "file": "Files"
+    },
+    "startChat": "Start Chat",
+    "selected": "{{count}} selected",
+    "clearSelection": "Clear selection"
+  },
+  "attachment": {
+    "download": "Download",
+    "downloadSuccess": "Download started",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this attachment?",
+    "noFile": "There's no file to download",
+    "rename": "Rename",
+    "viewResult": "View Extracted Text",
+    "addLabel": "Add photos or files"
   },
   "problem": {
     "title": "Problem Bank",
@@ -100,6 +120,9 @@
     "aiFeedback": "AI Feedback",
     "explanation": "Solution",
     "practice": "Practice",
+    "startChat": "Start chat",
+    "startChatLimit": "Start chat with up to {{count}} problems at a time — please select fewer",
+    "select": "Select",
     "viewInChat": "View in Chat",
     "copy": "Copy"
   },
@@ -202,6 +225,7 @@
     "review": "Review concepts"
   },
   "toolCall": {
+    "attachmentResult": "Extracted Content",
     "creatingProblem": "Creating problem...",
     "createProblemFailed": "Failed to create problem",
     "recordingTopic": "Recording topic...",

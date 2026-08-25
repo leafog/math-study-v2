@@ -5,6 +5,7 @@ import {
   PromptInputActionAddAttachments,
   PromptInputActionMenu,
   PromptInputActionMenuContent,
+  PromptInputActionMenuItem,
   PromptInputActionMenuTrigger,
   PromptInputBody,
   PromptInputFooter,
@@ -18,9 +19,12 @@ import {
   type PromptInputProps,
 } from "~/components/chat/prompt-input";
 
+import { md5 } from "hash-wasm";
+
 import {
   attachmentChatRelColl,
   attachmentColl,
+  attachmentHashColl,
   attachmentMetaDataColl,
   attachmentTasksColl,
   chatMessageColl,
@@ -43,7 +47,7 @@ import {
   useToolSelectionStore,
   type ToolSelectionItem,
 } from "./tools/store/tool-selection";
-import { isEmpty, isUndefined, keyBy, values } from "lodash-es";
+import { isEmpty, isUndefined, keyBy } from "lodash-es";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import {
@@ -55,14 +59,13 @@ import MathRes from "../math/math-res";
 import { useEffect, useMemo, useState } from "react";
 import { useChatPromptInput } from "~/hooks/chat/active-chat/hooks";
 import { useChatPromptSuggestionStore } from "~/store/chat-prompt-suggestion-store";
-import { useChatPromptProblems } from "~/store/chat-prompt-problems";
 import { useEvent } from "~/event/use-event";
 
 import ChatPromptModelSelector from "./chat-prompt-model-selector";
 import ChatPromptModelThinkingEffort from "./chat-prompt-model-thinking-effort";
 import { useLocation } from "react-router";
 import { ProblemsAttachmentList } from "../math/problems-attachment-list";
-import { ocrResultToMarkdown, useOcr } from "~/lib/ocr";
+
 import { blobUrlToBlob } from "~/lib/blob-utils";
 import { Spinner } from "../ui/spinner";
 import {
@@ -73,10 +76,8 @@ import {
   useLiveQuery,
   type InitialQueryBuilder,
 } from "@tanstack/react-db";
-import { useImmer } from "use-immer";
-import { z } from "zod";
-
 import { toLabelledComment } from "~/lib/agent/markdown-utils";
+import { getPrompt } from "~/lib/agent/instructions";
 import Lightbox, { type SlideImage } from "yet-another-react-lightbox";
 import Counter from "yet-another-react-lightbox/plugins/counter";
 
@@ -89,13 +90,8 @@ import { bus } from "~/event/event-bus";
 import { useSync } from "~/hooks/use-sync";
 import BlobUrlPreview from "../common-ui/blob-url-preview";
 import { extractFileText } from "~/lib/file";
-import IndexedUrlPreview, {
-  IndexedUrlImage,
-} from "../common-ui/indexed-url-preview";
 
-const OCRInfoSchema = z.object({
-  markdown: z.string().describe("ocr markdown"),
-});
+import { useImmer } from "use-immer";
 
 /** 附件文本抽取任务查询：按附件 id 过滤，updated_at 倒序（最近一次在前） */
 const buildAttachmentTasksQuery = (q: InitialQueryBuilder, fileIds: string[]) =>
@@ -128,12 +124,17 @@ const toLatestTaskMap = (tasks: AttachmentTask[]) => {
 
 const DisplayAttachments = () => {
   const { files, remove, addItemWithId } = usePromptInputAttachments();
-  const { chatId } = useActiveChat();
+  const { chatId, isNewChat } = useActiveChat();
   const fileIds = useChatPromptInput().use.fileIds();
   const setFileIds = useChatPromptInput().use.setFileIds();
   const [lightBoxIndex, setLightBoxIndex] = useState(0);
 
-  const exFileIds = useMemo(() => files.map((it) => it.id), [files]);
+  const [fileIdMap, setFileIdMap] = useImmer(new Map<string, string>());
+
+  const exFileIds = useMemo(
+    () => files.map((it) => fileIdMap.get(it.id) ?? it.id),
+    [files, fileIdMap],
+  );
 
   useSync(exFileIds, setFileIds);
 
@@ -196,13 +197,10 @@ const DisplayAttachments = () => {
   };
 
   const urls = files.map((it) => it.url).join(",");
-
-  useEffect(() => {
-    const ids = new Set(fileIds);
+  const syncInputFiles = (ids: Set<string>) => {
     files.forEach((f) => {
       if (!ids.has(f.id)) remove(f.id);
     });
-
     // 补上缺失的附件
     fileIds
       .filter((id) => !files.some((f) => f.id === id))
@@ -216,14 +214,30 @@ const DisplayAttachments = () => {
         };
         handler();
       });
+  };
+
+  const { state } = useLocation();
+
+  useEffect(() => {
+    if (state && state.fileIds) {
+      const nfids = state.fileIds as Set<string>;
+      if (isNewChat) {
+        syncInputFiles(nfids);
+      }
+    }
+  }, [state]);
+
+  useEffect(() => {
+    const ids = new Set(fileIds);
+    syncInputFiles(ids);
   }, [chatId]);
 
   const { data: attachmentTasks = [] } = useLiveQuery(
     (q) => {
       if (fileIds.length === 0) return undefined;
-      return buildAttachmentTasksQuery(q, fileIds);
+      return buildAttachmentTasksQuery(q, [...fileIdMap.values()]);
     },
-    [fileIds],
+    [fileIdMap],
   );
 
   // 每个附件最近一次任务（供渲染展示处理结果）
@@ -236,66 +250,83 @@ const DisplayAttachments = () => {
     const ids = files.map((it) => it.id);
     if (ids.length === 0) return;
 
-    // 复用同一查询：取每个附件最近一次任务（updated_at 倒序取第一条）
-    queryOnce((q) => buildAttachmentTasksQuery(q, ids)).then((tasks) => {
-      if (!tasks) return;
-      const latest = toLatestTaskMap(tasks);
+    setFileIdMap((draft) => {
+      ids.forEach((it) => draft.set(it, it));
+    });
 
-      // 最近一次任务为 done 的附件，跳过不再处理
+    queryOnce((q) =>
+      q
+        .from({ attMeta: attachmentMetaDataColl })
+        .where(({ attMeta }) => inArray(attMeta.id, ids)),
+    ).then((metas) => {
+      const metasMap = keyBy(metas, (it) => it.id);
       const doneAttachmentIds = new Set(
         files
-          .map((it) => latest.get(it.id))
-          .filter((task) => task?.status === "done")
-          .map((task) => task!.attachment_id),
+          .map((it) => metasMap[it.id])
+          .filter((it) => it?.last_task_text)
+          .map((it) => it.id),
       );
-
       const needHandlerFiles = files.filter(
         (it) => !doneAttachmentIds.has(it.id),
       );
-
       const handlers = needHandlerFiles.map(
         ({ url, id, filename, mediaType }) => {
           const handler = async () => {
             const taskId = genId();
             const now = new Date();
-
-            attachmentTasksColl.insert({
-              id: taskId,
-              attachment_id: id,
-              task_type: "extract_text",
-              status: "pending",
-              origin_filename: filename,
-              created_at: now,
-              updated_at: now,
-            });
-
             const blob = await blobUrlToBlob(url);
+            const blobBytes = await blob.bytes();
 
-            await fileStore.save(
-              new File([blob], filename ?? genId(), {
-                type: blob.type,
-              }),
-              id,
-            );
-
-            attachmentMetaDataColl.insert({
-              id,
-              origin_filename: filename ?? "",
-            });
-
-            try {
-              const file_text = await extractFileText(blob, mediaType);
-              attachmentTasksColl.update(taskId, (draft) => {
-                draft.status = "done";
-                draft.result = file_text;
-                draft.updated_at = new Date();
+            const md5Result = await md5(blobBytes);
+            console.log(md5Result);
+            const attachmentHash = attachmentHashColl.get(md5Result);
+            console.log(attachmentHash);
+            if (attachmentHash?.attachment_id) {
+              setFileIdMap((draft) => {
+                draft.set(id, attachmentHash?.attachment_id);
               });
-            } catch (err) {
-              attachmentTasksColl.update(taskId, (draft) => {
-                draft.status = "error";
-                draft.error = String(err);
-                draft.updated_at = new Date();
+            } else {
+              attachmentTasksColl.insert({
+                id: taskId,
+                attachment_id: id,
+                task_type: "extract_text",
+                status: "pending",
+                origin_filename: filename,
+                created_at: now,
+                updated_at: now,
               });
+              attachmentHashColl.insert({
+                id: md5Result,
+                attachment_id: id,
+                created_at: now,
+              });
+              await fileStore.save(
+                new File([blob], filename ?? genId(), {
+                  type: blob.type,
+                }),
+                id,
+              );
+              attachmentMetaDataColl.insert({
+                id,
+                origin_filename: filename ?? "",
+              });
+              try {
+                const file_text = await extractFileText(blob, mediaType);
+                attachmentTasksColl.update(taskId, (draft) => {
+                  draft.status = "done";
+                  draft.result = file_text;
+                  draft.updated_at = new Date();
+                });
+                attachmentMetaDataColl.update(id, (draft) => {
+                  draft.last_task_text = file_text;
+                });
+              } catch (err) {
+                attachmentTasksColl.update(taskId, (draft) => {
+                  draft.status = "error";
+                  draft.error = String(err);
+                  draft.updated_at = new Date();
+                });
+              }
             }
           };
           return handler;
@@ -303,6 +334,78 @@ const DisplayAttachments = () => {
       );
       Promise.all(handlers.map((h) => h()));
     });
+    // // 复用同一查询：取每个附件最近一次任务（updated_at 倒序取第一条）
+    // queryOnce((q) => buildAttachmentTasksQuery(q, ids)).then((tasks) => {
+    //   if (!tasks) return;
+    //   const latest = toLatestTaskMap(tasks);
+
+    //   // 最近一次任务为 done 的附件，跳过不再处理
+    //   const doneAttachmentIds = new Set(
+    //     files
+    //       .map((it) => latest.get(it.id))
+    //       .filter((task) => task?.status === "done")
+    //       .map((task) => task!.attachment_id),
+    //   );
+
+    //   const needHandlerFiles = files.filter(
+    //     (it) => !doneAttachmentIds.has(it.id),
+    //   );
+
+    //   const handlers = needHandlerFiles.map(
+    //     ({ url, id, filename, mediaType }) => {
+    //       const handler = async () => {
+    //         const taskId = genId();
+    //         const now = new Date();
+
+    //         attachmentTasksColl.insert({
+    //           id: taskId,
+    //           attachment_id: id,
+    //           task_type: "extract_text",
+    //           status: "pending",
+    //           origin_filename: filename,
+    //           created_at: now,
+    //           updated_at: now,
+    //         });
+
+    //         const blob = await blobUrlToBlob(url);
+    //         const b = await blob.bytes();
+    //         const mds = md5(b);
+
+    //         await fileStore.save(
+    //           new File([blob], filename ?? genId(), {
+    //             type: blob.type,
+    //           }),
+    //           id,
+    //         );
+
+    //         attachmentMetaDataColl.insert({
+    //           id,
+    //           origin_filename: filename ?? "",
+    //         });
+
+    //         try {
+    //           const file_text = await extractFileText(blob, mediaType);
+    //           attachmentTasksColl.update(taskId, (draft) => {
+    //             draft.status = "done";
+    //             draft.result = file_text;
+    //             draft.updated_at = new Date();
+    //           });
+    //           attachmentMetaDataColl.update(id, (draft) => {
+    //             draft.last_task_text = file_text;
+    //           });
+    //         } catch (err) {
+    //           attachmentTasksColl.update(taskId, (draft) => {
+    //             draft.status = "error";
+    //             draft.error = String(err);
+    //             draft.updated_at = new Date();
+    //           });
+    //         }
+    //       };
+    //       return handler;
+    //     },
+    //   );
+    //   Promise.all(handlers.map((h) => h()));
+    // });
   }, [urls]);
 
   const toTaskStatus = (fileId: string) => {
@@ -314,11 +417,16 @@ const DisplayAttachments = () => {
     }
   };
 
+  if (files.length === 0) {
+    return null;
+  }
+
   return (
     <div className="w-full">
       <AttachmentGroup className="w-full overflow-scroll ">
         {files.map((file) => {
           const { id, url, filename, mediaType } = file;
+          const realFileId = fileIdMap.get(id) ?? id;
           return (
             <Attachment
               key={id}
@@ -327,7 +435,7 @@ const DisplayAttachments = () => {
             >
               <AttachmentMedia>
                 <BlobUrlPreview file={file} />
-                {toTaskStatus(id)}
+                {toTaskStatus(realFileId)}
               </AttachmentMedia>
               <AttachmentActions>
                 <AttachmentAction
@@ -340,12 +448,11 @@ const DisplayAttachments = () => {
               </AttachmentActions>
               <AttachmentTrigger
                 aria-label="Preview research-summary.pdf"
-
                 onClick={() => {
                   bus.emit("open:tool", {
                     kind: "showAttachment",
                     title: filename ?? "",
-                    refId: id,
+                    refId: realFileId,
                   });
                 }}
               />
@@ -421,6 +528,7 @@ const DisplaySelectsMap = ({
 const PruePromptInput = () => {
   const { t } = useTranslation();
   const { id, sendMessage, status } = useActiveChatHelpers();
+
   const { isNewChat, createChat } = useActiveChat();
 
   const selectsMap = useToolSelectionStore.use.selectsMap();
@@ -428,37 +536,29 @@ const PruePromptInput = () => {
   const fileIds = useChatPromptInput().use.fileIds();
 
   const hasAny = useChatPromptInput().use.hasAny();
-  const practcieProblems = useChatPromptProblems.use.problems();
-  const hasProblems = useChatPromptProblems.use.hasProblems();
-  const pushProblem = useChatPromptProblems.use.pushProblem();
-  const removeProblem = useChatPromptProblems.use.removeProblem();
-  const clearProblems = useChatPromptProblems.use.clearProblems();
+  const problemIds = useChatPromptInput().use.problemIds();
+  const hasProblems = useChatPromptInput().use.hasProblems();
+  const addProblemIds = useChatPromptInput().use.addProblemIds();
+  const clearProblemIds = useChatPromptInput().use.clearProblemIds();
+  const removeProblemId = useChatPromptInput().use.removeProblemId();
+
+  // 只持久化 id，完整题目在渲染/发送时按 id 从库中查询
+  const { data: practiceProblems = [] } = useLiveQuery(
+    (q) => {
+      if (problemIds.length === 0) return undefined;
+      return q
+        .from({ problemColl })
+        .where(({ problemColl }) => inArray(problemColl.id, problemIds));
+    },
+    [problemIds],
+  );
+
   const { state } = useLocation();
 
-  useEffect(() => {
-    if (!state) {
-      clearProblems();
-      return;
-    }
-    const ns = state as { problemId: string; action: "practice" };
-    if (ns.problemId && ns.action === "practice") {
-      const problem = problemColl.get(ns.problemId);
-      if (!problem) {
-        clearProblems();
-        return;
-      }
-      pushProblem(problem);
-    }
-  }, [state]);
-
-  useEffect(() => {
-    if (!isNewChat) {
-      clearProblems();
-    }
-  }, [isNewChat]);
-
   const onSubmit: PromptInputProps["onSubmit"] = async (message) => {
+    console.log(hasAny);
     if (!hasAny) return;
+    console.log("send");
     const title = message.text;
     if (isNewChat) {
       createChat(title.slice(0, 40));
@@ -485,15 +585,20 @@ const PruePromptInput = () => {
     const parts: any[] = [];
     parts.push({ text: fullText, type: "text" });
 
+    const practicePrompt = getPrompt("chat.practicePrompt");
     const practiceComments = toLabelledComment(
       "practice-problem",
-      practcieProblems,
+      practicePrompt,
+      practiceProblems,
     );
+
     const attachments = await queryOnce((q) => {
       return buildAttachmentTasksQuery(q, fileIds);
     });
+    const attachmentPrompt = getPrompt("chat.attachmentPrompt");
     const attachmentText = toLabelledComment(
       "attachment-ocr-result",
+      attachmentPrompt,
       [...toLatestTaskMap(attachments).values()].map((it) => it.result),
     );
     const messageId = genId();
@@ -501,7 +606,7 @@ const PruePromptInput = () => {
       files: [],
       text: [practiceComments, fullText, attachmentText].join("\n"),
       metadata: {
-        practiceProblems: practcieProblems,
+        practiceProblemIds: problemIds,
         attachmentIds: fileIds,
         message_id: messageId,
       },
@@ -516,7 +621,7 @@ const PruePromptInput = () => {
       parts,
       metadata: {
         created_at: now,
-        practiceProblems: practcieProblems,
+        practiceProblemIds: problemIds,
         attachmentIds: fileIds,
         message_id: messageId,
       },
@@ -535,8 +640,8 @@ const PruePromptInput = () => {
         updated_at: new Date(),
       });
     });
-
     sendMessage(endMessage);
+    clearProblemIds();
     setTextInputValue("");
   };
 
@@ -556,6 +661,7 @@ const PruePromptInput = () => {
   useEvent("push-prompt-input", (prompt) => {
     textInput.setInput(prompt);
   });
+
   // 切换聊天时：从 Zustand 恢复草稿到 PromptInput（一次性，单向）
   useEffect(() => {
     textInput.setInput(textInputValue);
@@ -571,13 +677,14 @@ const PruePromptInput = () => {
       className="bg-background"
     >
       <PromptInputHeader>
-        {hasProblems && (
+        {practiceProblems.length > 0 && (
           <ProblemsAttachmentList
-            problems={practcieProblems}
-            handleRemove={removeProblem}
+            problems={practiceProblems}
+            handleRemove={removeProblemId}
           />
         )}
         <DisplayAttachments />
+
         {/* <DisplaySelectsMap selectsMap={selectsMap} /> */}
       </PromptInputHeader>
       <PromptInputBody>
@@ -593,8 +700,11 @@ const PruePromptInput = () => {
         <PromptInputTools>
           <PromptInputActionMenu>
             <PromptInputActionMenuTrigger />
-            <PromptInputActionMenuContent>
-              <PromptInputActionAddAttachments />
+            <PromptInputActionMenuContent className="min-w-40">
+              <PromptInputActionAddAttachments
+                label={t("attachment.addLabel")}
+              />
+              <PromptInputActionMenuItem>hehe</PromptInputActionMenuItem>
             </PromptInputActionMenuContent>
           </PromptInputActionMenu>
         </PromptInputTools>

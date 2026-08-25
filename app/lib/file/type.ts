@@ -1,5 +1,8 @@
 import { keyBy } from "lodash-es";
 import { parse } from "media-typer";
+import type { ComponentType } from "react";
+import type { LucideIcon } from "lucide-react";
+import type { FileCardProps } from "./file-ui/file-card";
 
 /** 文件类别（由 mediaType 归类） */
 export enum FileType {
@@ -23,3 +26,8 @@ export type FileTextExtractorFC = (
 
 /** 按文件类别聚合的提取器表 */
 export type FileTextExtractors = Partial<Record<FileType, FileTextExtractorFC>>;
+
+export type FileCards = Partial<Record<FileType, ComponentType<FileCardProps>>>;
+
+/** 按文件类别对应的图标（lucide 组件） */
+export type FileIcons = Partial<Record<FileType, LucideIcon>>;

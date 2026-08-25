@@ -73,7 +73,7 @@ const ChatPromptModelSelector = () => {
       <DropdownMenuTrigger asChild>
         <Button
           variant={"outline"}
-          className="hover: cursor-pointer rounded-full"
+          className="hover: cursor-pointer rounded-full px-4 min-w-32 justify-start"
         >
           {activeModel && selectedProvider ? (
             <>
@@ -81,7 +81,7 @@ const ChatPromptModelSelector = () => {
               {activeModel.model_name}
             </>
           ) : (
-            "Select model"
+            <>{t("chat.selectModelToUse")}</>
           )}
         </Button>
       </DropdownMenuTrigger>

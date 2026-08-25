@@ -30,6 +30,7 @@ import {
   attachmentChatRelColl,
   attachmentColl,
   attachmentMetaDataColl,
+  problemColl,
 } from "~/db/tdb-collections";
 import AttachmentsReadonlyList from "./attachments-readonly-list";
 import type { Attachment } from "~/db/db-zod-schema";
@@ -52,8 +53,25 @@ const PureChatMessage = memo(
 
     const isUser = message.role === "user";
     const align = isUser ? "end" : "start";
-    const practiceProblems = message.metadata?.practiceProblems ?? [];
+    // 新消息只存 id；老消息可能在 metadata 里存了完整题目，作为兜底
+    const practiceProblemIds = message.metadata?.practiceProblemIds ?? [];
+    const legacyProblems = message.metadata?.practiceProblems ?? [];
     const messageId = message.metadata?.message_id ?? message.id;
+
+    const { data: problemsByIds = [] } = useLiveQuery(
+      (q) => {
+        if (practiceProblemIds.length === 0) return undefined;
+        return q
+          .from({ problemColl })
+          .where(({ problemColl }) =>
+            inArray(problemColl.id, practiceProblemIds),
+          );
+      },
+      [practiceProblemIds],
+    );
+
+    const practiceProblems =
+      practiceProblemIds.length > 0 ? problemsByIds : legacyProblems;
 
     const attachmentIds = message.metadata?.attachmentIds ?? [];
     const { data: attachments = [] } = useLiveQuery(
@@ -162,12 +180,12 @@ const PureChatMessage = memo(
           ) : (
             <>
               {hasPracticeProblems && (
-                <div className="ml-auto justify-end">
+                <div className="ml-auto justify-end max-w-full">
                   <ProblemsAttachmentList problems={practiceProblems} />
                 </div>
               )}
               {attachmentIds.length > 0 && (
-                <div className="ml-auto justify-end">
+                <div className="ml-auto justify-end max-w-full">
                   <AttachmentsReadonlyList
                     attachments={attachments as AttachmentWithMetaData[]}
                   />
@@ -175,7 +193,7 @@ const PureChatMessage = memo(
               )}
               {filteredParts.map((part, i) => {
                 const key = `message-${message.id}-part-${i}`;
-                if (part.type === "text") {
+                if (part.type === "text" && part.text.length > 0) {
                   return (
                     <MessageContent key={key}>
                       <MathResBlock
@@ -189,6 +207,7 @@ const PureChatMessage = memo(
                 }
                 if (part.type === "file") {
                   const isImage = part.mediaType.startsWith("image/");
+                  console.log(part.mediaType);
                   return (
                     <div key={key} className="mb-2 last:mb-0">
                       {isImage ? (

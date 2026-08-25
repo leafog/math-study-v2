@@ -144,6 +144,14 @@ Pass the problem ID. After calling the tool, help the student solve it.`,
     template:
       "Use Markdown for readability when it helps, but keep the response concise and conversational. Do not add headings or lists for their own sake; prefer short, direct answers.",
   },
+  "chat.practicePrompt": {
+    description: "Prefix before the attached practice problems.",
+    template: "I want to practice the following problems:",
+  },
+  "chat.attachmentPrompt": {
+    description: "Prefix before the attached files' extracted text.",
+    template: "The accompanying text information is:",
+  },
   "title.generate": {
     description: "Generate a concise chat title from the first user message and the AI's first reply.",
     template: `You are naming a study chat in a math learning app. You receive a JSON with the first exchange:
@@ -164,7 +172,8 @@ Conversation (JSON):
   "ocr.vision": {
     description: "Vision-model OCR: turn an image into clean Markdown.",
     template: `You are an OCR engine. Recognize the mathematical content in the image and convert it to Markdown.
-- Output only the recognized result, with no explanation.`,
+- Output only the recognized result, with no explanation.
+- Do NOT wrap the output in a Markdown code fence (no \`\`\`markdown ... \`\`\` or any other code block). The entire response IS Markdown, so emit it directly, starting and ending with content.`,
   },
   "ocr.toMarkdown": {
     description: "Convert a raw PaddleOCR result into clean Markdown.",
@@ -175,6 +184,7 @@ Rewrite it into clean, fluent Markdown that faithfully preserves the meaning. Re
 2. Fix obvious recognition errors or garbled text when the surrounding context makes the correction clear.
 3. Drop fragments with very low confidence that cannot be recovered; do not output them.
 4. Only output content that actually appears in the image — do not add explanations or problems that are not there.
+5. Do NOT wrap the output in a Markdown code fence (no \`\`\`markdown ... \`\`\` or any other code block). The entire response IS Markdown, so emit it directly, starting and ending with content.
 
 OCR result (JSON):
 {ocr}`,

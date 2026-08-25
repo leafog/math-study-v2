@@ -16,8 +16,9 @@ export const toHtmlComment = (content: string): string => {
  */
 export const toLabelledComment = <T>(
   label: string,
+  prompt: string,
   fields: T,
 ): string => {
   const body = JSON.stringify(fields ?? {}, null, 2);
-  return toHtmlComment(`${label}\n${body}`);
+  return toHtmlComment(`${label} ${prompt} \n${body}`);
 };

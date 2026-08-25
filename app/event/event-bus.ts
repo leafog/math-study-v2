@@ -18,6 +18,7 @@ export type AppEvents = {
     title: string;
     refId: string;
   };
+  "chat:create:by-open-tool": void;
 };
 
 export const bus = mitt<AppEvents>();

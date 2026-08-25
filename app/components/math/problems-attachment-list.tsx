@@ -27,48 +27,46 @@ export const ProblemsAttachmentList = ({
   handleRemove?: (id: string) => void;
 }) => {
   return (
-    <div>
-      <AttachmentGroup>
-        {problems.map((it) => (
-          <Attachment
-            key={it.id}
-            orientation="vertical"
-            className="focus-within:ring-0"
-          >
-            <AttachmentMedia variant="image">
-              <MathResBlock>{it.content}</MathResBlock>
-            </AttachmentMedia>
-            <AttachmentContent>
-              <AttachmentTitle className="flex gap-1.5 items-center">
+    <AttachmentGroup className="w-full">
+      {problems.map((it) => (
+        <Attachment
+          key={it.id}
+          orientation="vertical"
+          className="focus-within:ring-0"
+        >
+          <AttachmentMedia variant="image">
+            <MathResBlock>{it.content}</MathResBlock>
+          </AttachmentMedia>
+          <AttachmentContent>
+            <AttachmentTitle className="flex gap-1.5 items-center">
+              <StatusIcon status={it.status} />
+              <MathResInline>{it.description}</MathResInline>
+            </AttachmentTitle>
+          </AttachmentContent>
+          {handleRemove && (
+            <AttachmentActions>
+              <AttachmentAction
+                type="button"
+                onClick={() => handleRemove(it.id)}
+              >
+                <XIcon />
+              </AttachmentAction>
+            </AttachmentActions>
+          )}
+
+          <AttachmentDialog>
+            <DialogContent>
+              <DialogTitle className="flex gap-1.5 items-center">
                 <StatusIcon status={it.status} />
                 <MathResInline>{it.description}</MathResInline>
-              </AttachmentTitle>
-            </AttachmentContent>
-            {handleRemove && (
-              <AttachmentActions>
-                <AttachmentAction
-                  type="button"
-                  onClick={() => handleRemove(it.id)}
-                >
-                  <XIcon />
-                </AttachmentAction>
-              </AttachmentActions>
-            )}
-
-            <AttachmentDialog>
-              <DialogContent>
-                <DialogTitle className="flex gap-1.5 items-center">
-                  <StatusIcon status={it.status} />
-                  <MathResInline>{it.description}</MathResInline>
-                </DialogTitle>
-                <div className="-mx-4 no-scrollbar max-h-[70vh] overflow-y-auto px-4">
-                  <MathResBlock>{it.content}</MathResBlock>
-                </div>
-              </DialogContent>
-            </AttachmentDialog>
-          </Attachment>
-        ))}
-      </AttachmentGroup>
-    </div>
+              </DialogTitle>
+              <div className="-mx-4 no-scrollbar max-h-[70vh] overflow-y-auto px-4">
+                <MathResBlock>{it.content}</MathResBlock>
+              </div>
+            </DialogContent>
+          </AttachmentDialog>
+        </Attachment>
+      ))}
+    </AttachmentGroup>
   );
 };

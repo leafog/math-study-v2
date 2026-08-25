@@ -1,24 +1,35 @@
 import {
   Attachment,
+  AttachmentContent,
   AttachmentGroup,
   AttachmentMedia,
+  AttachmentTitle,
   AttachmentTrigger,
 } from "../ui/attachment";
 import { bus } from "~/event/event-bus";
 import IndexedUrlPreview, {
   type AttachmentWithMetaData,
 } from "../common-ui/indexed-url-preview";
-import type { z } from "zod";
+import { FileType, fileIcons, getFileType } from "~/lib/file";
+import { FileIcon } from "lucide-react";
 
 const AttachmentItemMedia = ({
   attachment,
 }: {
   attachment: AttachmentWithMetaData;
 }) => {
+  const fileType = getFileType(attachment.media_type ?? "");
+  // 图片直接预览；其余按类别显示图标（无法归类回退通用文件图标）
+  const Icon = fileType ? (fileIcons[fileType] ?? FileIcon) : FileIcon;
+
   return (
     <>
       <AttachmentMedia key={attachment.id}>
-        <IndexedUrlPreview attachment={attachment} />
+        {fileType === FileType.Image ? (
+          <IndexedUrlPreview attachment={attachment} />
+        ) : (
+          <Icon className="size-6 shrink-0" />
+        )}
       </AttachmentMedia>
       <AttachmentTrigger
         onClick={(e) => {
@@ -38,14 +49,18 @@ const AttachmentsReadonlyList = ({
   attachments: AttachmentWithMetaData[];
 }) => {
   return (
-    <AttachmentGroup>
-      {attachments.map((it) => (
+    <AttachmentGroup className="w-full overflow-scroll">
+      {attachments.map((it, idx) => (
         <Attachment
-          key={it.id}
-          orientation="vertical"
+          key={`${it.id}-${idx}`}
           className="focus-within:ring-0"
+          orientation={"vertical"}
+          size={"default"}
         >
           <AttachmentItemMedia attachment={it}></AttachmentItemMedia>
+          <AttachmentContent>
+            <AttachmentTitle>{it.meta_data?.origin_filename}</AttachmentTitle>
+          </AttachmentContent>
         </Attachment>
       ))}
     </AttachmentGroup>

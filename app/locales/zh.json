@@ -41,7 +41,8 @@
       "xhigh": "最高"
     },
     "noModelConfigured": "还未配置模型",
-    "goToModelSettings": "前往设置配置模型"
+    "goToModelSettings": "前往设置配置模型",
+    "selectModelToUse": "选择模型"
   },
   "routes": {
     "files": "文件",
@@ -71,7 +72,26 @@
   },
   "library": {
     "totalFiles": "共 {{count}} 个文件",
-    "empty": "暂无文件"
+    "empty": "暂无文件",
+    "end": "已经到底啦",
+    "filter": {
+      "all": "全部",
+      "image": "图片",
+      "file": "文件"
+    },
+    "startChat": "开始聊天",
+    "selected": "已选 {{count}} 项",
+    "clearSelection": "清空所选"
+  },
+  "attachment": {
+    "download": "下载",
+    "downloadSuccess": "已开始下载",
+    "delete": "删除",
+    "deleteConfirm": "确定删除这个附件吗？",
+    "noFile": "没有可下载的文件",
+    "rename": "重命名",
+    "viewResult": "查看识别结果",
+    "addLabel": "添加照片或文件"
   },
   "problem": {
     "title": "题库",
@@ -100,6 +120,9 @@
     "aiFeedback": "AI 点评",
     "explanation": "题目解析",
     "practice": "去练习",
+    "startChat": "开始聊天",
+    "startChatLimit": "一次最多带 {{count}} 道题开始聊天，请少选几道",
+    "select": "选择",
     "viewInChat": "在聊天中查看",
     "copy": "复制"
   },
@@ -202,6 +225,7 @@
     "review": "回顾知识点"
   },
   "toolCall": {
+    "attachmentResult": "识别内容",
     "creatingProblem": "正在出题...",
     "createProblemFailed": "出题失败",
     "recordingTopic": "正在记录知识点...",

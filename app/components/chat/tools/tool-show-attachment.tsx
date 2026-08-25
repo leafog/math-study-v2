@@ -42,8 +42,10 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import CopyButton from "~/components/common-ui/copy-button";
+import { useTranslation } from "react-i18next";
 
 const ShowAttachmentPanel = ({ chatId, id, refId }: ToolPanelProps) => {
+  const { t } = useTranslation();
   const { data: att } = useLiveQuery(
     (q) =>
       q
@@ -161,7 +163,7 @@ const ShowAttachmentPanel = ({ chatId, id, refId }: ToolPanelProps) => {
           ) : (
             <Card className="h-full rounded-none bg-muted border-none">
               <CardHeader>
-                <CardTitle>Ocr Result</CardTitle>
+                <CardTitle>{t("toolCall.attachmentResult")}</CardTitle>
                 <CardAction>
                   <CopyButton text={task?.result} />
                 </CardAction>

@@ -39,7 +39,6 @@ export const llmPredict = async (blob: Blob): Promise<string> => {
     },
   );
   const dataUrl = await blobToDataUrl(blob);
-  console.log(dataUrl);
   const { text } = await generateText({
     model,
     messages: [
@@ -58,56 +57,3 @@ export const llmPredict = async (blob: Blob): Promise<string> => {
   });
   return text;
 };
-
-const useVersion = () => {
-  const { getConfigById } = useChatAgent();
-  const visionModel = useVisionModel.use.visionModel();
-  const config = getConfigById(visionModel?.id);
-  const model = useMemo(() => {
-    if (!config) return;
-    if (!visionModel) return;
-    const createLLMFC = createLLMs[config.provider_id as ProviderId];
-    if (!createLLMFC) return;
-    return getOrPut(
-      modelCache,
-      `${config.id}:${visionModel.model_name}`,
-      () => {
-        return createLLMFC(
-          { apiKey: config.api_key ?? "", baseURL: config.base_url ?? "" },
-          visionModel.model_name,
-        );
-      },
-    );
-  }, [config, visionModel]);
-
-  const predict = useCallback(
-    async (blob: Blob): Promise<string> => {
-      if (!model) {
-        throw new Error("vision model not ready");
-      }
-      const dataUrl = await blobToDataUrl(blob);
-      const { text } = await generateText({
-        model,
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: getPrompt("ocr.vision") },
-              {
-                type: "file",
-                data: dataUrl,
-                mediaType: blob.type || "image/png",
-              },
-            ],
-          },
-        ],
-      });
-      return text;
-    },
-    [model],
-  );
-
-  return { model, predict };
-};
-
-export default useVersion;

@@ -461,8 +461,21 @@ export type Attachment = z.infer<typeof AttachmentSchema>;
 export const AttachmentMetaDataSchema = z.object({
   id: z.string(),
   origin_filename: z.string(),
+  last_task_text: z.string().optional(),
 });
 export type AttachmentMetaData = z.infer<typeof AttachmentMetaDataSchema>;
+
+/**
+ * 附件去重表（localOnly）。直接用 md5 hash 作主键 id，
+ * 命中即重复，未命中插入一行即可。单独一张表避免污染
+ * Attachment 主表、也免去 PowerSync 同步迁移。
+ */
+export const AttachmentHashSchema = z.object({
+  id: z.string().describe("md5 hash，作为主键"),
+  attachment_id: z.string().describe("FK to Attachment"),
+  created_at: z.date().optional(),
+});
+export type AttachmentHash = z.infer<typeof AttachmentHashSchema>;
 
 /**
  * 附件处理任务表（localOnly）。
@@ -512,6 +525,7 @@ export const ChatMessageSchema = z.object({
       created_at: z.date().optional(),
       reasonings_start_end: z.array(z.string()).optional(),
       practiceProblems: z.array(ProblemSchema).optional(),
+      practiceProblemIds: z.array(z.string()).optional(),
       attachmentIds: z.array(z.string()).optional(),
       message_id: z.string().optional(), // 用户信息在这里取
     })

@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Excalidraw,
   exportToBlob,
+  Footer,
+  MainMenu,
   serializeAsJSON,
 } from "@excalidraw/excalidraw";
 import "@excalidraw/excalidraw/index.css";
@@ -18,8 +20,8 @@ import { toolDataColl } from "~/db/tdb-collections";
 import { useDebounceCallback } from "usehooks-ts";
 import { Button } from "~/components/ui/button";
 import { Download } from "lucide-react";
-import extractImage from "~/lib/file/extract-image";
-import extractText from "~/lib/file/extract-text";
+import extractTextFromImage from "~/lib/file/extract-text-from-image";
+import readTextFile from "~/lib/file/read-text-file";
 
 const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
   const apiRef = useRef<ExcalidrawImperativeAPI>(null);
@@ -78,7 +80,7 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
       mimeType: "image/png",
       exportPadding: 10,
     });
-    const text = await extractImage(blob);
+    const text = await extractTextFromImage(blob);
     console.log(text);
     // const url = URL.createObjectURL(blob);
     // const a = document.createElement("a");
@@ -94,25 +96,27 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
   }, []);
 
   return (
-    <ToolContainer className="size-full grid grid-rows-[auto_1fr]">
-      <div className="flex items-center gap-2 bg-muted h-10 px-2">
-        <Button
-          size="sm"
-          variant="outline"
-          className="gap-1.5"
-          onClick={exportSelected}
-        >
-          <Download className="h-4 w-4" />
-          导出选中
-        </Button>
-      </div>
+    <ToolContainer className="size-full ">
       <Excalidraw
         theme={resolvedTheme === "dark" ? "dark" : "light"}
         onChange={onChange}
         initialData={initialData}
         gridModeEnabled
         excalidrawAPI={excalidrawAPI}
-      />
+      >
+        <MainMenu>
+          <MainMenu.Item
+            onClick={(e) => {
+              alert(e);
+            }}
+          >
+            12
+          </MainMenu.Item>
+        </MainMenu>
+        <Footer>
+          <Button>sd</Button>
+        </Footer>
+      </Excalidraw>
     </ToolContainer>
   );
 };

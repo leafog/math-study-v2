@@ -171,6 +171,7 @@ export const {
   zustandStorageColl,
   attachmentColl,
   attachmentTasksColl,
+  attachmentHashColl,
   kgTopicColl,
   kgEdgeColl,
   kgClusterColl,

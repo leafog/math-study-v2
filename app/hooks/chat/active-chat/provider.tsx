@@ -31,6 +31,8 @@ import z from "zod";
 import { useTranslation } from "react-i18next";
 import { getPrompt } from "~/lib/agent/instructions";
 import { useEvent } from "~/event/use-event";
+import { newChatPromptInputStore } from "~/store/chat-prompt-input-store";
+import { bus } from "~/event/event-bus";
 const ChatTitleSchema = z.object({
   title: z.string(),
 });
@@ -187,6 +189,7 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
 
   const onOpenBefore = (kind: string, title?: string, _refId?: string) => {
     if (isNewChat) {
+      bus.emit("chat:create:by-open-tool");
       createChat(title ?? kind);
     }
   };
