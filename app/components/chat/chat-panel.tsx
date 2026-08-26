@@ -37,6 +37,7 @@ import { ArrowDownIcon } from "lucide-react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { useChatProblemScroll } from "./use-chat-problem-scroll";
+import { PromptInput } from "./prompt-input";
 
 interface ChatPanelProps {
   panelRef: React.RefObject<PanelImperativeHandle | null>;
@@ -82,7 +83,6 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
   const { isNewChat, renameChatTitle, conversation } = useActiveChat();
   const onChatResize = useActiveChatToolsPanelStore().use.onChatResize();
   const onChatResizeDebounce = useDebounceCallback(onChatResize, 300);
-  const [promptInputDivRef, { height: promptInputDivHeight }] = useMeasure();
 
   const [pinnedDivRef, { height: pinnedDivHeight }] = useMeasure();
 
@@ -119,10 +119,6 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
     () => (showPinned ? (pinnedDivHeight ?? 0) : 0) + 16,
     [showPinned, pinnedDivHeight],
   );
-  const mb = useMemo(
-    () => (promptInputDivHeight ?? 0) + 8,
-    [promptInputDivHeight],
-  );
 
   const virtualizer = useVirtualizer({
     count: messages.length,
@@ -131,12 +127,11 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
     getItemKey: (index) => messages[index]!.id,
     anchorTo: "end",
     followOnAppend: true,
-    scrollEndThreshold: mb + 8,
+    scrollEndThreshold: 20,
     overscan: 3,
     useFlushSync: false,
     scrollPaddingStart: mt,
     paddingStart: mt,
-    paddingEnd: mb,
   });
 
   useLayoutEffect(() => {
@@ -207,76 +202,95 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
           />
         </ChatInnerWrapper>
       )}
-      <div
-        ref={scrollRef}
-        className="relative flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scroll-fade scrollbar-gutter-stable "
-      >
-        <div className="flex flex-row min-h-full px-4">
-          <div className="min-w-0 w-full mx-auto max-w-3xl relative ">
-            <div
-              className="relative w-full"
-              style={{
-                height: virtualizer.getTotalSize(),
-              }}
-            >
-              {virtualizer.getVirtualItems().map((virtualRow) => {
-                const message = messages[virtualRow.index];
-                if (!message) return null;
-                return (
-                  <div
-                    key={virtualRow.key}
-                    data-index={virtualRow.index}
-                    ref={virtualizer.measureElement}
-                    className="absolute top-0 left-0 w-full"
-                    style={{
-                      transform: `translateY(${virtualRow.start}px)`,
-                      paddingBottom: "2rem",
-                    }}
-                  >
-                    <ChatMessage
-                      message={message}
-                      isAnimating={
-                        status === "streaming" &&
-                        virtualRow.index === messages.length - 1
-                      }
-                    />
-                  </div>
-                );
-              })}
+      <div className="flex-1  min-h-0 grid grid-rows-[1fr_auto]">
+        <div
+          ref={scrollRef}
+          className="relative flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scroll-fade scrollbar-gutter-stable "
+        >
+          <div className="flex flex-row min-h-full px-4">
+            <div className="min-w-0 w-full mx-auto max-w-3xl relative ">
+              <div
+                className="relative w-full"
+                style={{
+                  height: virtualizer.getTotalSize(),
+                }}
+              >
+                {virtualizer.getVirtualItems().map((virtualRow) => {
+                  const message = messages[virtualRow.index];
+                  if (!message) return null;
+                  const isLast = virtualRow.index === messages.length - 1;
+                  return (
+                    <div
+                      key={virtualRow.key}
+                      data-index={virtualRow.index}
+                      ref={virtualizer.measureElement}
+                      className="absolute top-0 left-0 w-full"
+                      style={{
+                        transform: `translateY(${virtualRow.start}px)`,
+                        paddingBottom: isLast ? "0" : "1rem",
+                      }}
+                    >
+                      <ChatMessage
+                        message={message}
+                        isAnimating={
+                          status === "streaming" &&
+                          virtualRow.index === messages.length - 1
+                        }
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
 
-          {menuShow && !toolsShow && (
-            <div className="sticky top-2 h-full w-xs z-40 p-2 overflow-hidden">
-              <ChatPanelRight />
-            </div>
+            {menuShow && !toolsShow && (
+              <div className="sticky top-2 h-full w-xs z-40 p-2 overflow-hidden">
+                <ChatPanelRight />
+              </div>
+            )}
+            {showSuggestions && (
+              <ChatInnerWrapper
+                className={`z-50 bottom-4`}
+                menuShow={menuShow}
+                toolsShow={toolsShow}
+              >
+                <ChatPromptSuggestion />
+              </ChatInnerWrapper>
+            )}
+          </div>
+        </div>
+        <div className="relative">
+          <ChatInnerWrapper
+            menuShow={menuShow}
+            toolsShow={toolsShow}
+            className="p-4 relative"
+          >
+            <ChatPromptInput />
+          </ChatInnerWrapper>
+          {!virtualizer.isAtEnd() && (
+            <ChatInnerWrapper
+              menuShow={menuShow}
+              toolsShow={toolsShow}
+              className="absolute -top-8 z-40 pointer-events-none"
+              innerClassName="flex items-center justify-center pointer-events-auto"
+            >
+              <Button
+                onClick={() => virtualizer.scrollToEnd({ behavior: "smooth" })}
+                size="icon"
+                type="button"
+                variant="outline"
+              >
+                <ArrowDownIcon className="size-4" />
+              </Button>
+            </ChatInnerWrapper>
           )}
         </div>
       </div>
-      {!virtualizer.isAtEnd() && (
-        <ChatInnerWrapper
-          menuShow={menuShow}
-          toolsShow={toolsShow}
-          className="items-center mx-auto"
-          innerClassName="mx-auto flex items-center justify-center"
-          style={{
-            bottom: `calc(2rem + ${promptInputDivHeight ?? 0}px)`,
-          }}
-        >
-          <Button
-            onClick={() => virtualizer.scrollToEnd({ behavior: "smooth" })}
-            size="icon"
-            type="button"
-            variant="outline"
-          >
-            <ArrowDownIcon className="size-4" />
-          </Button>
-        </ChatInnerWrapper>
-      )}
+
       {isNewChat && (
         <ChatInnerWrapper
           className={cn(
-            "-translate-y-1/2   top-[calc((100%-140px)/2)] overflow-hidden py-4",
+            "-translate-y-1/2  top-[calc((100%-140px)/2)] overflow-hidden py-4",
           )}
           menuShow={menuShow}
           toolsShow={toolsShow}
@@ -284,27 +298,6 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
           <ChatWelcome />
         </ChatInnerWrapper>
       )}
-      {showSuggestions && (
-        <ChatInnerWrapper
-          className={`z-50 `}
-          style={{
-            bottom: `calc(${promptInputDivHeight}px + 1rem + 2rem)`,
-          }}
-          menuShow={menuShow}
-          toolsShow={toolsShow}
-        >
-          <ChatPromptSuggestion />
-        </ChatInnerWrapper>
-      )}
-      <ChatInnerWrapper
-        ref={promptInputDivRef}
-        menuShow={menuShow}
-        toolsShow={toolsShow}
-        className="bottom-4 "
-        innerClassName="py-2"
-      >
-        <ChatPromptInput />
-      </ChatInnerWrapper>
     </ResizablePanel>
   );
 };

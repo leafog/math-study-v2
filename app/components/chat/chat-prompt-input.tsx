@@ -495,7 +495,6 @@ const PruePromptInput = () => {
       practicePrompt,
       practiceProblems,
     );
-
     const attMetas = await queryOnce((q) => {
       return q
         .from({ attMeta: attachmentMetaDataColl })
@@ -562,6 +561,8 @@ const PruePromptInput = () => {
         updated_at: new Date(),
       });
     });
+
+    console.log(endMessage);
 
     sendMessage(endMessage);
     clearProblemIds();
