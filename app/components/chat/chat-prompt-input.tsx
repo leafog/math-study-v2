@@ -47,7 +47,7 @@ import {
   useToolSelectionStore,
   type ToolSelectionItem,
 } from "./tools/store/tool-selection";
-import { isEmpty, isUndefined, keyBy } from "lodash-es";
+import { groupBy, isEmpty, isUndefined, keyBy } from "lodash-es";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import {
@@ -78,8 +78,6 @@ import {
 } from "@tanstack/react-db";
 import { toLabelledComment } from "~/lib/agent/markdown-utils";
 import { getPrompt } from "~/lib/agent/instructions";
-import Lightbox, { type SlideImage } from "yet-another-react-lightbox";
-import Counter from "yet-another-react-lightbox/plugins/counter";
 
 import "yet-another-react-lightbox/plugins/counter.css";
 import "yet-another-react-lightbox/styles.css";
@@ -168,29 +166,6 @@ const DisplayAttachments = () => {
         })),
     [chatId],
   );
-
-  const { slides, slideIdToIndex } = useMemo(() => {
-    const withSlide = [
-      ...attachmentsInDb
-        .filter((it) => it.media_type?.startsWith("image/"))
-        .map((it) => ({ id: it.id, slide: { src: it.local_uri } }))
-        .filter((it) => !isUndefined(it)),
-      ...files
-        .filter((it) => it.mediaType.startsWith("image/"))
-        .map((it) => ({ id: it.id, slide: { src: it.url } })),
-    ];
-
-    return {
-      slides: withSlide.map((it) => it.slide) as SlideImage[],
-      slideIdToIndex: new Map(withSlide.map((it, index) => [it.id, index])),
-    };
-  }, [attachmentsInDb, fileIds]);
-
-  useEvent("image:show-light-box", (id) => {
-    openLightBox();
-    const index = slideIdToIndex.get(id) ?? -1;
-    setLightBoxIndex(index);
-  });
 
   const handleRemove = (id: string) => {
     remove(id);
@@ -334,78 +309,6 @@ const DisplayAttachments = () => {
       );
       Promise.all(handlers.map((h) => h()));
     });
-    // // 复用同一查询：取每个附件最近一次任务（updated_at 倒序取第一条）
-    // queryOnce((q) => buildAttachmentTasksQuery(q, ids)).then((tasks) => {
-    //   if (!tasks) return;
-    //   const latest = toLatestTaskMap(tasks);
-
-    //   // 最近一次任务为 done 的附件，跳过不再处理
-    //   const doneAttachmentIds = new Set(
-    //     files
-    //       .map((it) => latest.get(it.id))
-    //       .filter((task) => task?.status === "done")
-    //       .map((task) => task!.attachment_id),
-    //   );
-
-    //   const needHandlerFiles = files.filter(
-    //     (it) => !doneAttachmentIds.has(it.id),
-    //   );
-
-    //   const handlers = needHandlerFiles.map(
-    //     ({ url, id, filename, mediaType }) => {
-    //       const handler = async () => {
-    //         const taskId = genId();
-    //         const now = new Date();
-
-    //         attachmentTasksColl.insert({
-    //           id: taskId,
-    //           attachment_id: id,
-    //           task_type: "extract_text",
-    //           status: "pending",
-    //           origin_filename: filename,
-    //           created_at: now,
-    //           updated_at: now,
-    //         });
-
-    //         const blob = await blobUrlToBlob(url);
-    //         const b = await blob.bytes();
-    //         const mds = md5(b);
-
-    //         await fileStore.save(
-    //           new File([blob], filename ?? genId(), {
-    //             type: blob.type,
-    //           }),
-    //           id,
-    //         );
-
-    //         attachmentMetaDataColl.insert({
-    //           id,
-    //           origin_filename: filename ?? "",
-    //         });
-
-    //         try {
-    //           const file_text = await extractFileText(blob, mediaType);
-    //           attachmentTasksColl.update(taskId, (draft) => {
-    //             draft.status = "done";
-    //             draft.result = file_text;
-    //             draft.updated_at = new Date();
-    //           });
-    //           attachmentMetaDataColl.update(id, (draft) => {
-    //             draft.last_task_text = file_text;
-    //           });
-    //         } catch (err) {
-    //           attachmentTasksColl.update(taskId, (draft) => {
-    //             draft.status = "error";
-    //             draft.error = String(err);
-    //             draft.updated_at = new Date();
-    //           });
-    //         }
-    //       };
-    //       return handler;
-    //     },
-    //   );
-    //   Promise.all(handlers.map((h) => h()));
-    // });
   }, [urls]);
 
   const toTaskStatus = (fileId: string) => {
@@ -460,26 +363,6 @@ const DisplayAttachments = () => {
           );
         })}
       </AttachmentGroup>
-      {/* <Lightbox
-        open={lightBoxShow}
-        plugins={[Counter]}
-        close={closeLightBox}
-        index={lightBoxIndex}
-        slides={slides}
-        render={{
-          slide({ slide }) {
-            if (slide.src.startsWith("blob"))
-              return <img src={slide.src} alt=""></img>;
-            if (slide.src.startsWith("index"))
-              return <IndexedUrlImage src={slide.src} alt="" />;
-          },
-        }}
-        styles={{
-          root: {
-            "--yarl__color_backdrop": "rgba(0, 0, 0, 0.6)",
-          },
-        }}
-      ></Lightbox> */}
     </div>
   );
 };
@@ -542,6 +425,16 @@ const PruePromptInput = () => {
   const clearProblemIds = useChatPromptInput().use.clearProblemIds();
   const removeProblemId = useChatPromptInput().use.removeProblemId();
 
+  const { textInput } = usePromptInputController();
+  const textInputValue = useChatPromptInput().use.textInputValue();
+  const setTextInputValue = useChatPromptInput().use.setTextInputValue();
+  const setSuggestions = useChatPromptSuggestionStore.use.setSuggestions();
+
+  useSync(textInput.value, setTextInputValue);
+  useEffect(() => {
+    console.log("hhh", textInputValue, hasAny);
+  }, [textInputValue]);
+
   // 只持久化 id，完整题目在渲染/发送时按 id 从库中查询
   const { data: practiceProblems = [] } = useLiveQuery(
     (q) => {
@@ -563,11 +456,13 @@ const PruePromptInput = () => {
       addProblemIds(ns.problemIds);
     }
   }, [state]);
+  useEffect(() => {
+    console.log(hasAny);
+  }, [hasAny]);
 
   const onSubmit: PromptInputProps["onSubmit"] = async (message) => {
     console.log(hasAny);
     if (!hasAny) return;
-    console.log("send");
     const title = message.text;
     if (isNewChat) {
       createChat(title.slice(0, 40));
@@ -601,39 +496,57 @@ const PruePromptInput = () => {
       practiceProblems,
     );
 
-    const attachments = await queryOnce((q) => {
-      return buildAttachmentTasksQuery(q, fileIds);
+    const attMetas = await queryOnce((q) => {
+      return q
+        .from({ attMeta: attachmentMetaDataColl })
+        .where(({ attMeta }) => inArray(attMeta.id, fileIds));
     });
+    const attProblems = await queryOnce((q) => {
+      return q.from({ problem: problemColl }).where(({ problem }) =>
+        inArray(
+          problem.source_attachment_id,
+          attMetas.map((it) => it.id),
+        ),
+      );
+    });
+    const attProblemsMap = groupBy(
+      attProblems,
+      (it) => it.source_attachment_id,
+    );
     const attachmentPrompt = getPrompt("chat.attachmentPrompt");
+
     const attachmentText = toLabelledComment(
       "attachment-ocr-result",
       attachmentPrompt,
-      [...toLatestTaskMap(attachments).values()].map((it) => it.result),
+      attMetas.map((it) => ({
+        id: it.id,
+        text: it.last_task_text,
+        problems: attProblemsMap[it.id] ?? [],
+      })),
     );
+
     const messageId = genId();
+
+    const now = new Date();
+    const metadata = {
+      created_at: now,
+      practiceProblemIds: problemIds,
+      attachmentIds: fileIds,
+      message_id: messageId,
+    };
+
     const endMessage = {
       files: [],
       text: [practiceComments, fullText, attachmentText].join("\n"),
-      metadata: {
-        practiceProblemIds: problemIds,
-        attachmentIds: fileIds,
-        message_id: messageId,
-      },
+      metadata,
     };
-
-    const now = new Date();
 
     chatMessageColl.insert({
       chat_id: id,
       role: "user",
       id: messageId,
       parts,
-      metadata: {
-        created_at: now,
-        practiceProblemIds: problemIds,
-        attachmentIds: fileIds,
-        message_id: messageId,
-      },
+      metadata,
       created_at: now,
     });
 
@@ -649,17 +562,11 @@ const PruePromptInput = () => {
         updated_at: new Date(),
       });
     });
+
     sendMessage(endMessage);
     clearProblemIds();
     setTextInputValue("");
   };
-
-  const { textInput } = usePromptInputController();
-  const textInputValue = useChatPromptInput().use.textInputValue();
-  const setTextInputValue = useChatPromptInput().use.setTextInputValue();
-  const setSuggestions = useChatPromptSuggestionStore.use.setSuggestions();
-
-  useSync(textInput.value, setTextInputValue);
 
   useEffect(() => {
     if (isNewChat) {

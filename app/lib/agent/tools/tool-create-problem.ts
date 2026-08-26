@@ -1,9 +1,5 @@
 import { tool } from "ai";
-import {
-  problemColl,
-  chatKgTopicRelColl,
-  problemChatRelColl,
-} from "~/db/tdb-collections";
+import { problemColl, problemChatRelColl } from "~/db/tdb-collections";
 import {
   CreateProblemOutputSchema,
   ProblemSchema,
@@ -22,11 +18,12 @@ export const createProblem = tool({
     updated_at: true,
     status: true,
   }),
-  execute: (input, context) => {
+  execute: async (input, context) => {
     const chat_id = chatIdStore.getState().chatId;
     const now = new Date();
     const pid = genId();
     const tool_call_id = context.toolCallId;
+
     // 保存题目到 problem 表
     const problem: Problem = {
       ...input,

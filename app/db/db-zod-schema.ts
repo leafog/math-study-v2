@@ -18,6 +18,12 @@ export const ProblemSchema = z.object({
   source: z
     .enum(["photo", "latex", "batch", "ai", "manual"])
     .describe("How the problem was created"),
+  source_attachment_id: z
+    .string()
+    .nullish()
+    .describe(
+      "The attachment this problem was extracted from (OCR). Null when not from an attachment.",
+    ),
   status: z
     .enum(["unanswered", "correct", "incorrect"])
     .catch("unanswered")
@@ -34,6 +40,7 @@ export const ProblemChatRelSchema = z.object({
   pid: z.string(),
   chat_id: z.string(),
   tool_call_id: z.string().optional(),
+  sort_order: z.number().optional(),
   created_at: z.date(),
   updated_at: z.date(),
 });
@@ -615,6 +622,7 @@ export const CreateProblemOutputSchema = z.object({
   description: z.string().optional(),
   tags: z.array(z.string()),
   source: z.enum(["photo", "latex", "batch", "ai", "manual"]),
+  source_attachment_id: z.string().nullish(),
 });
 export type CreateProblemOutput = z.infer<typeof CreateProblemOutputSchema>;
 
@@ -642,15 +650,6 @@ export const CreateExplanationOutputSchema = z.object({
 export type CreateExplanationOutput = z.infer<
   typeof CreateExplanationOutputSchema
 >;
-
-export const CheckAnswerOutputSchema = z.object({
-  success: z.boolean(),
-  answer_id: z.string(),
-  correct: z.boolean(),
-  message: z.string(),
-});
-export type CheckAnswerOutput = z.infer<typeof CheckAnswerOutputSchema>;
-
 export const LinkTopicsOutputSchema = z.object({
   success: z.boolean(),
   linked: z.array(z.string()),

@@ -23,7 +23,7 @@ Your goals:
 - Explain before practicing when appropriate.
 - Don't create a problem in every response.
 - Use diagnostic problems when the student struggles.
-- Problems must be created with \`createProblem\`; never write generated problems directly as normal text.
+- Problems must be created with \`createProblem\` (a single problem) or \`createProblemsByAttachment\` (all the problems extracted from one uploaded attachment, at once); never write generated problems directly as normal text.
 - After creating a problem, don't repeat its content — let the student answer first.
 
 ## Understand flow
@@ -37,7 +37,7 @@ When the student enters the Understand flow:
 ## Answer evaluation
 When the student answers a problem:
 1. Evaluate it with \`checkAnswer\`.
-2. Give concise feedback explaining whether and why it's correct.
+2. The check result and analysis are displayed automatically in the UI — do NOT restate them in your reply.
 3. Guide toward the next step without immediately giving away the solution.
 When a standard solution is needed, use \`createExplanation\`.
 
@@ -46,7 +46,7 @@ When a standard solution is needed, use \`createExplanation\`.
 - Do not repeat content already displayed by tools (problems, knowledge graphs).
 - Prefer teaching and interaction over long explanations.
 - After creating a problem with \`createProblem\`, output no text at all — no intro, no guidance, no "try this". The problem card is displayed automatically.
-- After evaluating an answer with \`checkAnswer\`, keep feedback to one or two short sentences — don't repeat the problem, don't over-explain.`,
+- After \`checkAnswer\`, output no text at all — the result and analysis are shown in the UI. At most ask a follow-up question about the next step, without repeating the verdict or analysis.`,
   },
   "toolDesc.searchSimilarTopics": {
     description: "Find existing knowledge points similar to a topic.",
@@ -113,7 +113,7 @@ Record:
 
 The analysis should explain why the answer is correct or incorrect and identify the main learning issue.
 
-After calling, give only one or two short sentences of feedback — do not repeat the problem or over-explain.`,
+The result and analysis are displayed in the UI. After calling, output no text — do not repeat the verdict or analysis, and do not restate the problem.`,
   },
   "toolDesc.createExplanation": {
     description: "Create a standard solution for a problem.",
@@ -149,8 +149,20 @@ Pass the problem ID. After calling the tool, help the student solve it.`,
     template: "I want to practice the following problems:",
   },
   "chat.attachmentPrompt": {
-    description: "Prefix before the attached files' extracted text.",
-    template: "The accompanying text information is:",
+    description:
+      "Tell the model which problems the system has already analyzed per attachment, and only create the ones that are missing.",
+    template: `The following is the text extracted (OCR) from the file(s) the student uploaded, together with the problems the system has already analyzed from each file.
+
+For each attachment, the data includes:
+- id: the attachment id
+- text: the raw OCR text of the file
+- problems: the problems the system has already extracted and linked to this attachment. When this list is non-empty, those problems already exist and are shown to the student — do NOT recreate or create them again.
+
+For any attachment whose problems list is empty, identify EVERY math problem in its text and call the createProblemsByAttachment tool ONCE for that attachment, passing its id as attachment_id and every problem in it as one entry per problem. Keep going until no attachment with missing problems remains; do not skip any. Do NOT call createProblem for these attachment problems.
+
+Pass the attachment's id as the attachment_id parameter; the created problems are linked to that attachment automatically.
+
+Skip text that is not a math problem (page numbers, titles, instructions, answer sheets without questions, etc.). If a problem is ambiguous or has minor OCR errors, infer the most reasonable version and still create it rather than skipping it. Do not merge separate problems into one; keep each as its own entry in the problems array.`,
   },
   "title.generate": {
     description: "Generate a concise chat title from the first user message and the AI's first reply.",

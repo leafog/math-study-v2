@@ -95,6 +95,8 @@
     "startChat": "开始聊天"
   },
   "problem": {
+    "defaultGroup": "未分组",
+    "attachment": "附件",
     "title": "题库",
     "subtitle": "浏览和管理所有数学题目",
     "total": "道题目",
@@ -229,6 +231,7 @@
     "attachmentResult": "识别内容",
     "creatingProblem": "正在出题...",
     "createProblemFailed": "出题失败",
+    "createdProblems": "已创建 {{count}} 道题目",
     "recordingTopic": "正在记录知识点...",
     "topicRecorded": "已记录",
     "topicLinked": "已关联已有知识点",
@@ -256,12 +259,14 @@
       "checkAnswer": "检查答案",
       "createExplanation": "生成解析",
       "createProblem": "创建题目",
+      "createProblemsByAttachment": "批量创建题目",
       "createRelationship": "建立关系",
       "createTopic": "记录知识点",
       "linkTopics": "关联知识点",
       "getKnowledgeGraph": "获取知识图谱",
       "invokeCortex": "计算",
       "practiceProblem": "练习题目",
+      "practiceProblems": "批量练习",
       "searchSimilarTopics": "搜索相似"
     },
     "tab": {

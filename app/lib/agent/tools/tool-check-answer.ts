@@ -1,9 +1,6 @@
 import { tool } from "ai";
 import { z } from "zod";
-import {
-  AnswerRecordSchema,
-  CheckAnswerOutputSchema,
-} from "~/db/db-zod-schema";
+import { AnswerRecordSchema } from "~/db/db-zod-schema";
 import {
   answerRecordColl,
   answerAnalysisColl,
@@ -13,6 +10,16 @@ import { genId } from "~/lib/id-utils";
 import { normalizeMathDelimiters } from "~/lib/utils";
 import { chatIdStore } from "~/store/chat-id-store";
 import { getPrompt } from "../instructions";
+
+/** checkAnswer 的输出 schema —— 本工具私有，不放进 db-zod-schema（那里会全部加载成 coll） */
+const CheckAnswerOutputSchema = z.object({
+  success: z.boolean(),
+  answer_id: z.string(),
+  correct: z.boolean(),
+  message: z.string(),
+  user_answer: z.string().optional(),
+  analysis: z.string().optional(),
+});
 
 export const checkAnswer = tool({
   description: getPrompt("toolDesc.checkAnswer"),
@@ -68,6 +75,8 @@ export const checkAnswer = tool({
       answer_id: id,
       correct: input.correct,
       message: input.correct ? "回答正确，已记录" : "回答有误，已记录",
+      user_answer,
+      analysis: normalizedAnalysis,
     });
   },
 });

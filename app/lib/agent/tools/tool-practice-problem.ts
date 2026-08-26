@@ -2,7 +2,7 @@ import { tool } from "ai";
 import { z } from "zod";
 import { problemChatRelColl, problemColl } from "~/db/tdb-collections";
 import { getPrompt } from "../instructions";
-import { chatIdStore, useChatId } from "~/store/chat-id-store";
+import { chatIdStore } from "~/store/chat-id-store";
 import type { ProblemChatRel } from "~/db/db-zod-schema";
 import { genId } from "~/lib/id-utils";
 

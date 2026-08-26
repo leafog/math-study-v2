@@ -71,11 +71,13 @@
       "Read(//Users/yanfeiwuji/work/no1/dist/**)",
       "Bash(cd /Users/yanfeiwuji/work/no1/math-study-v2/node_modules/@tanstack/highlight/dist; echo \"=== theme.d.ts ===\"; cat theme.d.ts 2>/dev/null | head -20; echo \"=== does highlightToHtml emit inline style or class? ===\"; grep -rn \"style\\\\|class\\\\|dangerously\" ../dist/react.js 2>/dev/null | head; echo \"=== sample output structure ===\"; grep -rn \"className\" internal/*.js 2>/dev/null | head)",
       "Bash(node node_modules/@cortex-js/compute-engine/dist/esm-min/cli/epsil.js --help)",
-      "Bash(node -e \"const p=require\\('./node_modules/@tanstack/react-db/package.json'\\); console.log\\(JSON.stringify\\(p.exports||p.types||p.main,null,1\\)\\)\")"
+      "Bash(node -e \"const p=require\\('./node_modules/@tanstack/react-db/package.json'\\); console.log\\(JSON.stringify\\(p.exports||p.types||p.main,null,1\\)\\)\")",
+      "Bash(grep -rn \"export function toLabelledComment\\\\|export const toLabelledComment\" app/lib/agent/markdown-utils.ts; sed -n '/toLabelledComment/,/^}/p' app/lib/agent/markdown-utils.ts | head -30)"
     ],
     "additionalDirectories": [
       "/Users/yanfeiwuji/work/no1/math-study-v2/app/locales",
-      "/Users/yanfeiwuji/work/no1/math-study-v2/app/lib/agent/tools/tools-ui"
+      "/Users/yanfeiwuji/work/no1/math-study-v2/app/lib/agent/tools/tools-ui",
+      "/Users/yanfeiwuji/work/no1/math-study-v2/app/lib/agent"
     ]
   }
 }

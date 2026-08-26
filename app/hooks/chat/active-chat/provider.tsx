@@ -184,8 +184,10 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
   const chatToolsPanelStore = useMemo(() => {
     return createChatToolsPanelStore(isNewChat, chatId);
   }, [isNewChat, chatId]);
+   
   const openToolsShow = chatToolsPanelStore.use.openToolsShow();
-  useEvent("open:tool", () => openToolsShow());
+
+  useEvent("open:tool", () => openToolsShow()); 
 
   const onOpenBefore = (kind: string, title?: string, _refId?: string) => {
     if (isNewChat) {

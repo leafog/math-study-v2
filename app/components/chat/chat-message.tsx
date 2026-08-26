@@ -252,7 +252,6 @@ const PureChatMessage = memo(
             </>
           )}
         </Message>
-
         <MessageActions
           className={cn(
             "opacity-0 gap-2 group-hover:opacity-100 transition-opacity",

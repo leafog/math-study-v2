@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { combine, createJSONStorage, persist } from "zustand/middleware";
+import QuickLRU from "quick-lru";
 
 import { createSelectors } from "./create-selectors";
 import { tanstackDbStorage } from "./tanstack-db-storage";
@@ -55,17 +56,21 @@ const computeHasAny = (
     ChatPromptInputState,
     "textInputValue" | "fileIds" | "problemIds"
   >,
-): boolean =>
-  state.textInputValue !== "" ||
-  state.fileIds.length > 0 ||
-  state.problemIds.length > 0;
+): boolean => {
+  console.log(state.textInputValue, "0000");
+  return (
+    state.textInputValue !== "" ||
+    state.fileIds.length > 0 ||
+    state.problemIds.length > 0
+  );
+};
 
 const chatPromptInputStoreCreator = (init: ChatPromptInputState) =>
   combine<ChatPromptInputState, ChatPromptInputAction>({ ...init }, (set) => ({
     setTextInputValue: (textInputValue) =>
       set((state) => ({
         textInputValue,
-        hasAny: computeHasAny(state),
+        hasAny: computeHasAny({ ...state, textInputValue }),
       })),
     setCurrentModel: (currentModel) => set({ currentModel }),
     setReasoning: (reasoning) => set({ reasoning }),
@@ -161,7 +166,11 @@ export const newChatPromptInputStore = createSelectors(
 
 export type ChatPromptInputStore = typeof newChatPromptInputStore;
 
-const chatPromptInputStoreCache = new Map<string, ChatPromptInputStore>();
+// 会话草稿 store 的内存缓存：LRU 限制数量，防止无限增长。
+// 数据仍在持久化存储里，被淘汰的 store 下次访问会按需重建。
+const chatPromptInputStoreCache = new QuickLRU<string, ChatPromptInputStore>({
+  maxSize: 50,
+});
 export const toKey = (chatId: string) => `chat-prompt-input-store-${chatId}`;
 export const createChatPromptInputStore = (
   isNewChat: boolean,

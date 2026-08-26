@@ -73,9 +73,8 @@ const ProblemCard = ({
       <CardHeader className="relative z-10">
         <CardTitle className="flex min-w-0 items-center gap-1.5">
           <StatusIcon status={problem.status} />
-          <span className="truncate">
-            <MathResInLine>{problem.description}</MathResInLine>
-          </span>
+
+          <MathResInLine>{problem.description}</MathResInLine>
         </CardTitle>
         <CardAction className="opacity-0 transition-opacity group-hover/card:opacity-100 focus-within:opacity-100">
           <DropdownMenu>

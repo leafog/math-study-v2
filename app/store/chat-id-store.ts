@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { createSelectors } from "./create-selectors";
+import { genId } from "~/lib/id-utils";
 
 interface ChatIdState {
   chatId: string;
@@ -11,10 +12,11 @@ interface ChatIdState {
 
 const chatIdStore = create<ChatIdState>((set) => ({
   chatId: "",
-  newChatId: "",
+  newChatId: genId(),
   setChatId: (chatId) => set({ chatId }),
   setNewChatId: (newChatId) => set({ newChatId }),
-  resetNewChatId: () => set({ newChatId: "" }),
+  resetNewChatId: () => set({ newChatId: genId() }),
 }));
+
 const useChatId = createSelectors(chatIdStore);
 export { chatIdStore, useChatId };

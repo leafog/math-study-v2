@@ -13,7 +13,12 @@ const ChatMenuBtn = () => {
   const menuShow = useActiveChatToolsPanelStore().use.menuShow();
   const menuShowToggle = useActiveChatToolsPanelStore().use.menuShowToggle();
   const toolsShow = useActiveChatToolsPanelStore().use.toolsShow();
-  const ref = useClickAway<HTMLDivElement>(() => {
+  const ref = useClickAway<HTMLDivElement>((e) => {
+    if (
+      (e.target as HTMLElement | null)?.closest("#tools-show-popover-trigger")
+    ) {
+      return;
+    }
     setPopoverOpen(false);
   });
 
@@ -21,8 +26,9 @@ const ChatMenuBtn = () => {
     if (toolsShow) {
       if (popoverOpen) {
         return;
+      } else {
+        setPopoverOpen(true);
       }
-      setPopoverOpen(true);
       setTimeout(() => {
         bus.emit("topic:in-chat-view-topic", id);
       }, 200);
@@ -39,7 +45,7 @@ const ChatMenuBtn = () => {
 
   return toolsShow ? (
     <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-      <PopoverTrigger asChild>
+      <PopoverTrigger asChild id="tools-show-popover-trigger">
         <Button
           size="icon"
           variant={"ghost"}

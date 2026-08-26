@@ -3,6 +3,7 @@ import type { ToolPartRenderMap, AgentToolPart } from "./types";
 
 import { CheckAnswer } from "./tool-ui-check-answer";
 import { CreateProblem } from "./tool-ui-create-problem";
+import { CreateProblemsByAttachment } from "./tool-ui-create-problems-by-attachment";
 import { CreateTopic } from "./tool-ui-create-topic";
 import { LinkTopics } from "./tool-ui-link-topics";
 import { CreateRelationship } from "./tool-ui-create-relationship";
@@ -11,12 +12,14 @@ import { SearchSimilarTopics } from "./tool-ui-search-similar-topics";
 import { GetKnowledgeGraph } from "./tool-ui-get-knowledge-graph";
 import { InvokeCortex } from "./tool-ui-invoke-cortex";
 import { PracticeProblem } from "./tool-ui-practice-problem";
+import { PracticeProblems } from "./tool-ui-practice-problems";
 
 type ToolKind = keyof ToolPartRenderMap;
 
 const renderMap = {
   "tool-checkAnswer": CheckAnswer,
   "tool-createProblem": CreateProblem,
+  "tool-createProblemsByAttachment": CreateProblemsByAttachment,
   "tool-createTopic": CreateTopic,
   "tool-linkTopics": LinkTopics,
   "tool-createRelationship": CreateRelationship,
@@ -25,6 +28,7 @@ const renderMap = {
   "tool-getKnowledgeGraph": GetKnowledgeGraph,
   "tool-invokeCortex": InvokeCortex,
   "tool-practiceProblem": PracticeProblem,
+  "tool-practiceProblems": PracticeProblems,
   "dynamic-tool": undefined,
 } satisfies ToolPartRenderMap;
 

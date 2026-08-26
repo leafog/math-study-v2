@@ -8,6 +8,7 @@ export function useSync<T>(externalValue: T, setInternal: (value: T) => void) {
   const prevValueRef = useRef(externalValue);
 
   useEffect(() => {
+    console.log(externalValue);
     // 只有外部值真的变了，才同步到内部
     if (externalValue !== prevValueRef.current) {
       prevValueRef.current = externalValue;

@@ -5,7 +5,6 @@ import { settingModelConfigColl } from "~/db/tdb-collections";
 import type { SettingModelConfig } from "~/db/db-zod-schema";
 import { modelIconRecord } from "~/lib/agent";
 import type { ProviderId } from "~/lib/agent/types";
-import { useAgent } from "~/lib/agent/client-agent";
 
 const useChatAgentManager = () => {
   const { data: settings = [] } = useLiveQuery((q) =>

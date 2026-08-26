@@ -71,7 +71,7 @@ const ChatInnerWrapper = ({
         {children}
       </div>
       {menuShow && !toolsShow && (
-        <div className="sticky top-0  w-xs max-h-full   "></div>
+        <div className="sticky top-0  w-xs max-h-full"></div>
       )}
     </div>
   );
@@ -79,7 +79,7 @@ const ChatInnerWrapper = ({
 
 const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
   const { messages, status } = useActiveChatHelpers();
-  const { currentConversation, isNewChat } = useActiveChat();
+  const { isNewChat, renameChatTitle, conversation } = useActiveChat();
   const onChatResize = useActiveChatToolsPanelStore().use.onChatResize();
   const onChatResizeDebounce = useDebounceCallback(onChatResize, 300);
   const [promptInputDivRef, { height: promptInputDivHeight }] = useMeasure();
@@ -110,12 +110,7 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
 
   const saveTitle = () => {
     const trimmed = titleValue.trim();
-    if (trimmed && currentConversation) {
-      conversationColl.update(currentConversation.id, (draft) => {
-        draft.title = trimmed;
-        draft.updated_at = new Date();
-      });
-    }
+    renameChatTitle(trimmed);
     setEditingTitle(false);
   };
 
@@ -182,12 +177,12 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
               <Button
                 variant={"ghost"}
                 onClick={() => {
-                  if (!currentConversation) return;
+                  if (!conversation) return;
                   setEditingTitle(true);
-                  setTitleValue(currentConversation.title ?? "");
+                  setTitleValue(conversation.title ?? "");
                 }}
               >
-                {currentConversation?.title}
+                {conversation?.title}
               </Button>
             )}
           </div>

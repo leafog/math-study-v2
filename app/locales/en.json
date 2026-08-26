@@ -95,6 +95,8 @@
     "startChat": "Start chat"
   },
   "problem": {
+    "defaultGroup": "Ungrouped",
+    "attachment": "Attachment",
     "title": "Problem Bank",
     "subtitle": "Browse and manage all math problems",
     "total": "problems",
@@ -229,6 +231,7 @@
     "attachmentResult": "Extracted Content",
     "creatingProblem": "Creating problem...",
     "createProblemFailed": "Failed to create problem",
+    "createdProblems": "Created {{count}} problems",
     "recordingTopic": "Recording topic...",
     "topicRecorded": "Recorded",
     "topicLinked": "Linked to existing topic",
@@ -256,12 +259,14 @@
       "checkAnswer": "Check Answer",
       "createExplanation": "Generate Explanation",
       "createProblem": "Create Problem",
+      "createProblemsByAttachment": "Create Problems",
       "createRelationship": "Build Relationship",
       "createTopic": "Record Topic",
       "linkTopics": "Link Topics",
       "getKnowledgeGraph": "Get Knowledge Graph",
       "invokeCortex": "Compute",
       "practiceProblem": "Practice Problem",
+      "practiceProblems": "Practice Problems",
       "searchSimilarTopics": "Search Similar"
     },
     "tab": {

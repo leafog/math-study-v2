@@ -22,6 +22,13 @@ const buildProblemToIndex = (
         const pid = part.output?.id;
         if (pid) map.set(pid, index);
       }
+      if (
+        part.type === "tool-createProblemsByAttachment" ||
+        part.type === "tool-practiceProblems"
+      ) {
+        const pids = part.output?.ids ?? [];
+        pids.forEach((it) => map.set(it, index));
+      }
     }
   });
   return map;

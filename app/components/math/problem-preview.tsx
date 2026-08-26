@@ -18,6 +18,7 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
+  CardTitle,
 } from "../ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { cn } from "~/lib/utils";
@@ -52,6 +53,8 @@ import { keyBy } from "lodash-es";
 import { motion, useAnimationControls } from "motion/react";
 import KgTopicInChatItem from "../graph/kg-topic-in-chat-item";
 import CopyButton from "../common-ui/copy-button";
+import StatusIcon from "./status-icon";
+import MathResInLine from "./math-res-inline";
 
 export type ProblemPreviewHandle = {
   openExplanation: () => void;
@@ -187,11 +190,10 @@ const ProblemPreview = forwardRef<ProblemPreviewHandle, ProblemProps>(
           )}
         />
         <CardHeader className="pb-1 pl-5">
-          {description && (
-            <CardDescription>
-              <MathResInline>{description}</MathResInline>
-            </CardDescription>
-          )}
+          <CardTitle className="flex min-w-0 items-center gap-1.5">
+            <StatusIcon status={problem.status} />
+            <MathResInLine>{problem.description}</MathResInLine>
+          </CardTitle>
           <CardAction>
             <ButtonGroup>
               <CopyButton text={problem.content} />
@@ -222,104 +224,6 @@ const ProblemPreview = forwardRef<ProblemPreviewHandle, ProblemProps>(
           <div className="text-base min-w-0">
             <MathResBlock>{content}</MathResBlock>
           </div>
-          {answers.length > 0 && (
-            <Collapsible
-              id={`problem-${id}-answers`}
-              open={answerRecordOpen}
-              onOpenChange={toggleAnswerRecord}
-              className="rounded-md data-[state=open]:bg-muted"
-            >
-              <CollapsibleTrigger asChild>
-                <motion.div animate={anwsers} className="rounded-md">
-                  <Button variant="ghost" className="group w-full">
-                    <Clock className="size-4" /> {t("problem.answerRecord")}
-                    <ChevronDownIcon className="ml-auto group-data-[state=open]:rotate-180" />
-                  </Button>
-                </motion.div>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="p-2.5 pt-0 text-sm">
-                {answers.map((it, i) => {
-                  const analysis = answerAnalysesMap[it.id];
-                  return (
-                    <div key={it.id}>
-                      {i > 0 && <Separator className="my-3" />}
-                      <div className="flex items-start gap-2">
-                        {analysis ? (
-                          <HoverCard>
-                            <HoverCardTrigger asChild>
-                              <span
-                                className={cn(
-                                  "mt-1.5 size-2 shrink-0 rounded-full cursor-help",
-                                  "hover:ring-2 hover:ring-offset-1 hover:ring-offset-background transition-all",
-                                  it.correct
-                                    ? cn(
-                                        PROBLEM_STATE_COLORS.correct,
-                                        "hover:ring-green-600/40",
-                                      )
-                                    : cn(
-                                        PROBLEM_STATE_COLORS.incorrect,
-                                        "hover:ring-amber-600/40",
-                                      ),
-                                )}
-                              />
-                            </HoverCardTrigger>
-                            <HoverCardContent
-                              side="right"
-                              className="max-w-xs sm:max-w-sm"
-                            >
-                              <p className="text-xs text-muted-foreground mb-1">
-                                {t("problem.aiFeedback")}
-                              </p>
-                              <MathResBlock>{analysis.content}</MathResBlock>
-                            </HoverCardContent>
-                          </HoverCard>
-                        ) : (
-                          <span
-                            className={cn(
-                              "mt-1.5 size-2 shrink-0 rounded-full",
-                              it.correct
-                                ? PROBLEM_STATE_COLORS.correct
-                                : PROBLEM_STATE_COLORS.incorrect,
-                            )}
-                          />
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <MathResBlock>{it.user_answer}</MathResBlock>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </CollapsibleContent>
-            </Collapsible>
-          )}
-
-          {problemExplanations && problemExplanations.length > 0 && (
-            <Collapsible
-              id={`problem-${id}-explanation`}
-              open={explanationOpen}
-              onOpenChange={toggleExplanation}
-              className="rounded-md data-[state=open]:bg-muted"
-            >
-              <CollapsibleTrigger asChild>
-                <motion.div animate={expplations} className="rounded-md">
-                  <Button variant="ghost" className="group w-full">
-                    <BadgeQuestionMark className="size-4" />
-                    {t("problem.explanation")}
-                    <ChevronDownIcon className="ml-auto group-data-[state=open]:rotate-180" />
-                  </Button>
-                </motion.div>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="p-2.5 pt-0 text-sm space-y-2">
-                {problemExplanations.map((exp, i) => (
-                  <div key={exp.id}>
-                    {i > 0 && <Separator className="my-2" />}
-                    <MathResBlock>{exp.content}</MathResBlock>
-                  </div>
-                ))}
-              </CollapsibleContent>
-            </Collapsible>
-          )}
         </CardContent>
 
         {kgTopics.length > 0 && (

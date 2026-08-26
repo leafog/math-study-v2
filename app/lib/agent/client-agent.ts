@@ -11,22 +11,14 @@ import type {
   TransportOptions,
   UIChatMessage,
 } from "./types";
-import { createTopic } from "./tools/tool-create-topic";
-import { linkTopics } from "./tools/tool-link-topics";
-import { createRelationship } from "./tools/tool-create-relationship";
-import { createProblem } from "./tools/tool-create-problem";
-import { checkAnswer } from "./tools/tool-check-answer";
-import { createExplanation } from "./tools/tool-create-explanation";
-import { searchSimilarTopics } from "./tools/tool-search-similar-topics";
-import { getKnowledgeGraph } from "./tools/tool-get-knowledge-graph";
 import { instructions } from "./instructions";
+import { commonToolsConfig } from "./tools";
 
 import { hashString } from "../id-utils";
+import QuickLRU from "quick-lru";
 import { useTranslation } from "react-i18next";
 import { transports } from "./create-transport";
 import { useMemo } from "react";
-import { invokeCortex } from "./tools/tool-invoke-cortex";
-import { practiceProblem } from "./tools/tool-practice-problem";
 
 export const deepseek = createDeepSeek({
   apiKey: "",
@@ -39,30 +31,7 @@ export const agent = new ToolLoopAgent({
   model: deepseeks,
   instructions,
   reasoning: "low",
-  toolApproval: {
-    createTopic: "approved",
-    linkTopics: "approved",
-    createRelationship: "approved",
-    createProblem: "approved",
-    checkAnswer: "approved",
-    createExplanation: "approved",
-    searchSimilarTopics: "approved",
-    getKnowledgeGraph: "approved",
-    invokeCortex: "approved",
-    practiceProblem: "approved",
-  },
-  tools: {
-    createTopic,
-    linkTopics,
-    createRelationship,
-    createProblem,
-    checkAnswer,
-    createExplanation,
-    searchSimilarTopics,
-    getKnowledgeGraph,
-    invokeCortex,
-    practiceProblem,
-  },
+  ...commonToolsConfig,
 });
 
 export const messageMetadata: MessageMetadataFn = ({ part }) => {
@@ -84,7 +53,11 @@ const transport = new DirectChatTransport({
   messageMetadata,
 });
 
-const TransportMap = new Map<string, TransportFCResult>();
+// 按 (provider, apiKey, baseURL, model, locale, reasoning) 缓存的 transport 实例，
+// LRU 限制数量，防止配置切换多了之后无限堆积。
+const TransportMap = new QuickLRU<string, TransportFCResult>({
+  maxSize: 20,
+});
 
 const calcAgentKey = (
   providerId: ProviderId,

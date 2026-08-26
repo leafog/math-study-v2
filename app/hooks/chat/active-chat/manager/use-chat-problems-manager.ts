@@ -16,7 +16,6 @@ import {
   answerAnalysisColl,
   problemChatRelColl,
 } from "~/db/tdb-collections";
-import { useEvent } from "~/event/use-event";
 import z from "zod";
 
 const ProblemWithPosInfo = ProblemSchema.extend({
@@ -38,7 +37,10 @@ const useChatProblemsManager = (chatId: string) => {
         .where(({ problemChatRelColl }) =>
           eq(problemChatRelColl.chat_id, chatId),
         )
-        .orderBy(({ problemColl: col }) => col.created_at, {
+        .orderBy(({ problemChatRelColl: col }) => col.created_at, {
+          direction: "asc",
+        })
+        .orderBy(({ problemChatRelColl: col }) => col.sort_order, {
           direction: "asc",
         })
         .select(({ problemColl, problemChatRelColl }) => ({
@@ -60,7 +62,6 @@ const useChatProblemsManager = (chatId: string) => {
   }, [problemsQuery]);
 
   const problemsMap = useMemo(() => keyBy(problems, (it) => it.id), [problems]);
-
   const { data: answerRecords } = useLiveQuery(
     (q) =>
       q
@@ -112,10 +113,6 @@ const useChatProblemsManager = (chatId: string) => {
     },
     [],
   );
-
-  useEvent("problem:scroll-to", (pid) => {
-    refs.current.get(pid)?.highlight();
-  });
 
   const problemHasanswers = useCallback(
     (pid: string) => {

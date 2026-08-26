@@ -1,3 +1,5 @@
+import { isEmpty } from "lodash-es";
+
 /**
  * 把文本包装成 HTML 注释：模型可见、界面不渲染。
  *
@@ -19,6 +21,7 @@ export const toLabelledComment = <T>(
   prompt: string,
   fields: T,
 ): string => {
+  if (isEmpty(fields)) return "";
   const body = JSON.stringify(fields ?? {}, null, 2);
   return toHtmlComment(`${label} ${prompt} \n${body}`);
 };
