@@ -23,6 +23,6 @@ export type ToolInfo = {
     Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>
   >;
   showInOpen: boolean;
-  Panel: LazyExoticComponent<ToolPanel>;
+  Panel: ToolPanel | LazyExoticComponent<ToolPanel>;
 };
 export type Tools = Record<string, ToolInfo>;

@@ -1,6 +1,7 @@
 {
   "common": {
     "loading": "Loading...",
+    "annoEmpty": "(empty annotation)",
     "error": "Something went wrong",
     "save": "Save",
     "cancel": "Cancel",

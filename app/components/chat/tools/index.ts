@@ -1,4 +1,5 @@
 import { lazy } from "react";
+import ExclidrawPanel from "./tool-exclidraw";
 import {
   Pen,
   Pi,
@@ -14,7 +15,7 @@ const tools = {
     kind: "excalidraw" as const,
     Icon: Pen,
     showInOpen: true,
-    Panel: lazy(() => import("./tool-exclidraw")),
+    Panel: ExclidrawPanel,
   },
   mathlive: {
     kind: "mathlive" as const,
@@ -32,7 +33,7 @@ const tools = {
     kind: "blocknote" as const,
     Icon: Notebook,
     showInOpen: true,
-    Panel: lazy(() => import("./tool-blocknote")),
+    Panel: lazy(() => import("./tool-mathlive")),
   },
   showAttachment: {
     kind: "showAttachment" as const,
