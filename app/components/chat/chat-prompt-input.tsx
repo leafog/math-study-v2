@@ -8,8 +8,12 @@ import {
   PromptInputActionMenuItem,
   PromptInputActionMenuTrigger,
   PromptInputBody,
+  PromptInputButton,
   PromptInputFooter,
   PromptInputHeader,
+  PromptInputHoverCard,
+  PromptInputHoverCardContent,
+  PromptInputHoverCardTrigger,
   PromptInputProvider,
   PromptInputSubmit,
   PromptInputTextarea,
@@ -83,7 +87,7 @@ import "yet-another-react-lightbox/plugins/counter.css";
 import "yet-another-react-lightbox/styles.css";
 import { type AttachmentTask } from "~/db/db-zod-schema";
 import { useBoolean } from "usehooks-ts";
-import { X, XIcon } from "lucide-react";
+import { AtSignIcon, X, XIcon } from "lucide-react";
 import { bus } from "~/event/event-bus";
 import { useSync } from "~/hooks/use-sync";
 import BlobUrlPreview from "../common-ui/blob-url-preview";
@@ -594,6 +598,15 @@ const PruePromptInput = () => {
       className="bg-background"
     >
       <PromptInputHeader>
+        <PromptInputHoverCard>
+          <PromptInputHoverCardTrigger>
+            <PromptInputButton>
+              <AtSignIcon />
+            </PromptInputButton>
+          </PromptInputHoverCardTrigger>
+          <PromptInputHoverCardContent></PromptInputHoverCardContent>
+        </PromptInputHoverCard>
+
         {practiceProblems.length > 0 && (
           <ProblemsAttachmentList
             problems={practiceProblems}

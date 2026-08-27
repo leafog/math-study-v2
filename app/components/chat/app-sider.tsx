@@ -91,7 +91,7 @@ const AppSidebar = () => {
           {isOpen && <SidebarTrigger />}
         </div>
       </SidebarHeader>
-      <SidebarContent className="scrollbar-thin">
+      <SidebarContent className="scrollbar-thin overscroll-none">
         <SidebarGroup className="sticky top-0 bg-background z-50 ">
           <SidebarMenu>
             {topRoutes.map(({ path, icon, title }) => {

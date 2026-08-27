@@ -441,10 +441,20 @@ export type SettingModelConfig = z.infer<typeof SettingModelConfigSchema>;
 export const ConversationSchema = z.object({
   id: z.string(),
   title: z.string(),
+  archived_at: z.date().nullable(),
   created_at: z.date(),
   updated_at: z.date(),
 });
 export type Conversation = z.infer<typeof ConversationSchema>;
+
+/** 会话置顶表 */
+export const ConversationPinSchema = z.object({
+  id: z.string(),
+  chat_id: z.string(),
+  sort_order: z.number().optional(),
+  created_at: z.date(),
+});
+export type ConversationPin = z.infer<typeof ConversationPinSchema>;
 
 /**
  * PowerSync AttachmentTable schema (localOnly, used for attachment sync).
@@ -650,6 +660,17 @@ export const CreateExplanationOutputSchema = z.object({
 export type CreateExplanationOutput = z.infer<
   typeof CreateExplanationOutputSchema
 >;
+
+export const CheckAnswerOutputSchema = z.object({
+  success: z.boolean(),
+  answer_id: z.string(),
+  correct: z.boolean(),
+  message: z.string(),
+  user_answer: z.string().optional(),
+  analysis: z.string().optional(),
+});
+export type CheckAnswerOutput = z.infer<typeof CheckAnswerOutputSchema>;
+
 export const LinkTopicsOutputSchema = z.object({
   success: z.boolean(),
   linked: z.array(z.string()),

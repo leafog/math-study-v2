@@ -163,6 +163,7 @@ export const {
   practiceLogColl,
   tagColl,
   conversationColl,
+  conversationPinColl,
   chatMessageColl,
   fileRecordColl,
   albumColl,

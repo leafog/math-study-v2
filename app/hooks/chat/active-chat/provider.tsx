@@ -24,7 +24,7 @@ import useChatKgTopicsManager from "./manager/use-chat-kg-topics-manager";
 import useChatPromptInputManager from "./manager/use-chat-prompt-input-manager";
 import useChatAgentManager from "./manager/use-chat-agent-manager";
 import { toast } from "sonner";
-import type { LanguageModel } from "ai";
+import type { LanguageModel, UIMessage } from "ai";
 import { useGenerateObject } from "./use-generate-object";
 
 import z from "zod";
@@ -33,6 +33,8 @@ import { getPrompt } from "~/lib/agent/instructions";
 import { useEvent } from "~/event/use-event";
 import { newChatPromptInputStore } from "~/store/chat-prompt-input-store";
 import { bus } from "~/event/event-bus";
+import QuickLRU from "quick-lru";
+import { getOrPut } from "~/lib/map-utils";
 const ChatTitleSchema = z.object({
   title: z.string(),
 });
@@ -44,6 +46,14 @@ const partsToText = (parts?: Array<{ type?: string; text?: string }>): string =>
     .map((p) => p.text)
     .join(" ")
     .trim();
+
+const chatsMap = new QuickLRU<string, Chat<UIChatMessage>>({
+  maxSize: 50,
+  onEviction(key, value) {
+    value.stop();
+  },
+});
+
 export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
   const activeChatState = useChatIdManager();
   const { i18n } = useTranslation();
@@ -73,92 +83,83 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
   const transportRef = useRef(agentTransport);
   transportRef.current = agentTransport;
 
-  const chatInstanceRef = useRef<Chat<UIChatMessage> | null>(null);
-  const pendingStopRef = useRef<(() => Promise<void>) | null>(null);
+  const chat = useMemo<Chat<UIChatMessage>>(() => {
+    return getOrPut(chatsMap, chatId, () => {
+      return new Chat<UIChatMessage>({
+        id: chatId,
+        transport: {
+          sendMessages: (opts) =>
+            transportRef.current!.transport.sendMessages(opts),
+          reconnectToStream: (opts) =>
+            transportRef.current!.transport.reconnectToStream(opts),
+        },
+        generateId: genId,
+        messages: initMessages,
+        onToolCall: async ({ toolCall }) => {},
+        onError: (error) => {
+          toast.error(error.message, { position: "top-center" });
+        },
+        onFinish: ({ message, isAbort, messages }) => {
+          // 切换会话导致的中止:消息不完整且属于旧会话,不落库
+          if (isAbort) return;
+          const meta = message.metadata as Record<string, number> | undefined;
 
-  if (chatInstanceRef.current?.id !== chatId) {
-    if (chatInstanceRef.current) {
-      pendingStopRef.current = chatInstanceRef.current.stop;
-    }
-    chatInstanceRef.current = new Chat<UIChatMessage>({
-      id: chatId,
-      transport: {
-        sendMessages: (opts) =>
-          transportRef.current!.transport.sendMessages(opts),
-        reconnectToStream: (opts) =>
-          transportRef.current!.transport.reconnectToStream(opts),
-      },
-      generateId: genId,
-      messages: initMessages,
-      onToolCall: async ({ toolCall }) => {},
-      onError: (error) => {
-        toast.error(error.message, { position: "top-center" });
-      },
-      onFinish: ({ message, isAbort, messages }) => {
-        // 切换会话导致的中止:消息不完整且属于旧会话,不落库
-        if (isAbort) return;
-        const meta = message.metadata as Record<string, number> | undefined;
-
-        if (meta) {
-          // Collect reasoning start/end timestamps from Date.now()-based keys
-          const startKeys = Object.keys(meta)
-            .filter((k) => k.startsWith("reasoning-start:"))
-            .sort((a, b) => meta[a]! - meta[b]!);
-          const endKeys = Object.keys(meta)
-            .filter((k) => k.startsWith("reasoning-end:"))
-            .sort((a, b) => meta[a]! - meta[b]!);
-          const reasoningParts = message.parts?.filter(
-            (part) => part.type === "reasoning",
-          );
-          if (reasoningParts) {
-            reasoningParts.forEach((part, i) => {
-              if (i < startKeys.length && i < endKeys.length) {
-                const start = meta[startKeys[i]!];
-                const end = meta[endKeys[i]!];
-                if (start != null && end != null) {
-                  (part as any)._duration = Math.ceil((end - start) / 1000);
+          if (meta) {
+            // Collect reasoning start/end timestamps from Date.now()-based keys
+            const startKeys = Object.keys(meta)
+              .filter((k) => k.startsWith("reasoning-start:"))
+              .sort((a, b) => meta[a]! - meta[b]!);
+            const endKeys = Object.keys(meta)
+              .filter((k) => k.startsWith("reasoning-end:"))
+              .sort((a, b) => meta[a]! - meta[b]!);
+            const reasoningParts = message.parts?.filter(
+              (part) => part.type === "reasoning",
+            );
+            if (reasoningParts) {
+              reasoningParts.forEach((part, i) => {
+                if (i < startKeys.length && i < endKeys.length) {
+                  const start = meta[startKeys[i]!];
+                  const end = meta[endKeys[i]!];
+                  if (start != null && end != null) {
+                    (part as any)._duration = Math.ceil((end - start) / 1000);
+                  }
                 }
+              });
+            }
+          }
+
+          if (messages.length === 2) {
+            const [userMsg, assistantMsg] = messages;
+            const conversation = JSON.stringify({
+              user: partsToText(userMsg.parts),
+              assistant: partsToText(assistantMsg.parts),
+            });
+            const language = i18n.language?.toLowerCase().startsWith("zh")
+              ? "Chinese"
+              : "English";
+            const prompt = getPrompt("title.generate", {
+              vars: { language, conversation },
+            });
+            generateChatTitle(prompt).then((it) => {
+              if (it?.title) {
+                conversationColl.update(chatId, (draft) => {
+                  draft.title = it.title;
+                });
               }
             });
           }
-        }
-
-        if (messages.length === 2) {
-          const [userMsg, assistantMsg] = messages;
-          const conversation = JSON.stringify({
-            user: partsToText(userMsg.parts),
-            assistant: partsToText(assistantMsg.parts),
+          chatMessageColl.insert({
+            chat_id: chatId,
+            created_at: new Date(),
+            ...message,
           });
-          const language = i18n.language?.toLowerCase().startsWith("zh")
-            ? "Chinese"
-            : "English";
-          const prompt = getPrompt("title.generate", {
-            vars: { language, conversation },
-          });
-          generateChatTitle(prompt).then((it) => {
-            if (it?.title) {
-              conversationColl.update(chatId, (draft) => {
-                draft.title = it.title;
-              });
-            }
-          });
-        }
-        chatMessageColl.insert({
-          chat_id: chatId,
-          created_at: new Date(),
-          ...message,
-        });
-      },
+        },
+      });
     });
-  }
-
-  useEffect(() => {
-    pendingStopRef.current?.();
-    pendingStopRef.current = null;
   }, [chatId]);
 
   const chatHelpersRaw = useChat<UIChatMessage>({
-    chat: chatInstanceRef.current,
+    chat,
     throttle: 100,
   });
 
@@ -184,10 +185,10 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
   const chatToolsPanelStore = useMemo(() => {
     return createChatToolsPanelStore(isNewChat, chatId);
   }, [isNewChat, chatId]);
-   
+
   const openToolsShow = chatToolsPanelStore.use.openToolsShow();
 
-  useEvent("open:tool", () => openToolsShow()); 
+  useEvent("open:tool", () => openToolsShow());
 
   const onOpenBefore = (kind: string, title?: string, _refId?: string) => {
     if (isNewChat) {

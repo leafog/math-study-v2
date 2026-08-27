@@ -6,8 +6,10 @@ import { createTx } from "~/db/tx";
 import { chatIdStore } from "~/store/chat-id-store";
 import { useSync } from "~/hooks/use-sync";
 import { useLiveQuery } from "@tanstack/react-db";
+import { useTranslation } from "react-i18next";
 
 export const useChatIdManager = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { chatId: chatIdFromUrl } = useParams<{ chatId: string }>();
   const { newChatId, resetNewChatId, setChatId } = chatIdStore.getState();
@@ -31,11 +33,13 @@ export const useChatIdManager = () => {
   useSync(chatId, setChatId);
   const createChat = async (title: string) => {
     const id = chatId;
+    const finalTitle = title.trim() === "" ? t("chat.newChat") : title;
     const tx = createTx();
     tx.mutate(() => {
       conversationColl.insert({
         id,
-        title,
+        title: finalTitle,
+        archived_at: null,
         created_at: new Date(),
         updated_at: new Date(),
       });
@@ -54,8 +58,9 @@ export const useChatIdManager = () => {
     if (isNewChat) return;
     const conversation = conversationColl.get(chatId);
     if (conversation) {
+      const finalTitle = title.trim() === "" ? t("chat.newChat") : title;
       conversationColl.update(conversation.id, (draft) => {
-        draft.title = title;
+        draft.title = finalTitle;
         draft.updated_at = new Date();
       });
     }

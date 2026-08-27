@@ -62,7 +62,7 @@ const ChatInnerWrapper = ({
   return (
     <div
       className={cn(
-        "flex flex-row  absolute w-full z-40  scrollbar-gutter-stable   overflow-auto px-4 ",
+        "flex flex-row  absolute w-full z-40  scrollbar-gutter-stable   overflow-hidden px-4 ",
         className,
       )}
       ref={ref}
