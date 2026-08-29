@@ -1,0 +1,31 @@
+/* 把 Excalidraw 的主题色统一到应用(shadcn)的 token 上。
+   应用 token(--background/--card/--primary/--foreground/--border)随 .dark 祖先切换,
+   所以同一组 var() 引用在亮/暗下自动取对应值,只需对 .theme--light/.theme--dark 同时生效。
+   用 .excalidraw 前缀提高特异性,确保盖过 Excalidraw 自带的 .theme--light/.theme--dark。 */
+.excalidraw.theme--light,
+.excalidraw.theme--dark {
+  /* 画布底色 */
+  --color-surface-lowest: var(--background);
+  /* 面板/悬浮岛表面 */
+  --color-surface-low: var(--card);
+  --color-surface-mid: var(--card);
+  --color-surface-high: var(--accent);
+  /* 文字 */
+  --color-on-surface: var(--foreground);
+  /* 主色(选中/强调) */
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary);
+  --color-primary-light: var(--primary);
+  --color-primary-light-darker: var(--primary);
+  --color-primary-darker: var(--primary);
+  --color-on-primary-container: var(--primary-foreground);
+  /* 选中工具的浅色背景 */
+  --color-surface-primary-container: color-mix(
+    in oklab,
+    var(--primary) 18%,
+    transparent
+  );
+  /* 边框 */
+  --color-border-outline: var(--border);
+  --color-border-outline-variant: var(--border);
+}

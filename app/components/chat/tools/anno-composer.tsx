@@ -38,7 +38,7 @@ const AnnoComposer = ({
   return (
     <InputGroup
       className={cn(
-        "max-w-72 min-w-52 rounded-md bg-background shadow-sm ",
+        "max-w-72 min-w-52 rounded-md bg-background dark:bg-background shadow-sm ",
         className,
       )}
     >

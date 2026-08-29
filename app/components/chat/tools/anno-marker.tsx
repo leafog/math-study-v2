@@ -37,60 +37,40 @@ const AnnoMarker = ({
 }: AnnoMarkerProps) => {
   const { t } = useTranslation();
   const [isReadOnly, setIsReadOnly] = useState(initialReadOnly);
-  const containerRef = useClickAway<HTMLDivElement>(() =>
-    setIsReadOnly(true),
-  );
+  const containerRef = useClickAway<HTMLDivElement>(() => setIsReadOnly(true));
 
-  // 只读：仅显示 MessageCircle，点击进入编辑
-  if (isReadOnly) {
-    return (
-      <div
-        ref={containerRef}
-        className="absolute z-[3] cursor-pointer"
-        style={{ left: pos.iconPos.x, top: pos.iconPos.y }}
-        onClick={() => setIsReadOnly(false)}
-      >
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <MessageCircle className="text-primary" />
-          </TooltipTrigger>
-          <TooltipContent side="right">
-            {value || t("common.annoEmpty")}
-          </TooltipContent>
-        </Tooltip>
-      </div>
-    );
-  }
-
+  // 与 AnnoedMarker 布局一致：始终显示图标行(Tooltip + MessageCircle)，编辑态才显示输入框
   return (
     <div ref={containerRef}>
       <div
-        className="absolute z-[3] flex items-start gap-2"
+        className="absolute z-[3] cursor-pointer flex items-start gap-2"
         style={{ left: pos.iconPos.x, top: pos.iconPos.y }}
       >
-        <MessageCircle className="text-primary" />
-        <AnnoComposer
-          value={value}
-          onChange={onChange}
-          onSubmit={() => {
-            setIsReadOnly(true);
-            onSubmit();
-          }}
-        />
-      </div>
-      <div
-        className="pointer-events-none absolute z-[2]"
-        style={{
-          left: pos.box.left,
-          top: pos.box.top,
-          width: pos.box.w,
-          height: pos.box.h,
-        }}
-      >
-        <div className="absolute inset-x-0 top-0 border-t-2 border-dashed border-primary" />
-        <div className="absolute inset-x-0 bottom-0 border-b-2 border-dashed border-primary" />
-        <div className="absolute inset-y-0 left-0 border-l-2 border-dashed border-primary" />
-        <div className="absolute inset-y-0 right-0 border-r-2 border-dashed border-primary" />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <MessageCircle
+              className="shrink-0 text-primary"
+              fill="currentColor"
+              onClick={() => setIsReadOnly(false)}
+            />
+          </TooltipTrigger>
+          <TooltipContent side="right" className="max-w-64">
+            {/* 包在 span 里 truncate:flex 父级下 min-w-0 才收缩出省略号 */}
+            <span className="truncate min-w-0">
+              {value || t("common.annoEmpty")}
+            </span>
+          </TooltipContent>
+        </Tooltip>
+        {!isReadOnly && (
+          <AnnoComposer
+            value={value}
+            onChange={onChange}
+            onSubmit={() => {
+              setIsReadOnly(true);
+              onSubmit();
+            }}
+          />
+        )}
       </div>
     </div>
   );

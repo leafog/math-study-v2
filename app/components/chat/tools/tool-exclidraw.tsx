@@ -8,8 +8,10 @@ import {
   getCommonBounds,
   hashElementsVersion,
   sceneCoordsToViewportCoords,
+  exportToSvg,
 } from "@excalidraw/excalidraw";
 import "@excalidraw/excalidraw/index.css";
+import "./excalidraw-theme.css";
 import { useMouse } from "@uidotdev/usehooks";
 
 import type {
@@ -24,11 +26,26 @@ import { eq, and, queryOnce } from "@tanstack/react-db";
 import { toolDataColl } from "~/db/tdb-collections";
 import { useBoolean, useDebounceCallback } from "usehooks-ts";
 import { Button } from "~/components/ui/button";
-import { MessageCirclePlus } from "lucide-react";
+import { Badge } from "~/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "~/components/ui/alert-dialog";
+import { Eye, MessageCirclePlus, Trash, X } from "lucide-react";
 import extractTextFromImage from "~/lib/file/extract-text-from-image";
 
 import AnnoMarker from "./anno-marker";
+import AnnoedMarker from "./annoed-marker";
 import { useImmer } from "use-immer";
+import { useTranslation } from "react-i18next";
+import { cn } from "~/lib/utils";
 
 type AnnoIng = {
   selectedElementIds: {
@@ -45,10 +62,13 @@ type Box = {
 };
 
 type Annoed = {
-  box: Box;
+  bounds: [minX: number, minY: number, maxX: number, maxY: number];
+  svg: SVGElement;
+  text: string;
 };
 
 const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
+  const { t } = useTranslation();
   const apiRef = useRef<ExcalidrawImperativeAPI>(null);
   const { resolvedTheme } = useTheme();
   const [initialData, setInitialData] = useState();
@@ -59,6 +79,13 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
   const { value: isSelecting, setValue: setSelecting } = useBoolean(false);
   // 正在注释：点工具栏按钮开启/关闭
   const { value: isAnnotating, toggle: toggleAnnotating } = useBoolean(false);
+  // 外部"show all"：为 true 时所有已提交标注展开 svg 盒并打开 tooltip；
+  // 任一标注进入编辑态(showInput)时置回 false
+  const {
+    value: showAll,
+    toggle: toggleShowAll,
+    setFalse: closeShowAll,
+  } = useBoolean(false);
   const [mouse, exclidrawDivRef] = useMouse<HTMLDivElement>();
   const {
     value: annoIng,
@@ -66,7 +93,7 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
     setFalse: closeAnnoing,
   } = useBoolean(false);
   const [currAnno, setCurrAnno] = useState<AnnoIng>();
-  const [annos, setAnnos] = useImmer<AnnoIng[]>([]);
+  const [annos, setAnnos] = useImmer<Annoed[]>([]);
 
   const [scrollX, setScrollX] = useState<number>(0);
   const [scrollY, setScrollY] = useState<number>(0);
@@ -74,11 +101,52 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
   // 场景版本号(元素 versionNonce 的哈希)，元素移动/变化时更新，驱动标注框重算
   const [sceneVersion, setSceneVersion] = useState<number>(0);
 
-  const submitCurrAnno = useCallback(() => {
-    if (currAnno) {
-      setAnnos((draft) => {
-        draft.push(currAnno);
-      });
+  const exportSelected = useCallback(async () => {
+    const api = apiRef.current;
+    if (!api) return;
+    const appState = api.getAppState();
+    const selectedIds = Object.keys(appState.selectedElementIds);
+    if (selectedIds.length === 0) return;
+
+    const elements = api
+      .getSceneElements()
+      .filter((it) => appState.selectedElementIds[it.id]);
+    if (elements.length === 0) return;
+
+    // 主产物：SVG。exportPadding=0 让内容与场景 bounds 对齐，标记盒显示时与画布同大
+    const svg = await exportToSvg({
+      elements,
+      appState,
+      files: api.getFiles(),
+      exportPadding: 10,
+    });
+
+    return { svg };
+  }, []);
+
+  const submitCurrAnno = useCallback(async () => {
+    const api = apiRef.current;
+    if (!api) return;
+
+    if (currAnno && currAnnoViewPortPos) {
+      const info = await exportSelected();
+      if (info) {
+        const { svg } = info;
+        // 提交时把 exportPadding(10) 折进 bounds，盒子天然含留白，内容与选区居中对齐
+        const pad = 10;
+        const [minX, minY, maxX, maxY] = currAnnoViewPortPos.bounds;
+        setAnnos((draft) => {
+          draft.push({
+            bounds: [minX - pad, minY - pad, maxX + pad, maxY + pad],
+            text: currAnno.text,
+            svg,
+          });
+        });
+        api.updateScene({
+          appState: { selectedElementIds: {} },
+          captureUpdate: "NEVER",
+        });
+      }
     }
   }, [currAnno]);
 
@@ -115,27 +183,7 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
 
   // 导出选中的元素为 PNG blob 并下载。
   // 点击时实时读 appState.selectedElementIds(record),无需额外维护选中 state。
-  const exportSelected = useCallback(async () => {
-    const api = apiRef.current;
-    if (!api) return;
-    const appState = api.getAppState();
-    const selectedIds = Object.keys(appState.selectedElementIds);
-    if (selectedIds.length === 0) return;
 
-    const elements = api
-      .getSceneElements()
-      .filter((it) => appState.selectedElementIds[it.id]);
-    if (elements.length === 0) return;
-
-    const blob = await exportToBlob({
-      elements,
-      appState,
-      files: api.getFiles(),
-      mimeType: "image/png",
-      exportPadding: 10,
-    });
-    const text = await extractTextFromImage(blob);
-  }, []);
   const excalidrawAPI = useCallback((api: ExcalidrawImperativeAPI) => {
     apiRef.current = api;
   }, []);
@@ -158,27 +206,35 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
         (it) => annoItem.selectedElementIds[it.id],
       );
       if (selectedElements.length === 0) return;
-      const [minX, minY, maxX, maxY] = getCommonBounds(selectedElements);
-
+      const bounds = getCommonBounds(selectedElements);
+      const [minX, minY, maxX, maxY] = bounds;
+      // 与提交后一致：box/iconPos 用含 padding 的 bounds 换算，提交前后标记无跳变
+      const pad = 10;
+      const pMinX = minX - pad;
+      const pMinY = minY - pad;
+      const pMaxX = maxX + pad;
+      const pMaxY = maxY + pad;
       const iconPos = sceneCoordsToViewportCoords(
-        { sceneX: minX, sceneY: minY },
+        { sceneX: pMinX, sceneY: pMinY },
         {
           scrollX,
           scrollY,
           zoom: { value: zoom },
           offsetLeft: 0,
-          offsetTop: -40,
+          offsetTop: -30,
         },
       );
-      const box = {
+      const box: Box = {
         left: iconPos.x,
-        top: iconPos.y + 40,
-        w: (maxX - minX) * zoom,
-        h: (maxY - minY) * zoom,
+        top: iconPos.y + 30,
+        w: (pMaxX - pMinX) * zoom,
+        h: (pMaxY - pMinY) * zoom,
       };
       return {
         iconPos,
         box,
+        // 存储仍用原始 bounds，提交时统一 pad
+        bounds,
       };
     },
     [scrollX, scrollY, zoom, isAnnotating, sceneVersion],
@@ -188,22 +244,115 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
     return toAnnoViewPortPos(currAnno);
   }, [toAnnoViewPortPos, currAnno]);
 
-  const [a] = useState<{}[]>();
+  // 已提交标注：用定格的场景 bounds 换算视口位置，只跟 scroll/zoom，不随元素变化
+  const annoedToViewPortPos = useCallback(
+    (anno?: Annoed) => {
+      if (!anno) return;
+      const [minX, minY, maxX, maxY] = anno.bounds;
+      const iconPos = sceneCoordsToViewportCoords(
+        { sceneX: minX, sceneY: minY },
+        {
+          scrollX,
+          scrollY,
+          zoom: { value: zoom },
+          offsetLeft: 0,
+          offsetTop: -30,
+        },
+      );
+      const box: Box = {
+        left: iconPos.x,
+        top: iconPos.y + 30,
+        w: (maxX - minX) * zoom,
+        h: (maxY - minY) * zoom,
+      };
+      return { iconPos, box };
+    },
+    [scrollX, scrollY, zoom],
+  );
+
+  const hasAnnosAndAnnoIng = isAnnotating && annos.length > 0;
   return (
     <ToolContainer className="size-full grid grid-rows-[auto_1fr]">
-      <div className="h-12 flex items-center justify-between px-4">
-        <div>{annos.length}</div>
+      <div
+        className={cn(
+          "h-10 flex items-center justify-between px-4 ",
+          hasAnnosAndAnnoIng ? "bg-primary/20 dark:bg-primary/40" : "",
+        )}
+      >
+        <div className="flex gap-1">
+          {hasAnnosAndAnnoIng && (
+            <>
+              <Button variant={"ghost"} size="icon" onClick={toggleAnnotating}>
+                <X />
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant={"ghost"} size="icon">
+                    <Trash />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      {t("chat.deleteAnnoTitle")}
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {t("chat.deleteAnnoDesc")}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => setAnnos([])}>
+                      {t("common.delete")}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </>
+          )}
+        </div>
         <div>
-          <Button
-            variant={"ghost"}
-            size="icon-lg"
-            onClick={toggleAnnotating}
-            data-active={isAnnotating}
-          >
-            <MessageCirclePlus className={isAnnotating ? "text-primary" : ""} />
-          </Button>
+          {!isAnnotating && (
+            <Button
+              variant={"ghost"}
+              size={"icon"}
+              onClick={toggleAnnotating}
+              data-active={isAnnotating}
+            >
+              <MessageCirclePlus />
+            </Button>
+          )}
+          {isAnnotating && annos.length === 0 && (
+            <Button
+              variant={"outline"}
+              size={"default"}
+              onClick={toggleAnnotating}
+              data-active={isAnnotating}
+            >
+              <MessageCirclePlus
+                className={isAnnotating ? "text-primary" : ""}
+              />
+              <span className=" text-primary"> {t("chat.annotating")}</span>
+            </Button>
+          )}
+          {isAnnotating && annos.length > 0 && (
+            <div className="flex gap-2">
+              <Button
+                size="icon"
+                variant={showAll ? "default" : "outline"}
+                onClick={toggleShowAll}
+              >
+                <Eye />
+              </Button>
+              <Button variant={"default"}>
+                {t("chat.send")}
+                <Badge variant="secondary">{annos.length}</Badge>
+              </Button>
+            </div>
+          )}
         </div>
       </div>
+
       <div ref={exclidrawDivRef} className="relative overflow-hidden">
         <Excalidraw
           theme={resolvedTheme === "dark" ? "dark" : "light"}
@@ -220,20 +369,7 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
           initialData={initialData}
           gridModeEnabled
           excalidrawAPI={excalidrawAPI}
-        >
-          <MainMenu>
-            <MainMenu.Item
-              onClick={(e) => {
-                alert(e);
-              }}
-            >
-              12
-            </MainMenu.Item>
-          </MainMenu>
-          <Footer>
-            <Button>sd</Button>
-          </Footer>
-        </Excalidraw>
+        ></Excalidraw>
 
         {isAnnotating && currAnno && !isSelecting && currAnnoViewPortPos && (
           <AnnoMarker
@@ -246,25 +382,34 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
           />
         )}
 
-        {/* 已提交标注列表 */}
-        {annos.map((anno, i) => {
-          const pos = toAnnoViewPortPos(anno);
-          if (!pos) return null;
-          return (
-            <AnnoMarker
-              key={i}
-              pos={pos}
-              value={anno.text}
-              onChange={(v) =>
-                setAnnos((draft) => {
-                  draft[i].text = v;
-                })
-              }
-              onSubmit={() => {}}
-              initialReadOnly
-            />
-          );
-        })}
+        {isAnnotating && (
+          <>
+            {annos.map((anno, i) => {
+              const pos = annoedToViewPortPos(anno);
+              if (!pos) return null;
+              return (
+                <AnnoedMarker
+                  key={i}
+                  pos={pos}
+                  svg={anno.svg}
+                  value={anno.text}
+                  showAll={showAll}
+                  onShowInput={closeShowAll}
+                  onSubmit={(v) => {
+                    setAnnos((draft) => {
+                      draft[i].text = v;
+                    });
+                  }}
+                  onDelete={() => {
+                    setAnnos((draft) => {
+                      draft.splice(i, 1);
+                    });
+                  }}
+                />
+              );
+            })}
+          </>
+        )}
       </div>
     </ToolContainer>
   );
