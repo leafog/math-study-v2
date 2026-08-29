@@ -40,6 +40,7 @@ export const llmPredict = async (blob: Blob): Promise<string> => {
   );
   const dataUrl = await blobToDataUrl(blob);
   const { text } = await generateText({
+    reasoning: "none",
     model,
     messages: [
       {

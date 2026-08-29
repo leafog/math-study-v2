@@ -73,7 +73,9 @@
       "Bash(node node_modules/@cortex-js/compute-engine/dist/esm-min/cli/epsil.js --help)",
       "Bash(node -e \"const p=require\\('./node_modules/@tanstack/react-db/package.json'\\); console.log\\(JSON.stringify\\(p.exports||p.types||p.main,null,1\\)\\)\")",
       "Bash(grep -rn \"export function toLabelledComment\\\\|export const toLabelledComment\" app/lib/agent/markdown-utils.ts; sed -n '/toLabelledComment/,/^}/p' app/lib/agent/markdown-utils.ts | head -30)",
-      "Bash(grep -iv \"\\\\.join\\(\\\\`\\\\|\\\\.join\\('\\\\|keys.join\\\\|clauses.join\\\\|args.join\\\\|joinedRefs\\\\|joinOptions\")"
+      "Bash(grep -iv \"\\\\.join\\(\\\\`\\\\|\\\\.join\\('\\\\|keys.join\\\\|clauses.join\\\\|args.join\\\\|joinedRefs\\\\|joinOptions\")",
+      "Bash(grep -o \"exportBackground[^,;]\\\\{0,80\\\\}\" node_modules/@excalidraw/excalidraw/dist/dev/index.js)",
+      "Bash(grep -o \"createElementNS[^\\)]\\\\{0,40\\\\}\" node_modules/@excalidraw/excalidraw/dist/dev/index.js)"
     ],
     "additionalDirectories": [
       "/Users/yanfeiwuji/work/no1/math-study-v2/app/locales",
