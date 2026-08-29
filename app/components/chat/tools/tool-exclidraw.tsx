@@ -39,13 +39,17 @@ import {
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
 import { Eye, MessageCirclePlus, Trash, X } from "lucide-react";
-import extractTextFromImage from "~/lib/file/extract-text-from-image";
 
 import AnnoMarker from "./anno-marker";
 import AnnoedMarker from "./annoed-marker";
-import { useImmer } from "use-immer";
 import { useTranslation } from "react-i18next";
 import { cn } from "~/lib/utils";
+import {
+  useChatPromptInput,
+  useChatTools,
+} from "~/hooks/chat/active-chat/hooks";
+import { svgToXmlString } from "~/lib/xml-utils";
+import { useEvent } from "~/event/use-event";
 
 type AnnoIng = {
   selectedElementIds: {
@@ -61,12 +65,6 @@ type Box = {
   h: number;
 };
 
-type Annoed = {
-  bounds: [minX: number, minY: number, maxX: number, maxY: number];
-  svg: SVGElement;
-  text: string;
-};
-
 const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
   const { t } = useTranslation();
   const apiRef = useRef<ExcalidrawImperativeAPI>(null);
@@ -77,10 +75,17 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
   }>({});
 
   const { value: isSelecting, setValue: setSelecting } = useBoolean(false);
-  // 正在注释：点工具栏按钮开启/关闭
+
   const { value: isAnnotating, toggle: toggleAnnotating } = useBoolean(false);
-  // 外部"show all"：为 true 时所有已提交标注展开 svg 盒并打开 tooltip；
-  // 任一标注进入编辑态(showInput)时置回 false
+
+  const chatPromptInput = useChatPromptInput();
+  const annos =
+    chatPromptInput.use.annotationsByTool((byTool) => byTool[id]) ?? [];
+  const addAnnotation = chatPromptInput.use.addAnnotation();
+  const updateAnnotation = chatPromptInput.use.updateAnnotation();
+  const removeAnnotation = chatPromptInput.use.removeAnnotation();
+  const clearAnnotations = chatPromptInput.use.clearAnnotations();
+
   const {
     value: showAll,
     toggle: toggleShowAll,
@@ -93,13 +98,16 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
     setFalse: closeAnnoing,
   } = useBoolean(false);
   const [currAnno, setCurrAnno] = useState<AnnoIng>();
-  const [annos, setAnnos] = useImmer<Annoed[]>([]);
 
   const [scrollX, setScrollX] = useState<number>(0);
   const [scrollY, setScrollY] = useState<number>(0);
   const [zoom, setZoom] = useState<Zoom["value"]>(1 as Zoom["value"]);
-  // 场景版本号(元素 versionNonce 的哈希)，元素移动/变化时更新，驱动标注框重算
+
   const [sceneVersion, setSceneVersion] = useState<number>(0);
+  useEvent("anno-click", ({ toolId, annoIdx }) => {
+    if (toolId !== id) return;
+    console.log("id", id);
+  });
 
   const exportSelected = useCallback(async () => {
     const api = apiRef.current;
@@ -108,12 +116,21 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
     const selectedIds = Object.keys(appState.selectedElementIds);
     if (selectedIds.length === 0) return;
 
-    const elements = api
+    const selectElement = api
       .getSceneElements()
       .filter((it) => appState.selectedElementIds[it.id]);
-    if (elements.length === 0) return;
 
-    // 主产物：SVG。exportPadding=0 让内容与场景 bounds 对齐，标记盒显示时与画布同大
+    if (selectElement.length === 0) return;
+    const withBound = selectElement.flatMap((it) => [
+      it.id,
+      ...(it.boundElements?.map((it) => it.id) ?? []),
+    ]);
+    const withBoundSet = new Set(withBound);
+
+    const elements = api
+      .getSceneElements()
+      .filter((it) => withBoundSet.has(it.id));
+
     const svg = await exportToSvg({
       elements,
       appState,
@@ -132,15 +149,16 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
       const info = await exportSelected();
       if (info) {
         const { svg } = info;
+        if (!svg) return;
+        const svgXmlStr = svgToXmlString(svg);
         // 提交时把 exportPadding(10) 折进 bounds，盒子天然含留白，内容与选区居中对齐
         const pad = 10;
         const [minX, minY, maxX, maxY] = currAnnoViewPortPos.bounds;
-        setAnnos((draft) => {
-          draft.push({
-            bounds: [minX - pad, minY - pad, maxX + pad, maxY + pad],
-            text: currAnno.text,
-            svg,
-          });
+        addAnnotation(id, {
+          type: "svg",
+          bounds: [minX - pad, minY - pad, maxX + pad, maxY + pad],
+          text: currAnno.text,
+          svgXmlStr,
         });
         api.updateScene({
           appState: { selectedElementIds: {} },
@@ -148,7 +166,7 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
         });
       }
     }
-  }, [currAnno]);
+  }, [currAnno, addAnnotation, id]);
 
   useEffect(() => {
     const load = async () => {
@@ -208,7 +226,8 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
       if (selectedElements.length === 0) return;
       const bounds = getCommonBounds(selectedElements);
       const [minX, minY, maxX, maxY] = bounds;
-      // 与提交后一致：box/iconPos 用含 padding 的 bounds 换算，提交前后标记无跳变
+      // 与提交后一致：box/iconPos 用含 padding 的 bounds 换算，提交前后标记无跳变。
+      // icon 与 box 同源同定位，避免提交时 box 看起来下移
       const pad = 10;
       const pMinX = minX - pad;
       const pMinY = minY - pad;
@@ -246,7 +265,7 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
 
   // 已提交标注：用定格的场景 bounds 换算视口位置，只跟 scroll/zoom，不随元素变化
   const annoedToViewPortPos = useCallback(
-    (anno?: Annoed) => {
+    (anno?: { bounds: [number, number, number, number] }) => {
       if (!anno) return;
       const [minX, minY, maxX, maxY] = anno.bounds;
       const iconPos = sceneCoordsToViewportCoords(
@@ -302,7 +321,7 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => setAnnos([])}>
+                    <AlertDialogAction onClick={() => clearAnnotations(id)}>
                       {t("common.delete")}
                     </AlertDialogAction>
                   </AlertDialogFooter>
@@ -385,25 +404,23 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
         {isAnnotating && (
           <>
             {annos.map((anno, i) => {
+              // marker 内联渲染 svg，仅对 svg 类型生效；image 类型走 hover card 的 img
+              if (anno.type !== "svg") return null;
               const pos = annoedToViewPortPos(anno);
               if (!pos) return null;
               return (
                 <AnnoedMarker
                   key={i}
                   pos={pos}
-                  svg={anno.svg}
+                  svgXmlStr={anno.svgXmlStr ?? ""}
                   value={anno.text}
                   showAll={showAll}
                   onShowInput={closeShowAll}
                   onSubmit={(v) => {
-                    setAnnos((draft) => {
-                      draft[i].text = v;
-                    });
+                    updateAnnotation(id, i, { text: v });
                   }}
                   onDelete={() => {
-                    setAnnos((draft) => {
-                      draft.splice(i, 1);
-                    });
+                    removeAnnotation(id, i);
                   }}
                 />
               );

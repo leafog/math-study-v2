@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useClickAway } from "@uidotdev/usehooks";
 import { MessageCircle, Trash } from "lucide-react";
@@ -15,7 +15,7 @@ import { cn } from "~/lib/utils";
 type AnnoedMarkerProps = {
   pos: AnnoViewportPos;
   /** 被注释区域的 SVG 元素 */
-  svg: SVGElement;
+  svgXmlStr: string;
   value: string;
   onSubmit: (value: string) => void;
   /** 删除本条标注（从列表里删掉自己） */
@@ -33,7 +33,7 @@ type AnnoedMarkerProps = {
  */
 const AnnoedMarker = ({
   pos,
-  svg,
+  svgXmlStr,
   value,
   onSubmit,
   onDelete,
@@ -46,7 +46,7 @@ const AnnoedMarker = ({
     setFalse: closeInput,
     toggle: toggleInput,
   } = useBoolean();
-  // tooltip 的悬停态：showAll 强制打开时忽略，由外部控制
+
   const [hoverOpen, setHoverOpen] = useState(false);
   const containerRef = useClickAway<HTMLDivElement>(() => closeInput());
   const svgBoxRef = useRef<HTMLDivElement>(null);
@@ -73,20 +73,9 @@ const AnnoedMarker = ({
       setText(value);
     }
   }, [showInput]);
-  // 把 svg 元素挂进盒子里显示。用 ref 回调：div 一挂载就同步塞入，
-  // 不依赖 effect 时序（svg 盒只在编辑态才挂载）
-  const setSvgBox = useCallback(
-    (el: HTMLDivElement | null) => {
-      svgBoxRef.current = el;
-      if (el && svg) {
-        el.replaceChildren(svg);
-      }
-    },
-    [svg],
-  );
+
   const onInnerSubmit = () => {
     onSubmit(text);
-
     closeInput();
   };
 
@@ -174,7 +163,6 @@ const AnnoedMarker = ({
       {showBox && (
         <>
           <div
-            ref={setSvgBox}
             className="pointer-events-none absolute z-[2]
              ring-1 ring-card/80 dark:ring-primary/60 shadow-lg
             flex items-center justify-center overflow-hidden rounded-lg
@@ -185,6 +173,9 @@ const AnnoedMarker = ({
               top: pos.box.top,
               width: pos.box.w,
               height: pos.box.h,
+            }}
+            dangerouslySetInnerHTML={{
+              __html: svgXmlStr,
             }}
           ></div>
           {/* 上面的遮盖层：盖在 svg 上，统一着主色 */}

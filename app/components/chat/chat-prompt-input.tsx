@@ -1,5 +1,9 @@
 import { useTranslation } from "react-i18next";
-import { useActiveChat, useActiveChatHelpers } from "~/hooks/chat/active-chat";
+import {
+  useActiveChat,
+  useActiveChatHelpers,
+  useChatTools,
+} from "~/hooks/chat/active-chat";
 import {
   PromptInput,
   PromptInputActionAddAttachments,
@@ -11,15 +15,8 @@ import {
   PromptInputButton,
   PromptInputFooter,
   PromptInputHeader,
-  PromptInputHoverCard,
-  PromptInputHoverCardContent,
-  PromptInputHoverCardTrigger,
   PromptInputProvider,
   PromptInputSubmit,
-  PromptInputTab,
-  PromptInputTabBody,
-  PromptInputTabItem,
-  PromptInputTabLabel,
   PromptInputTextarea,
   PromptInputTools,
   usePromptInputAttachments,
@@ -91,21 +88,14 @@ import "yet-another-react-lightbox/plugins/counter.css";
 import "yet-another-react-lightbox/styles.css";
 import { type AttachmentTask } from "~/db/db-zod-schema";
 import { useBoolean } from "usehooks-ts";
-import { AtSignIcon, ImageIcon, PlusIcon, X, XIcon } from "lucide-react";
+import { ImageIcon, PlusIcon, X, XIcon } from "lucide-react";
 import { bus } from "~/event/event-bus";
 import { useSync } from "~/hooks/use-sync";
 import BlobUrlPreview from "../common-ui/blob-url-preview";
 import { extractFileText } from "~/lib/file";
 
 import { useImmer } from "use-immer";
-import {
-  Item,
-  ItemActions,
-  ItemContent,
-  ItemDescription,
-  ItemMedia,
-  ItemTitle,
-} from "../ui/item";
+import AnnoHoverCard from "./tools/anno-hover-card";
 
 /** 附件文本抽取任务查询：按附件 id 过滤，updated_at 倒序（最近一次在前） */
 const buildAttachmentTasksQuery = (q: InitialQueryBuilder, fileIds: string[]) =>
@@ -368,7 +358,7 @@ const DisplayAttachments = () => {
               <AttachmentTrigger
                 aria-label="Preview research-summary.pdf"
                 onClick={() => {
-                  bus.emit("open:tool", {
+                  bus.emit("open:tool:by-ref-id", {
                     kind: "showAttachment",
                     title: filename ?? "",
                     refId: realFileId,
@@ -444,7 +434,21 @@ const PruePromptInput = () => {
   const { textInput } = usePromptInputController();
   const textInputValue = useChatPromptInput().use.textInputValue();
   const setTextInputValue = useChatPromptInput().use.setTextInputValue();
+  // 按工具分组的标注，hover card 每个工具一个 Tab
+  const annotationsByTool = useChatPromptInput().use.annotationsByTool();
+  const removeAnnotation = useChatPromptInput().use.removeAnnotation();
+
   const setSuggestions = useChatPromptSuggestionStore.use.setSuggestions();
+
+  const { chatToolInstancesMap } = useChatTools();
+
+  const {} = useLiveQuery(
+    (q) => {
+      const toolIds = annotationsByTool;
+      return undefined;
+    },
+    [annotationsByTool],
+  );
 
   useSync(textInput.value, setTextInputValue);
   useEffect(() => {
@@ -579,7 +583,6 @@ const PruePromptInput = () => {
     });
 
     console.log(endMessage);
-
     sendMessage(endMessage);
     clearProblemIds();
     setTextInputValue("");
@@ -610,41 +613,13 @@ const PruePromptInput = () => {
       className="bg-background"
     >
       <PromptInputHeader>
-        <PromptInputHoverCard>
-          <PromptInputHoverCardTrigger>
-            <PromptInputButton>
-              <AtSignIcon /> 200 条注释
-            </PromptInputButton>
-          </PromptInputHoverCardTrigger>
-          <PromptInputHoverCardContent>
-            <PromptInputTab>
-              <PromptInputTabBody>
-                <PromptInputTabItem>
-                  <Item size="xs" className="p-0">
-                    <ItemMedia variant="image">
-                      <img
-                        src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' fill='%23e2e8f0'/%3E%3Ctext x='50%25' y='50%25' fill='%2394a3b8' font-size='10' text-anchor='middle' dominant-baseline='middle'%3Eimg%3C/text%3E%3C/svg%3E"
-                        alt="placeholder"
-                      />
-                    </ItemMedia>
-                    <ItemContent>
-                      <ItemTitle>123</ItemTitle>
-                    </ItemContent>
-                    <ItemActions>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="rounded-full"
-                      >
-                        <PlusIcon />
-                      </Button>
-                    </ItemActions>
-                  </Item>
-                </PromptInputTabItem>
-              </PromptInputTabBody>
-            </PromptInputTab>
-          </PromptInputHoverCardContent>
-        </PromptInputHoverCard>
+        {!isEmpty(annotationsByTool) && (
+          <AnnoHoverCard
+            annotationsByTool={annotationsByTool ?? {}}
+            toolsMap={chatToolInstancesMap}
+            onRemove={removeAnnotation}
+          />
+        )}
 
         {practiceProblems.length > 0 && (
           <ProblemsAttachmentList

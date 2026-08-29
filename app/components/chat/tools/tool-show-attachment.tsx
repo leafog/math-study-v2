@@ -79,7 +79,6 @@ const ShowAttachmentPanel = ({ chatId, id, refId }: ToolPanelProps) => {
     [att],
   );
   const [imgScale, setImgScale] = useState<string>("auto");
-  //const [attShowRef, { width, height }] = useMeasure();
   const attShowRef = useRef<HTMLDivElement>(null);
 
   const { width = 0, height = 0 } = useResizeObserver({

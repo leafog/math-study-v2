@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo } from "react";
-import { eq, useLiveQuery } from "@tanstack/react-db";
+import { act, useCallback, useEffect, useMemo } from "react";
+import { and, eq, inArray, queryOnce, useLiveQuery } from "@tanstack/react-db";
 import {
   chatToolInstanceColl,
   chatToolsBarStateColl,
@@ -11,23 +11,15 @@ import { hasToolKind } from "~/components/chat/tools";
 import { keyBy, without } from "lodash-es";
 import { moveToEnd } from "~/lib/coll-utils";
 import { useEvent } from "~/event/use-event";
+import {
+  ChatToolInstanceSchema,
+  type ChatToolInstance,
+} from "~/db/db-zod-schema";
 
 export const useChatToolsManager = (
   chatId: string,
   onOpenBefore?: (kind: string, title?: string) => void,
 ) => {
-  const { data: chatToolInstances = [] } = useLiveQuery(
-    {
-      query: (q) =>
-        q
-          .from({ chatToolInstanceColl })
-          .where(({ chatToolInstanceColl }) =>
-            eq(chatToolInstanceColl.chat_id, chatId),
-          ),
-    },
-    [chatId],
-  );
-
   const { data: chatToolsBarState } = useLiveQuery(
     {
       query: (q) =>
@@ -41,19 +33,32 @@ export const useChatToolsManager = (
     [chatId],
   );
 
+  const { data: chatToolInstances = [] } = useLiveQuery(
+    (q) => {
+      if (!chatToolsBarState?.tool_order) return undefined;
+      return q
+        .from({ chatToolInstanceColl })
+        .where(({ chatToolInstanceColl }) =>
+          eq(chatToolInstanceColl.chat_id, chatId),
+        );
+    },
+    [chatId],
+  );
+
+  const chatToolInstancesMap = useMemo(() => {
+    return keyBy(chatToolInstances, "id");
+  }, [chatToolInstances]);
+
   const { active_id, tool_order, actived_history } = chatToolsBarState ?? {};
   const [mountedToolsIds, setMountedToolsIds] = useImmer(new Set());
-
-  useEffect(() => {
-    setMountedToolsIds((it) => {
-      if (active_id) it.add(active_id);
-    });
-  }, [active_id]);
 
   const active = useCallback(
     async (instanceId: string) => {
       const current = chatToolsBarStateColl.get(chatId);
-      if (current) {
+      setMountedToolsIds((draft) => {
+        draft.add(instanceId);
+      });
+      if (current && current.active_id !== instanceId) {
         chatToolsBarStateColl.update(chatId, (it) => {
           it.active_id = instanceId;
           it.actived_history = moveToEnd(it.actived_history, instanceId);
@@ -62,6 +67,7 @@ export const useChatToolsManager = (
     },
     [chatId],
   );
+
   const availableToolInstances = useMemo(
     () => chatToolInstances.filter(({ kind }) => hasToolKind(kind)),
     [chatToolInstances],
@@ -73,7 +79,9 @@ export const useChatToolsManager = (
 
   const tools = useMemo(
     () =>
-      Array.from(tool_order ?? []).map((it) => availableToolInstancesMap[it]),
+      Array.from(tool_order ?? [])
+        .map((it) => availableToolInstancesMap[it])
+        .filter(Boolean),
     [tool_order, availableToolInstancesMap],
   );
 
@@ -82,16 +90,105 @@ export const useChatToolsManager = (
     [tools, mountedToolsIds],
   );
 
+  const openByToolId = useCallback(
+    (toolId: string) => {
+      const inBarInstance = mountedToolsIds.has(toolId);
+      if (inBarInstance) {
+        active(toolId);
+        return;
+      }
+
+      const instance = toolDataColl.get(toolId);
+      console.log(toolId);
+      console.log(instance);
+      if (!instance) return;
+
+      const instanceId = instance.id;
+      const chatToolInstance = ChatToolInstanceSchema.parse(instance);
+
+      console.log(instance);
+
+      chatToolInstanceColl.insert({
+        ...chatToolInstance,
+        created_at: new Date(),
+      });
+
+      const chatToolsBarState = chatToolsBarStateColl.get(chatId);
+
+      if (!chatToolsBarState) return;
+      chatToolsBarStateColl.update(chatToolsBarState.id, (draft) => {
+        draft.tool_order.push(instanceId);
+      });
+      active(instanceId);
+    },
+    [chatId, mountedToolsIds],
+  );
+
+  const openByRefId = useCallback(
+    async ({
+      kind,
+      title,
+      refId,
+    }: {
+      kind: string;
+      title?: string;
+      refId: string;
+    }) => {
+      onOpenBefore?.(kind, title);
+      const inBar = chatToolInstances.find((it) => it.ref_id === refId);
+
+      if (inBar) {
+        active(inBar.id);
+        return;
+      }
+
+      const inDbInstance = await queryOnce((q) =>
+        q
+          .from({ tool: toolDataColl })
+          .where(({ tool }) =>
+            and(
+              eq(tool.kind, kind),
+              eq(tool.ref_id, refId),
+              eq(tool.chat_id, chatId),
+            ),
+          )
+          .findOne(),
+      );
+
+      if (inDbInstance) {
+        const toolInstance = ChatToolInstanceSchema.parse(inDbInstance);
+        chatToolInstanceColl.insert({
+          ...toolInstance,
+          created_at: new Date(),
+        });
+
+        const chatToolsBarState = chatToolsBarStateColl.get(chatId);
+
+        if (!chatToolsBarState) return;
+        chatToolsBarStateColl.update(chatToolsBarState.id, (draft) => {
+          draft.tool_order.push(inDbInstance.id);
+        });
+
+        active(inDbInstance.id);
+        return;
+      }
+      open(kind, title, refId);
+    },
+    [onOpenBefore, chatId],
+  );
+
   const open = useCallback(
     async (kind: string, title?: string, refId?: string) => {
       onOpenBefore?.(kind, title);
-      const instanceId = genId();
+
       const now = new Date();
+      const realTitle = title ?? kind;
+      const instanceId = genId();
       chatToolInstanceColl.insert({
         id: instanceId,
         chat_id: chatId,
         kind,
-        title: title ?? kind,
+        title: realTitle,
         ref_id: refId,
         data: "",
         created_at: now,
@@ -101,9 +198,13 @@ export const useChatToolsManager = (
         id: instanceId,
         chat_id: chatId,
         kind: kind,
+        ref_id: refId,
+        data: "",
+        title: realTitle,
         created_at: now,
         updated_at: now,
       });
+
       const chatToolsBarState = chatToolsBarStateColl.get(chatId);
       if (chatToolsBarState) {
         chatToolsBarStateColl.update(chatToolsBarState.id, (draft) => {
@@ -114,21 +215,21 @@ export const useChatToolsManager = (
     },
     [chatId, onOpenBefore],
   );
+  useEvent("active:tool", ({ toolId }) => {
+    active(toolId);
+  });
 
-  useEvent("open:tool", ({ kind, title, refId }) => {
-    // @TODO 打开了 聚焦
-    const instance = chatToolInstances.find(
-      (it) => it.kind === kind && it.ref_id === refId,
-    );
-    if (instance) {
-      active(instance.id);
-    } else {
-      open(kind, title, refId);
-    }
+  useEvent("open:tool:by-ref-id", ({ kind, title, refId }) => {
+    openByRefId({ kind, title, refId });
+  });
+
+  useEvent("open:tool:by-tool-id", ({ toolId }) => {
+    openByToolId(toolId);
   });
 
   const close = async (instanceId: string) => {
     chatToolInstanceColl.delete(instanceId);
+
     setMountedToolsIds((it) => {
       it.delete(instanceId);
     });
@@ -162,6 +263,8 @@ export const useChatToolsManager = (
 
   const result = {
     tools,
+    chatToolInstancesMap,
+    toolsMap: availableToolInstancesMap,
     hasTools,
     open,
     close,

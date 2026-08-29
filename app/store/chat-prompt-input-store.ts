@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import { combine, createJSONStorage, persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
+import { immer } from "zustand/middleware/immer";
 import QuickLRU from "quick-lru";
 
 import { createSelectors } from "./create-selectors";
@@ -12,12 +13,27 @@ type CurrentModel = {
   model_name: string;
 };
 
+export type AnnotationType = "svg" | "image";
+
+export type Annotation = {
+  /** 标注类型：svg 存 XML 字符串，image 存可直接渲染的图片 URL */
+  type: AnnotationType;
+  bounds: [minX: number, minY: number, maxX: number, maxY: number];
+  text: string;
+  /** svg 类型：XML 字符串 */
+  svgXmlStr?: string;
+  /** image 类型：可直接用于 <img src> 的 URL（data/blob） */
+  imageUrl?: string;
+};
+
 type ChatPromptInputState = {
   textInputValue: string;
   fileIds: string[];
   hasAny: boolean;
   problemIds: string[];
   hasProblems: boolean;
+  /** 按 toolId 隔离的标注：每个工具一份标注列表 */
+  annotationsByTool: Record<string, Annotation[]>;
   currentModel: CurrentModel | null;
   reasoning: LLMreasoning;
 };
@@ -37,6 +53,22 @@ type ChatPromptInputAction = {
   addProblemIds: (ids: string | string[]) => void;
   removeProblemId: (id: string) => void;
   clearProblemIds: () => void;
+
+  /** 整体替换某个 tool 的标注 */
+  setAnnotations: (toolId: string, annos: Annotation[]) => void;
+  /** 往某个 tool 追加一条标注 */
+  addAnnotation: (toolId: string, anno: Annotation) => void;
+  /** 删除某个 tool 第 index 条标注 */
+  removeAnnotation: (toolId: string, index: number) => void;
+  /** 更新某个 tool 第 index 条标注（部分字段合并） */
+  updateAnnotation: (
+    toolId: string,
+    index: number,
+    anno: Partial<Annotation>,
+  ) => void;
+  /** 清空某个 tool 的标注；不传 toolId 时清空全部 */
+  clearAnnotations: (toolId?: string) => void;
+
   reset: () => void;
 };
 
@@ -45,6 +77,7 @@ const chatPromptInputStateDefault: ChatPromptInputState = {
   fileIds: [],
   hasAny: false,
   problemIds: [],
+  annotationsByTool: {},
   hasProblems: false,
   currentModel: null,
   reasoning: "none",
@@ -54,91 +87,125 @@ const chatPromptInputStateDefault: ChatPromptInputState = {
 const computeHasAny = (
   state: Pick<
     ChatPromptInputState,
-    "textInputValue" | "fileIds" | "problemIds"
+    "textInputValue" | "fileIds" | "problemIds" | "annotationsByTool"
   >,
 ): boolean => {
-  console.log(state.textInputValue, "0000");
   return (
     state.textInputValue !== "" ||
     state.fileIds.length > 0 ||
-    state.problemIds.length > 0
+    state.problemIds.length > 0 ||
+    Object.values(state.annotationsByTool).some((list) => list.length > 0)
   );
 };
 
+type ChatPromptInputStoreState = ChatPromptInputState & ChatPromptInputAction;
+
 const chatPromptInputStoreCreator = (init: ChatPromptInputState) =>
-  combine<ChatPromptInputState, ChatPromptInputAction>({ ...init }, (set) => ({
+  immer<ChatPromptInputStoreState>((set) => ({
+    ...init,
     setTextInputValue: (textInputValue) =>
-      set((state) => ({
-        textInputValue,
-        hasAny: computeHasAny({ ...state, textInputValue }),
-      })),
-    setCurrentModel: (currentModel) => set({ currentModel }),
-    setReasoning: (reasoning) => set({ reasoning }),
+      set((state) => {
+        state.textInputValue = textInputValue;
+        state.hasAny = computeHasAny(state);
+      }),
+    setCurrentModel: (currentModel) =>
+      set((state) => {
+        state.currentModel = currentModel;
+      }),
+    setReasoning: (reasoning) =>
+      set((state) => {
+        state.reasoning = reasoning;
+      }),
     setFileIds: (ids) =>
       set((state) => {
-        const fileIds = ids;
-        return { fileIds, hasAny: computeHasAny({ ...state, fileIds }) };
+        state.fileIds = ids;
+        state.hasAny = computeHasAny(state);
       }),
     addFileIds: (ids) =>
       set((state) => {
         const list = Array.isArray(ids) ? ids : [ids];
-        const fileIds = Array.from(new Set([...state.fileIds, ...list]));
-        return { fileIds, hasAny: computeHasAny({ ...state, fileIds }) };
+        state.fileIds = Array.from(new Set([...state.fileIds, ...list]));
+        state.hasAny = computeHasAny(state);
       }),
     removeFileId: (id) =>
       set((state) => {
-        const fileIds = state.fileIds.filter((fileId) => fileId !== id);
-        return { fileIds, hasAny: computeHasAny({ ...state, fileIds }) };
+        state.fileIds = state.fileIds.filter((fileId) => fileId !== id);
+        state.hasAny = computeHasAny(state);
       }),
     clearFileIds: () =>
       set((state) => {
-        const fileIds: string[] = [];
-        return { fileIds, hasAny: computeHasAny({ ...state, fileIds }) };
+        state.fileIds = [];
+        state.hasAny = computeHasAny(state);
       }),
     clearTextInput: () =>
       set((state) => {
-        const textInputValue = "";
-        return {
-          textInputValue,
-          hasAny: computeHasAny({ ...state, textInputValue }),
-        };
+        state.textInputValue = "";
+        state.hasAny = computeHasAny(state);
       }),
     addProblemIds: (ids) =>
       set((state) => {
         const list = Array.isArray(ids) ? ids : [ids];
-        const problemIds = Array.from(new Set([...state.problemIds, ...list]));
-        return {
-          problemIds,
-          hasProblems: problemIds.length > 0,
-          hasAny: computeHasAny({ ...state, problemIds }),
-        };
+        state.problemIds = Array.from(new Set([...state.problemIds, ...list]));
+        state.hasProblems = state.problemIds.length > 0;
+        state.hasAny = computeHasAny(state);
       }),
     removeProblemId: (id) =>
       set((state) => {
-        const problemIds = state.problemIds.filter((it) => it !== id);
-        return {
-          problemIds,
-          hasProblems: problemIds.length > 0,
-          hasAny: computeHasAny({ ...state, problemIds }),
-        };
+        state.problemIds = state.problemIds.filter((it) => it !== id);
+        state.hasProblems = state.problemIds.length > 0;
+        state.hasAny = computeHasAny(state);
       }),
     setProblemIds: (ids) =>
       set((state) => {
-        const problemIds = Array.from(new Set(ids));
-        return {
-          problemIds,
-          hasProblems: problemIds.length > 0,
-          hasAny: computeHasAny({ ...state, problemIds }),
-        };
+        state.problemIds = Array.from(new Set(ids));
+        state.hasProblems = state.problemIds.length > 0;
+        state.hasAny = computeHasAny(state);
       }),
     clearProblemIds: () =>
       set((state) => {
-        const problemIds: string[] = [];
-        return {
-          problemIds,
-          hasProblems: false,
-          hasAny: computeHasAny({ ...state, problemIds }),
-        };
+        state.problemIds = [];
+        state.hasProblems = false;
+        state.hasAny = computeHasAny(state);
+      }),
+    setAnnotations: (toolId, annos) =>
+      set((state) => {
+        state.annotationsByTool[toolId] = annos;
+        state.hasAny = computeHasAny(state);
+      }),
+    addAnnotation: (toolId, anno) =>
+      set((state) => {
+        const list = state.annotationsByTool[toolId] ?? [];
+        state.annotationsByTool[toolId] = [...list, anno];
+        state.hasAny = computeHasAny(state);
+      }),
+    removeAnnotation: (toolId, index) =>
+      set((state) => {
+        const list = state.annotationsByTool[toolId] ?? [];
+        const next = list.filter((_, i) => i !== index);
+        // 删空后直接把 key 也删掉，避免残留空列表（isEmpty 才能判空）
+        if (next.length === 0) {
+          delete state.annotationsByTool[toolId];
+        } else {
+          state.annotationsByTool[toolId] = next;
+        }
+        state.hasAny = computeHasAny(state);
+      }),
+    updateAnnotation: (toolId, index, anno) =>
+      set((state) => {
+        const list = state.annotationsByTool[toolId] ?? [];
+        state.annotationsByTool[toolId] = list.map((it, i) =>
+          i === index ? { ...it, ...anno } : it,
+        );
+        state.hasAny = computeHasAny(state);
+      }),
+    clearAnnotations: (toolId) =>
+      set((state) => {
+        if (toolId) {
+          state.annotationsByTool[toolId] = [];
+        } else {
+          state.annotationsByTool = {};
+        }
+        state.hasAny = computeHasAny(state);
       }),
     reset: () => set(chatPromptInputStateDefault),
   }));

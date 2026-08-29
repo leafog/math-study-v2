@@ -588,7 +588,9 @@ export const ToolDataSchema = z.object({
   id: z.string(),
   chat_id: z.string().nullish(),
   kind: z.string().nullable().optional(),
+  title: z.string().nullable(),
   data: z.string().nullable().optional(),
+  ref_id: z.string().optional(),
   created_at: z.date(),
   updated_at: z.date(),
 });

@@ -13,10 +13,22 @@ export type AppEvents = {
   "topic:in-chat-view-topic": string;
   "push-prompt-input": string;
   "image:show-light-box": string;
-  "open:tool": {
+
+  "open:tool:by-ref-id": {
     kind: ToolKind;
-    title: string;
+    title?: string;
     refId: string;
+  };
+  "open:tool:by-tool-id": {
+    toolId: string;
+  };
+
+  "active:tool": {
+    toolId: string;
+  };
+  "anno-click": {
+    toolId: string;
+    annoIdx: number;
   };
   "chat:create:by-open-tool": void;
 };

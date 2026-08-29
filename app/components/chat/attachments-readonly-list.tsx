@@ -33,7 +33,7 @@ const AttachmentItemMedia = ({
       </AttachmentMedia>
       <AttachmentTrigger
         onClick={(e) => {
-          bus.emit("open:tool", {
+          bus.emit("open:tool:by-ref-id", {
             kind: "showAttachment",
             refId: attachment.id,
             title: attachment?.meta_data?.origin_filename ?? "",

@@ -2,6 +2,7 @@
   "common": {
     "loading": "加载中...",
     "annoEmpty": "（空标注）",
+    "annoCount": "{{count}} 条注释",
     "error": "出错了",
     "save": "保存",
     "cancel": "取消",
