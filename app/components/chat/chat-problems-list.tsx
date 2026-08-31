@@ -7,11 +7,7 @@ import {
   PinOffIcon,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import {
-  useActiveChat,
-  useActiveChatHelpers,
-  useChatProblems,
-} from "~/hooks/chat/active-chat";
+import { useActiveChat, useChatProblems } from "~/hooks/chat/active-chat";
 
 import {
   FileTree,

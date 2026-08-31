@@ -6,7 +6,7 @@ import {
   AttachmentTitle,
   AttachmentTrigger,
 } from "../ui/attachment";
-import { bus } from "~/event/event-bus";
+import { bus } from "~/event/events";
 import IndexedUrlPreview, {
   type AttachmentWithMetaData,
 } from "../common-ui/indexed-url-preview";

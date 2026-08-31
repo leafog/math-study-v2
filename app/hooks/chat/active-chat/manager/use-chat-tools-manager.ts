@@ -1,5 +1,5 @@
-import { act, useCallback, useEffect, useMemo } from "react";
-import { and, eq, inArray, queryOnce, useLiveQuery } from "@tanstack/react-db";
+import { useCallback, useEffect, useMemo } from "react";
+import { and, eq, queryOnce, useLiveQuery } from "@tanstack/react-db";
 import {
   chatToolInstanceColl,
   chatToolsBarStateColl,
@@ -10,11 +10,8 @@ import { useImmer } from "use-immer";
 import { hasToolKind } from "~/components/chat/tools";
 import { keyBy, without } from "lodash-es";
 import { moveToEnd } from "~/lib/coll-utils";
-import { useEvent } from "~/event/use-event";
-import {
-  ChatToolInstanceSchema,
-  type ChatToolInstance,
-} from "~/db/db-zod-schema";
+import { useRxEvent } from "~/event/events";
+import { ChatToolInstanceSchema } from "~/db/db-zod-schema";
 
 export const useChatToolsManager = (
   chatId: string,
@@ -50,14 +47,28 @@ export const useChatToolsManager = (
   }, [chatToolInstances]);
 
   const { active_id, tool_order, actived_history } = chatToolsBarState ?? {};
-  const [mountedToolsIds, setMountedToolsIds] = useImmer(new Set());
+  const [mountedToolsIds, setMountedToolsIds] = useImmer<Set<string>>(
+    new Set(),
+  );
 
+  // 切换 chat 时重置挂载集
+  useEffect(() => {
+    setMountedToolsIds(new Set());
+  }, [chatId]);
+
+  // 懒挂载：active_id 每次变化（含刷新后恢复）都挂载当前激活的 tool，
+  // 其余已打开的 tool 等切换时才挂载。
+  useEffect(() => {
+    if (!active_id) return;
+    setMountedToolsIds((draft) => {
+      draft.add(active_id);
+    });
+  }, [active_id]);
+
+  // active 只改 DB 状态（激活 + 历史），挂载由上面的 effect 驱动
   const active = useCallback(
-    async (instanceId: string) => {
+    (instanceId: string) => {
       const current = chatToolsBarStateColl.get(chatId);
-      setMountedToolsIds((draft) => {
-        draft.add(instanceId);
-      });
       if (current && current.active_id !== instanceId) {
         chatToolsBarStateColl.update(chatId, (it) => {
           it.active_id = instanceId;
@@ -92,21 +103,18 @@ export const useChatToolsManager = (
 
   const openByToolId = useCallback(
     (toolId: string) => {
-      const inBarInstance = mountedToolsIds.has(toolId);
-      if (inBarInstance) {
+      // 成员判断走权威的 tool_order，而不是挂载集
+      const bar = chatToolsBarStateColl.get(chatId);
+      if (bar?.tool_order?.includes(toolId)) {
         active(toolId);
         return;
       }
 
       const instance = toolDataColl.get(toolId);
-      console.log(toolId);
-      console.log(instance);
       if (!instance) return;
 
       const instanceId = instance.id;
       const chatToolInstance = ChatToolInstanceSchema.parse(instance);
-
-      console.log(instance);
 
       chatToolInstanceColl.insert({
         ...chatToolInstance,
@@ -114,14 +122,13 @@ export const useChatToolsManager = (
       });
 
       const chatToolsBarState = chatToolsBarStateColl.get(chatId);
-
       if (!chatToolsBarState) return;
       chatToolsBarStateColl.update(chatToolsBarState.id, (draft) => {
         draft.tool_order.push(instanceId);
       });
       active(instanceId);
     },
-    [chatId, mountedToolsIds],
+    [chatId],
   );
 
   const openByRefId = useCallback(
@@ -135,7 +142,11 @@ export const useChatToolsManager = (
       refId: string;
     }) => {
       onOpenBefore?.(kind, title);
-      const inBar = chatToolInstances.find((it) => it.ref_id === refId);
+      // 成员判断：ref 命中且已在 tool_order 里才算"已在栏内"
+      const bar = chatToolsBarStateColl.get(chatId);
+      const inBar = chatToolInstances.find(
+        (it) => it.ref_id === refId && bar?.tool_order?.includes(it.id),
+      );
 
       if (inBar) {
         active(inBar.id);
@@ -174,7 +185,7 @@ export const useChatToolsManager = (
       }
       open(kind, title, refId);
     },
-    [onOpenBefore, chatId],
+    [onOpenBefore, chatId, chatToolInstances],
   );
 
   const open = useCallback(
@@ -215,15 +226,15 @@ export const useChatToolsManager = (
     },
     [chatId, onOpenBefore],
   );
-  useEvent("active:tool", ({ toolId }) => {
+  useRxEvent("active:tool", true, ({ toolId }) => {
     active(toolId);
   });
 
-  useEvent("open:tool:by-ref-id", ({ kind, title, refId }) => {
+  useRxEvent("open:tool:by-ref-id", true, ({ kind, title, refId }) => {
     openByRefId({ kind, title, refId });
   });
 
-  useEvent("open:tool:by-tool-id", ({ toolId }) => {
+  useRxEvent("open:tool:by-tool-id", true, ({ toolId }) => {
     openByToolId(toolId);
   });
 
@@ -239,6 +250,10 @@ export const useChatToolsManager = (
       const prevActivedId = actived_history?.at(-2);
       if (prevActivedId) {
         active(prevActivedId);
+      } else {
+        chatToolsBarStateColl.update(chatToolsBarState.id, (draft) => {
+          draft.active_id = undefined;
+        });
       }
     }
 

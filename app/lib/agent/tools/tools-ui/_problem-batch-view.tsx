@@ -9,7 +9,7 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from "~/components/ui/carousel";
-import { useEvent } from "~/event/use-event";
+import { useRxEvent } from "~/event/events";
 
 /**
  * 批量题目的共用展示：多题进轮播、单题直接铺，逐题可作答/判题/看解析。
@@ -46,8 +46,9 @@ export const ProblemBatchView = ({
 
   const blockRef = useRef<HTMLDivElement>(null);
 
-  // 右侧题目列表点某道题时：先把轮播切到包含该题的那一页，再把这个轮播块滚进视野。
-  useEvent("problem:scroll-to", (pid) => {
+  // 右侧题目列表点某道题时：把轮播切到包含该题的那一页。
+  // 直接订阅 scroll-to-problem（BehaviorSubject 重放，晚挂载也能收到），无需滚动方再转发。
+  useRxEvent("scroll-to-problem", true, ({ pid }) => {
     const idx = ids.indexOf(pid);
     if (idx < 0) return;
     // jump=true:不做长距离平滑滑动(会跨过一整排重的题目卡片导致卡顿),直接瞬移到该题

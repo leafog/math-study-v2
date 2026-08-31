@@ -10,6 +10,7 @@ import { ANSWER_COLORS } from "~/components/math/constants";
 import { cn } from "~/lib/utils";
 import StatusIcon from "~/components/math/status-icon";
 import MathResBlock from "~/components/math/math-res-block";
+import CopyButton from "~/components/common-ui/copy-button";
 
 export const CheckAnswer = ({
   part,
@@ -61,7 +62,10 @@ export const CheckAnswer = ({
             </Badge>
           )}
           {(part.output.user_answer || part.output.analysis) && (
-            <div className="space-y-2 rounded-md bg-muted/60 px-3 py-2 text-sm">
+            <div className="relative space-y-2 rounded-md bg-muted/60 px-3 py-2 text-sm">
+              <div className="absolute right-2 top-2">
+                <CopyButton text={part.output.analysis ?? part.output.user_answer} />
+              </div>
               {part.output.user_answer && (
                 <div className="flex items-start gap-2">
                   <span className="shrink-0 pt-0.5 text-xs font-medium text-muted-foreground">

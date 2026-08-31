@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { useMeasure } from "@uidotdev/usehooks";
 import { cn } from "~/lib/utils";
 import { useChatPromptInput } from "~/hooks/chat/active-chat/hooks";
-import { bus } from "~/event/event-bus";
+import { bus } from "~/event/events";
 
 interface WelcomeAction {
   id: keyof typeof chatIconMap;

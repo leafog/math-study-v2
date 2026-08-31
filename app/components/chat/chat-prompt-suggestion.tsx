@@ -3,7 +3,7 @@ import { motion } from "motion/react";
 import { Button } from "../ui/button";
 import { useChatPromptSuggestionStore } from "~/store/chat-prompt-suggestion-store";
 import { chatIconMap } from "./chat-constants";
-import { bus } from "~/event/event-bus";
+import { bus } from "~/event/events";
 
 const ChatPromptSuggestion = () => {
   const suggestions = useChatPromptSuggestionStore.use.suggestions();

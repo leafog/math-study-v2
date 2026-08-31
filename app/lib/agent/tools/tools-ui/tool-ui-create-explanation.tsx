@@ -1,24 +1,24 @@
 import { useTranslation } from "react-i18next";
-import { CornerUpRight } from "lucide-react";
-import { Button } from "~/components/ui/button";
 import type { ToolRendererProps } from "./types";
-import { ToolInline } from "./_tool-common";
+import { ToolBlock } from "./_tool-common";
+import MathResBlock from "~/components/math/math-res-block";
+import CopyButton from "~/components/common-ui/copy-button";
 
 export const CreateExplanation = ({
   part,
 }: ToolRendererProps<"tool-createExplanation">) => {
   const { t } = useTranslation();
-  const isDone = part.state === "output-available";
-  const problemId = isDone ? part.input.problem_id : undefined;
 
   return (
-    <ToolInline title={t("toolCall.title.createExplanation")} part={part}>
-      {isDone && problemId && (
-        <Button variant="ghost" size="xs">
-          <CornerUpRight className="size-3 mr-1" />
-          {t("problem.viewExplanation")}
-        </Button>
+    <ToolBlock title={t("toolCall.title.createExplanation")} part={part}>
+      {part.state === "output-available" && (
+        <div className="relative space-y-2 rounded-md bg-muted/60 px-3 py-2 text-sm">
+          <div className="absolute right-2 top-2">
+            <CopyButton text={part.input.content} />
+          </div>
+          <MathResBlock>{part.input.content}</MathResBlock>
+        </div>
       )}
-    </ToolInline>
+    </ToolBlock>
   );
 };

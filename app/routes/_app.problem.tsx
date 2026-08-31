@@ -5,6 +5,7 @@ import {
   eq,
   inArray,
   like,
+  or,
   useLiveInfiniteQuery,
   useLiveQuery,
 } from "@tanstack/react-db";
@@ -109,7 +110,10 @@ const ProblemIndex = () => {
         const base = q
           .from({ problemColl })
           .where(({ problemColl }) =>
-            like(problemColl.content, `%${debouncedSearch}%`),
+            or(
+              like(problemColl.content, `%${debouncedSearch}%`),
+              like(problemColl.description, `%${debouncedSearch}%`),
+            ),
           );
         const withStatus =
           status === "all"

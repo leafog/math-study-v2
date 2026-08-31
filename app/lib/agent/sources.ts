@@ -119,7 +119,9 @@ The result and analysis are displayed in the UI. After calling, output no text â
     description: "Create a standard solution for a problem.",
     template: `Generate and save the standard solution for a problem.
 
-Use Markdown + LaTeX. Include the reasoning and key steps needed to understand the solution.`,
+Use Markdown + LaTeX. Include the reasoning and key steps needed to understand the solution.
+
+The explanation is displayed in the UI. After calling, output no text â€” do not repeat or summarize the solution.`,
   },
   "toolDesc.getKnowledgeGraph": {
     description: "Fetch the student's knowledge graph.",

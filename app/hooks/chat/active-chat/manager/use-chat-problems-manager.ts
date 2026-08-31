@@ -6,7 +6,7 @@ import {
   toStateColor,
   type ProblemPreviewHandle,
 } from "~/components/math/problem-preview";
-import { bus } from "~/event/event-bus";
+import { bus } from "~/event/events";
 import type { ProblemStateColor } from "~/components/math/type";
 import { ProblemSchema } from "~/db/db-zod-schema";
 import {
@@ -51,7 +51,6 @@ const useChatProblemsManager = (chatId: string) => {
     [chatId],
   );
 
-  // 过滤掉空/失效的题目：rel 行可能指向已删除的 problem，或 content 为空。
   const problems = useMemo(() => {
     const res = (problemsQuery ?? [])
       .filter((it) => it !== undefined)
@@ -130,7 +129,7 @@ const useChatProblemsManager = (chatId: string) => {
   // (消息未加载时由 useChatProblemScroll 缓存,到达后自动执行)
   useEffect(() => {
     if (problemId) {
-      bus.emit("chat:scroll-to-problem", {
+      bus.emit("scroll-to-problem", {
         pid: problemId,
         toolCallId: "",
         behavior: "auto",

@@ -5,8 +5,7 @@ import { useActiveChatToolsPanelStore } from "~/hooks/chat/active-chat";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import ChatMenuInfo from "./chat-menu-info";
 import { useClickAway } from "@uidotdev/usehooks";
-import { useEvent } from "~/event/use-event";
-import { bus } from "~/event/event-bus";
+import { bus, useRxEvent } from "~/event/events";
 
 const ChatMenuBtn = () => {
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -22,7 +21,7 @@ const ChatMenuBtn = () => {
     setPopoverOpen(false);
   });
 
-  useEvent("topic:in-chat-view-topic", (id) => {
+  useRxEvent("topic:in-chat-view-topic", true, (id) => {
     if (toolsShow) {
       if (popoverOpen) {
         return;

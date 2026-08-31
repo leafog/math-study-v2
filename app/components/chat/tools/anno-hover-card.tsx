@@ -18,7 +18,7 @@ import {
 } from "~/components/ui/item";
 import type { Annotation } from "~/store/chat-prompt-input-store";
 import { Button } from "~/components/ui/button";
-import { bus } from "~/event/event-bus";
+import { bus } from "~/event/events";
 
 type AnnoHoverCardProps = {
   /** 按 toolId 隔离的标注 */
@@ -61,9 +61,9 @@ const AnnoHoverCard = ({
                     <Item
                       size="xs"
                       className="p-0"
-                      onClick={(e) => {
+                      onClick={() => {
                         bus.emit("open:tool:by-tool-id", { toolId });
-                        bus.emit("anno-click", { toolId, annoIdx: i });
+                        bus.emit("focus-annotation", { toolId, annoIdx: i });
                       }}
                     >
                       <ItemMedia variant="image">

@@ -119,15 +119,14 @@ const PureChatMessage = memo(
       [t],
     );
 
-    const textFromParts = useMemo(
-      () =>
-        message.parts
-          ?.filter((part) => part.type === "text")
-          .map((part) => part.text)
-          .join("\n")
-          .trim(),
-      [message.parts],
-    );
+    const textFromParts = useMemo(() => {
+      if (isAnimating) return "";
+      return message.parts
+        ?.filter((part) => part.type === "text")
+        .map((part) => part.text)
+        .join("\n")
+        .trim();
+    }, [message.parts, isAnimating]);
 
     const filteredParts = useMemo(
       () => message.parts.filter((part) => part.type !== "step-start"),
@@ -252,19 +251,21 @@ const PureChatMessage = memo(
             </>
           )}
         </Message>
-        <MessageActions
-          className={cn(
-            "opacity-0 gap-2 group-hover:opacity-100 transition-opacity",
-            isUser ? "ml-auto justify-end" : "",
-          )}
-        >
-          <CopyButton text={textFromParts} />
-          {!isAnimating && message.metadata?.created_at && (
-            <span className="text-sm">
-              {formatMessageTime(message.metadata.created_at, t)}
-            </span>
-          )}
-        </MessageActions>
+        {!isAnimating && (
+          <MessageActions
+            className={cn(
+              "opacity-0 gap-2 group-hover:opacity-100 transition-opacity",
+              isUser ? "ml-auto justify-end" : "",
+            )}
+          >
+            <CopyButton text={textFromParts} />
+            {!isAnimating && message.metadata?.created_at && (
+              <span className="text-sm">
+                {formatMessageTime(message.metadata.created_at, t)}
+              </span>
+            )}
+          </MessageActions>
+        )}
       </div>
     );
 

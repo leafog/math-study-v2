@@ -6,7 +6,7 @@ import {
   HoverCardTrigger,
 } from "../ui/hover-card";
 import { Button } from "../ui/button";
-import { bus } from "~/event/event-bus";
+import { bus } from "~/event/events";
 import { useLocation } from "react-router";
 
 const KgTopicInChatItem = ({ id }: { id: string }) => {

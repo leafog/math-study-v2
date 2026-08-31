@@ -201,7 +201,7 @@ const chatPromptInputStoreCreator = (init: ChatPromptInputState) =>
     clearAnnotations: (toolId) =>
       set((state) => {
         if (toolId) {
-          state.annotationsByTool[toolId] = [];
+          delete state.annotationsByTool[toolId];
         } else {
           state.annotationsByTool = {};
         }

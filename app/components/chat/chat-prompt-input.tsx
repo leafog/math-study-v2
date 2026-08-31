@@ -12,7 +12,6 @@ import {
   PromptInputActionMenuItem,
   PromptInputActionMenuTrigger,
   PromptInputBody,
-  PromptInputButton,
   PromptInputFooter,
   PromptInputHeader,
   PromptInputProvider,
@@ -52,7 +51,7 @@ import {
   useToolSelectionStore,
   type ToolSelectionItem,
 } from "./tools/store/tool-selection";
-import { groupBy, isEmpty, isUndefined, keyBy } from "lodash-es";
+import { groupBy, isEmpty, isUndefined, keyBy, values } from "lodash-es";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import {
@@ -64,7 +63,7 @@ import MathRes from "../math/math-res";
 import { useEffect, useMemo, useState } from "react";
 import { useChatPromptInput } from "~/hooks/chat/active-chat/hooks";
 import { useChatPromptSuggestionStore } from "~/store/chat-prompt-suggestion-store";
-import { useEvent } from "~/event/use-event";
+import { useRxEvent } from "~/event/events";
 
 import ChatPromptModelSelector from "./chat-prompt-model-selector";
 import ChatPromptModelThinkingEffort from "./chat-prompt-model-thinking-effort";
@@ -72,6 +71,7 @@ import { useLocation } from "react-router";
 import { ProblemsAttachmentList } from "../math/problems-attachment-list";
 
 import { blobUrlToBlob } from "~/lib/blob-utils";
+import { composeImagesToBlob } from "~/lib/img-utils";
 import { Spinner } from "../ui/spinner";
 import {
   and,
@@ -88,14 +88,15 @@ import "yet-another-react-lightbox/plugins/counter.css";
 import "yet-another-react-lightbox/styles.css";
 import { type AttachmentTask } from "~/db/db-zod-schema";
 import { useBoolean } from "usehooks-ts";
-import { ImageIcon, PlusIcon, X, XIcon } from "lucide-react";
-import { bus } from "~/event/event-bus";
+import { X, XIcon } from "lucide-react";
+import { bus } from "~/event/events";
 import { useSync } from "~/hooks/use-sync";
 import BlobUrlPreview from "../common-ui/blob-url-preview";
 import { extractFileText } from "~/lib/file";
 
 import { useImmer } from "use-immer";
 import AnnoHoverCard from "./tools/anno-hover-card";
+import type { Annotation } from "~/store/chat-prompt-input-store";
 
 /** 附件文本抽取任务查询：按附件 id 过滤，updated_at 倒序（最近一次在前） */
 const buildAttachmentTasksQuery = (q: InitialQueryBuilder, fileIds: string[]) =>
@@ -124,6 +125,88 @@ const toLatestTaskMap = (tasks: AttachmentTask[]) => {
     map.set(task.attachment_id, task);
   });
   return map;
+};
+
+// ---------- 发送前把「练习 / 附件」构建成发往模型的 prompt 文本（统一返回 Promise<string>） ----------
+
+/** 统一构建器类型：入参 T，异步返回组装后的文本 */
+type BuildCommentFC<T> = (arg: T) => Promise<string>;
+
+/** 练习题目注释块：按 pids 查题后拼成注释 */
+const buildPracticeComments: BuildCommentFC<string[]> = async (pids) => {
+  if (pids.length === 0) return "";
+  const problems = await queryOnce((q) =>
+    q
+      .from({ problem: problemColl })
+      .where(({ problem }) => inArray(problem.id, pids)),
+  );
+  return toLabelledComment(
+    "practice-problem",
+    getPrompt("chat.practicePrompt"),
+    problems,
+  );
+};
+
+/** 附件 OCR 结果注释块：按 fileIds 查元数据与题目后拼成注释 */
+const buildAttachmentComments: BuildCommentFC<string[]> = async (fileIds) => {
+  if (fileIds.length === 0) return "";
+  const attMetas = await queryOnce((q) =>
+    q
+      .from({ attMeta: attachmentMetaDataColl })
+      .where(({ attMeta }) => inArray(attMeta.id, fileIds)),
+  );
+  const attProblems = await queryOnce((q) =>
+    q.from({ problem: problemColl }).where(({ problem }) =>
+      inArray(
+        problem.source_attachment_id,
+        attMetas.map((it) => it.id),
+      ),
+    ),
+  );
+  const attProblemsMap = groupBy(attProblems, (it) => it.source_attachment_id);
+  return toLabelledComment(
+    "attachment-ocr-result",
+    getPrompt("chat.attachmentPrompt"),
+    attMetas.map((it) => ({
+      id: it.id,
+      text: it.last_task_text,
+      problems: attProblemsMap[it.id] ?? [],
+    })),
+  );
+};
+
+const buildAnnotationComments: BuildCommentFC<
+  Record<string, Annotation[]>
+> = async (annotationsByTool) => {
+  console.log("hehe");
+  const cells = Object.values(annotationsByTool)
+    .flat()
+    .map((anno, i) =>
+      anno.type === "image"
+        ? {
+            source: { kind: "image" as const, data: anno.imageUrl ?? "" },
+            label: String(i + 1),
+          }
+        : {
+            source: { kind: "svg" as const, data: anno.svgXmlStr ?? "" },
+            bounds: anno.bounds,
+            label: String(i + 1),
+          },
+    );
+
+  if (cells.length === 0) return "";
+
+  // 测试阶段：先把合成图画出来，确认格子/裁剪/编号正确，再接视觉模型识别
+  const blob = await composeImagesToBlob(cells);
+  const previewUrl = URL.createObjectURL(blob);
+
+  console.log("[annotation-composite]", {
+    cells: cells.length,
+    bytes: blob.size,
+    previewUrl,
+  });
+
+  return `[annotation-composite: ${cells.length} cells, ${blob.size} bytes]`;
 };
 
 const DisplayAttachments = () => {
@@ -200,7 +283,7 @@ const DisplayAttachments = () => {
   const { state } = useLocation();
 
   useEffect(() => {
-    if (state && state.fileIds) {
+    if (state?.fileIds) {
       const nfids = state.fileIds as Set<string>;
       if (isNewChat) {
         syncInputFiles(nfids);
@@ -420,8 +503,6 @@ const PruePromptInput = () => {
 
   const { isNewChat, createChat } = useActiveChat();
 
-  const selectsMap = useToolSelectionStore.use.selectsMap();
-
   const fileIds = useChatPromptInput().use.fileIds();
 
   const hasAny = useChatPromptInput().use.hasAny();
@@ -441,14 +522,6 @@ const PruePromptInput = () => {
   const setSuggestions = useChatPromptSuggestionStore.use.setSuggestions();
 
   const { chatToolInstancesMap } = useChatTools();
-
-  const {} = useLiveQuery(
-    (q) => {
-      const toolIds = annotationsByTool;
-      return undefined;
-    },
-    [annotationsByTool],
-  );
 
   useSync(textInput.value, setTextInputValue);
   useEffect(() => {
@@ -488,62 +561,11 @@ const PruePromptInput = () => {
       createChat(title.slice(0, 40));
     }
 
-    const selections = Object.values(selectsMap).filter(
-      (it) => it.type === "markdown",
-    );
-    const selectionPrefix = selections
-      .map((it) => {
-        const kindLabel = t(`tools.${it.kind}`, it.kind);
-        const quotedContent = it.content.replaceAll("\n", "\n> ");
-        return t("chat.quoteFrom", {
-          kind: kindLabel,
-          content: quotedContent,
-        });
-      })
-      .join("\n\n");
-
-    const fullText = selectionPrefix
-      ? `${selectionPrefix}\n\n${message.text}`
-      : message.text;
-
-    const parts: any[] = [];
-    parts.push({ text: fullText, type: "text" });
-
-    const practicePrompt = getPrompt("chat.practicePrompt");
-    const practiceComments = toLabelledComment(
-      "practice-problem",
-      practicePrompt,
-      practiceProblems,
-    );
-    const attMetas = await queryOnce((q) => {
-      return q
-        .from({ attMeta: attachmentMetaDataColl })
-        .where(({ attMeta }) => inArray(attMeta.id, fileIds));
-    });
-    const attProblems = await queryOnce((q) => {
-      return q.from({ problem: problemColl }).where(({ problem }) =>
-        inArray(
-          problem.source_attachment_id,
-          attMetas.map((it) => it.id),
-        ),
-      );
-    });
-    const attProblemsMap = groupBy(
-      attProblems,
-      (it) => it.source_attachment_id,
-    );
-    const attachmentPrompt = getPrompt("chat.attachmentPrompt");
-
-    const attachmentText = toLabelledComment(
-      "attachment-ocr-result",
-      attachmentPrompt,
-      attMetas.map((it) => ({
-        id: it.id,
-        text: it.last_task_text,
-        problems: attProblemsMap[it.id] ?? [],
-      })),
-    );
-
+    const [practiceComments, attachmentText] = await Promise.all([
+      buildPracticeComments(problemIds),
+      buildAttachmentComments(fileIds),
+      buildAnnotationComments(annotationsByTool),
+    ]);
     const messageId = genId();
 
     const now = new Date();
@@ -556,15 +578,17 @@ const PruePromptInput = () => {
 
     const endMessage = {
       files: [],
-      text: [practiceComments, fullText, attachmentText].join("\n"),
+      text: [practiceComments, attachmentText, message.text].join("\n"),
       metadata,
     };
 
+    // 入库的 parts 与发到模型的 endMessage.text 保持一致（含 <!-- --> 注释），
+    // 否则跨轮历史从 parts 重建时练习/附件内容会丢
     chatMessageColl.insert({
       chat_id: id,
       role: "user",
       id: messageId,
-      parts,
+      parts: [{ text: endMessage.text, type: "text" }],
       metadata,
       created_at: now,
     });
@@ -594,7 +618,7 @@ const PruePromptInput = () => {
     }
   }, [isNewChat, setSuggestions]);
 
-  useEvent("push-prompt-input", (prompt) => {
+  useRxEvent("push-prompt-input", true, (prompt) => {
     textInput.setInput(prompt);
   });
 
@@ -621,7 +645,7 @@ const PruePromptInput = () => {
           />
         )}
 
-        {practiceProblems.length > 0 && (
+        {hasProblems && (
           <ProblemsAttachmentList
             problems={practiceProblems}
             handleRemove={removeProblemId}

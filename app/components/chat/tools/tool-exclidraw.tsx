@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Excalidraw,
-  exportToBlob,
-  Footer,
-  MainMenu,
   serializeAsJSON,
   getCommonBounds,
   hashElementsVersion,
@@ -41,15 +38,12 @@ import {
 import { Eye, MessageCirclePlus, Trash, X } from "lucide-react";
 
 import AnnoMarker from "./anno-marker";
-import AnnoedMarker from "./annoed-marker";
+import AnnoedMarker, { type AnnoedMarkerState } from "./annoed-marker";
 import { useTranslation } from "react-i18next";
 import { cn } from "~/lib/utils";
-import {
-  useChatPromptInput,
-  useChatTools,
-} from "~/hooks/chat/active-chat/hooks";
+import { useChatPromptInput } from "~/hooks/chat/active-chat/hooks";
 import { svgToXmlString } from "~/lib/xml-utils";
-import { useEvent } from "~/event/use-event";
+import { useRxEvent } from "~/event/events";
 
 type AnnoIng = {
   selectedElementIds: {
@@ -76,7 +70,11 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
 
   const { value: isSelecting, setValue: setSelecting } = useBoolean(false);
 
-  const { value: isAnnotating, toggle: toggleAnnotating } = useBoolean(false);
+  const {
+    value: isAnnotating,
+    toggle: toggleAnnotating,
+    setTrue: startAnnotating,
+  } = useBoolean(false);
 
   const chatPromptInput = useChatPromptInput();
   const annos =
@@ -104,9 +102,46 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
   const [zoom, setZoom] = useState<Zoom["value"]>(1 as Zoom["value"]);
 
   const [sceneVersion, setSceneVersion] = useState<number>(0);
-  useEvent("anno-click", ({ toolId, annoIdx }) => {
-    if (toolId !== id) return;
-    console.log("id", id);
+  // 每条标注的三态（受控）：仅记"正在编辑"的序号，展示/折叠由 showAll 派生
+  const [editingIdx, setEditingIdx] = useState<number | null>(null);
+  // api 就绪标志：场景真正初始化完(应用完 initialData)后才置 true。
+  // 挂载(excalidrawAPI)早于场景初始化,此刻场景可能还是空的/未应用异步加载的 initialData。
+  const [apiReady, setApiReady] = useState(false);
+  // 记录 initialData 是否已从 DB 加载并交给 Excalidraw(onChange 里据此判断是否可置就绪)
+  const initialDataLoadedRef = useRef(false);
+
+  // 等挂载后消费：apiReady 才订阅（BehaviorSubject 会重放"未就绪期间发布的最近一次"）。
+  // 聚焦即进入该条的编辑态，并把该条 scene 中心滚动到画布可见区中央。
+  // viewport = (scene + scroll)*zoom + offset；中心对齐时 offset 抵消 => scroll = viewport/(2*zoom) - sceneCenter
+  useRxEvent("focus-annotation", apiReady, (e) => {
+    if (e.toolId !== id) return; // 只响应本工具实例
+    const annoIdx = e.annoIdx;
+    startAnnotating(); // 进入标注态：marker 才渲染
+    setEditingIdx(annoIdx);
+    const anno = annos[annoIdx];
+    if (anno?.type !== "svg") return;
+    const api = apiRef.current;
+    if (!api) return;
+
+    const centerOnAnno = () => {
+      const { width, height, zoom } = api.getAppState();
+      if (!width || !height) {
+        requestAnimationFrame(centerOnAnno);
+        return;
+      }
+      const z = zoom.value;
+      const [minX, minY, maxX, maxY] = anno.bounds;
+      const cx = (minX + maxX) / 2;
+      const cy = (minY + maxY) / 2;
+      api.updateScene({
+        appState: {
+          scrollX: width / 2 / z - cx,
+          scrollY: height / 2 / z - cy,
+        },
+        captureUpdate: "NEVER",
+      });
+    };
+    requestAnimationFrame(centerOnAnno);
   });
 
   const exportSelected = useCallback(async () => {
@@ -151,7 +186,7 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
         const { svg } = info;
         if (!svg) return;
         const svgXmlStr = svgToXmlString(svg);
-        // 提交时把 exportPadding(10) 折进 bounds，盒子天然含留白，内容与选区居中对齐
+
         const pad = 10;
         const [minX, minY, maxX, maxY] = currAnnoViewPortPos.bounds;
         addAnnotation(id, {
@@ -181,12 +216,15 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
       if (result?.data) {
         const nd = JSON.parse(result.data);
         setInitialData({ ...nd });
+        initialDataLoadedRef.current = true;
+      } else {
+        // 无存档:空场景即为就绪,无需等 onChange 应用 initialData
+        setApiReady(true);
       }
     };
     load();
   }, [chatId, id]);
 
-  // 保存场景到 DB,500ms 防抖;只写库不 setState,不会触发渲染环
   const onSyncToDb: ExcalidrawProps["onChange"] = async (e, app, f) => {
     const data = serializeAsJSON(e, app, f, "database");
     const existing = toolDataColl.get(id);
@@ -203,6 +241,7 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
   // 点击时实时读 appState.selectedElementIds(record),无需额外维护选中 state。
 
   const excalidrawAPI = useCallback((api: ExcalidrawImperativeAPI) => {
+    // 只暂存 api；就绪等场景应用完 initialData 后的 onChange 再置位
     apiRef.current = api;
   }, []);
 
@@ -219,6 +258,8 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
       if (!annoItem) return;
       const api = apiRef.current;
       if (!api) return;
+      const { scrollX, scrollY, zoom } = api.getAppState();
+      const z = zoom.value;
       const elements = api.getSceneElements();
       const selectedElements = elements.filter(
         (it) => annoItem.selectedElementIds[it.id],
@@ -235,19 +276,13 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
       const pMaxY = maxY + pad;
       const iconPos = sceneCoordsToViewportCoords(
         { sceneX: pMinX, sceneY: pMinY },
-        {
-          scrollX,
-          scrollY,
-          zoom: { value: zoom },
-          offsetLeft: 0,
-          offsetTop: -30,
-        },
+        { scrollX, scrollY, zoom: { value: z }, offsetLeft: 0, offsetTop: -30 },
       );
       const box: Box = {
         left: iconPos.x,
         top: iconPos.y + 30,
-        w: (pMaxX - pMinX) * zoom,
-        h: (pMaxY - pMinY) * zoom,
+        w: (pMaxX - pMinX) * z,
+        h: (pMaxY - pMinY) * z,
       };
       return {
         iconPos,
@@ -263,30 +298,28 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
     return toAnnoViewPortPos(currAnno);
   }, [toAnnoViewPortPos, currAnno]);
 
-  // 已提交标注：用定格的场景 bounds 换算视口位置，只跟 scroll/zoom，不随元素变化
+  // 已提交标注：用定格的场景 bounds 换算视口位置，调用时从 appState 取实时 scroll/zoom
   const annoedToViewPortPos = useCallback(
     (anno?: { bounds: [number, number, number, number] }) => {
       if (!anno) return;
+      const api = apiRef.current;
+      if (!api) return;
+      const { scrollX, scrollY, zoom } = api.getAppState();
+      const z = zoom.value;
       const [minX, minY, maxX, maxY] = anno.bounds;
       const iconPos = sceneCoordsToViewportCoords(
         { sceneX: minX, sceneY: minY },
-        {
-          scrollX,
-          scrollY,
-          zoom: { value: zoom },
-          offsetLeft: 0,
-          offsetTop: -30,
-        },
+        { scrollX, scrollY, zoom: { value: z }, offsetLeft: 0, offsetTop: -30 },
       );
       const box: Box = {
         left: iconPos.x,
         top: iconPos.y + 30,
-        w: (maxX - minX) * zoom,
-        h: (maxY - minY) * zoom,
+        w: (maxX - minX) * z,
+        h: (maxY - minY) * z,
       };
       return { iconPos, box };
     },
-    [scrollX, scrollY, zoom],
+    [],
   );
 
   const hasAnnosAndAnnoIng = isAnnotating && annos.length > 0;
@@ -294,7 +327,7 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
     <ToolContainer className="size-full grid grid-rows-[auto_1fr]">
       <div
         className={cn(
-          "h-10 flex items-center justify-between px-4 ",
+          "h-10 flex items-center justify-between px-4  border-b-2",
           hasAnnosAndAnnoIng ? "bg-primary/20 dark:bg-primary/40" : "",
         )}
       >
@@ -376,6 +409,8 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
         <Excalidraw
           theme={resolvedTheme === "dark" ? "dark" : "light"}
           onChange={(elements, appState, files) => {
+            // 有存档时:Excalidraw 应用完 initialData 会触发 onChange,此刻场景才算就绪
+            if (initialDataLoadedRef.current) setApiReady(true);
             onChange(elements, appState, files);
             setSelecting(!!appState.selectionElement);
             setScrollX(appState.scrollX);
@@ -400,33 +435,42 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
             onSubmit={submitCurrAnno}
           />
         )}
-
-        {isAnnotating && (
-          <>
-            {annos.map((anno, i) => {
-              // marker 内联渲染 svg，仅对 svg 类型生效；image 类型走 hover card 的 img
-              if (anno.type !== "svg") return null;
-              const pos = annoedToViewPortPos(anno);
-              if (!pos) return null;
-              return (
-                <AnnoedMarker
-                  key={i}
-                  pos={pos}
-                  svgXmlStr={anno.svgXmlStr ?? ""}
-                  value={anno.text}
-                  showAll={showAll}
-                  onShowInput={closeShowAll}
-                  onSubmit={(v) => {
-                    updateAnnotation(id, i, { text: v });
-                  }}
-                  onDelete={() => {
-                    removeAnnotation(id, i);
-                  }}
-                />
-              );
-            })}
-          </>
-        )}
+        <div className="pointer-events-none">
+          {isAnnotating && (
+            <>
+              {annos.map((anno, i) => {
+                // marker 内联渲染 svg，仅对 svg 类型生效；image 类型走 hover card 的 img
+                if (anno.type !== "svg") return null;
+                const pos = annoedToViewPortPos(anno);
+                if (!pos) return null;
+                const state: AnnoedMarkerState =
+                  editingIdx === i ? "edit" : showAll ? "display" : "collapsed";
+                return (
+                  <AnnoedMarker
+                    key={i}
+                    pos={pos}
+                    svgXmlStr={anno.svgXmlStr ?? ""}
+                    value={anno.text}
+                    index={i}
+                    state={state}
+                    onStartEdit={() => {
+                      closeShowAll();
+                      setEditingIdx(i);
+                    }}
+                    onCancelEdit={() => setEditingIdx(null)}
+                    onSubmit={(v) => {
+                      updateAnnotation(id, i, { text: v });
+                    }}
+                    onDelete={() => {
+                      removeAnnotation(id, i);
+                      setEditingIdx(null);
+                    }}
+                  />
+                );
+              })}
+            </>
+          )}
+        </div>
       </div>
     </ToolContainer>
   );

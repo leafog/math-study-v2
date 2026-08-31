@@ -33,7 +33,7 @@ const tools = {
     kind: "blocknote" as const,
     Icon: Notebook,
     showInOpen: true,
-    Panel: lazy(() => import("./tool-mathlive")),
+    Panel: lazy(() => import("./tool-blocknote")),
   },
   showAttachment: {
     kind: "showAttachment" as const,

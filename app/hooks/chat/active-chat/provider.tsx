@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
-import { Chat, useChat, useObject } from "@ai-sdk/react";
+import { Chat, useChat } from "@ai-sdk/react";
 import { useAgent } from "~/lib/agent/client-agent";
 import { genId } from "~/lib/id-utils";
 import { chatMessageColl, conversationColl } from "~/db/tdb-collections";
@@ -30,9 +30,9 @@ import { useGenerateObject } from "./use-generate-object";
 import z from "zod";
 import { useTranslation } from "react-i18next";
 import { getPrompt } from "~/lib/agent/instructions";
-import { useEvent } from "~/event/use-event";
+import { useRxEvent } from "~/event/events";
 import { newChatPromptInputStore } from "~/store/chat-prompt-input-store";
-import { bus } from "~/event/event-bus";
+import { bus } from "~/event/events";
 import QuickLRU from "quick-lru";
 import { getOrPut } from "~/lib/map-utils";
 const ChatTitleSchema = z.object({
@@ -188,13 +188,13 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
 
   const openToolsShow = chatToolsPanelStore.use.openToolsShow();
 
-  useEvent(["open:tool:by-ref-id", "open:tool:by-tool-id"], () =>
+  useRxEvent(["open:tool:by-ref-id", "open:tool:by-tool-id"], true, () =>
     openToolsShow(),
   );
 
   const onOpenBefore = (kind: string, title?: string, _refId?: string) => {
     if (isNewChat) {
-      bus.emit("chat:create:by-open-tool");
+      bus.emit("chat:create:by-open-tool", undefined);
       createChat(title ?? kind);
     }
   };
