@@ -76,6 +76,13 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
     setTrue: startAnnotating,
   } = useBoolean(false);
 
+  useEffect(() => {
+    const api = apiRef.current;
+    if (api && isAnnotating) {
+      api.setActiveTool({ type: "selection" });
+    }
+  }, [isAnnotating]);
+
   const chatPromptInput = useChatPromptInput();
   const annos =
     chatPromptInput.use.annotationsByTool((byTool) => byTool[id]) ?? [];
@@ -90,11 +97,7 @@ const ExclidrawPanel = ({ chatId, id }: ToolPanelProps) => {
     setFalse: closeShowAll,
   } = useBoolean(false);
   const [mouse, exclidrawDivRef] = useMouse<HTMLDivElement>();
-  const {
-    value: annoIng,
-    setTrue: startAnnoIng,
-    setFalse: closeAnnoing,
-  } = useBoolean(false);
+  const {} = useBoolean(false);
   const [currAnno, setCurrAnno] = useState<AnnoIng>();
 
   const [scrollX, setScrollX] = useState<number>(0);

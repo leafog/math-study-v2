@@ -6,13 +6,10 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
-import { TanStackDevtools } from "@tanstack/react-devtools";
 
-import { useEffect } from "react";
 import type { Route } from "./+types/root";
 import "./app.css";
 import "./lib/i18n";
-import { preloadOcr } from "./lib/ocr";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "./components/ui/sonner";
@@ -54,18 +51,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Toaster />
         <ScrollRestoration />
         <Scripts />
-        <TanStackDevtools></TanStackDevtools>
       </body>
     </html>
   );
 }
 
 export default function App() {
-  useEffect(() => {
-    // 项目加载后在后台预热 OCR，避免首次上传图片时才冷启动。
-    preloadOcr();
-  }, []);
-
   return (
     <ThemeProvider attribute="class" disableTransitionOnChange>
       <TooltipProvider>

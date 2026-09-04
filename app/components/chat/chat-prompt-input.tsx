@@ -72,6 +72,8 @@ import { ProblemsAttachmentList } from "../math/problems-attachment-list";
 
 import { blobUrlToBlob } from "~/lib/blob-utils";
 import { composeImagesToBlob } from "~/lib/img-utils";
+import { llmPredictObject } from "~/lib/agent/version-agent";
+import { z } from "zod";
 import { Spinner } from "../ui/spinner";
 import {
   and,
@@ -97,6 +99,7 @@ import { extractFileText } from "~/lib/file";
 import { useImmer } from "use-immer";
 import AnnoHoverCard from "./tools/anno-hover-card";
 import type { Annotation } from "~/store/chat-prompt-input-store";
+import { llmPredict } from "~/lib/agent/version-agent";
 
 /** 附件文本抽取任务查询：按附件 id 过滤，updated_at 倒序（最近一次在前） */
 const buildAttachmentTasksQuery = (q: InitialQueryBuilder, fileIds: string[]) =>
@@ -175,10 +178,19 @@ const buildAttachmentComments: BuildCommentFC<string[]> = async (fileIds) => {
   );
 };
 
+/** 标注识别结果 schema：每个标注一个 { id, content } */
+const annotationRecognitionSchema = z.object({
+  items: z.array(
+    z.object({
+      id: z.string(),
+      content: z.string(),
+    }),
+  ),
+});
+
 const buildAnnotationComments: BuildCommentFC<
   Record<string, Annotation[]>
 > = async (annotationsByTool) => {
-  console.log("hehe");
   const cells = Object.values(annotationsByTool)
     .flat()
     .map((anno, i) =>
@@ -196,17 +208,24 @@ const buildAnnotationComments: BuildCommentFC<
 
   if (cells.length === 0) return "";
 
-  // 测试阶段：先把合成图画出来，确认格子/裁剪/编号正确，再接视觉模型识别
+  // 所有标注拼成一张合成图，交给视觉模型按编号识别
   const blob = await composeImagesToBlob(cells);
-  const previewUrl = URL.createObjectURL(blob);
-
-  console.log("[annotation-composite]", {
-    cells: cells.length,
-    bytes: blob.size,
-    previewUrl,
+  const result = await llmPredictObject(blob, {
+    schema: annotationRecognitionSchema,
+    prompt: getPrompt("chat.annotationPrompt"),
   });
 
-  return `[annotation-composite: ${cells.length} cells, ${blob.size} bytes]`;
+  if (!result || result.items.length === 0) return "";
+
+  // 按编号顺序对齐到标注，供下游模型理解每个标注圈的是什么
+  const items = result.items
+    .map((it) => ({
+      id: it.id,
+      content: it.content,
+    }))
+    .sort((a, b) => Number(a.id) - Number(b.id));
+
+  return toLabelledComment("annotation-recognition", "", items);
 };
 
 const DisplayAttachments = () => {
@@ -342,9 +361,7 @@ const DisplayAttachments = () => {
             const blobBytes = await blob.bytes();
 
             const md5Result = await md5(blobBytes);
-            console.log(md5Result);
             const attachmentHash = attachmentHashColl.get(md5Result);
-            console.log(attachmentHash);
             if (attachmentHash?.attachment_id) {
               setFileIdMap((draft) => {
                 draft.set(id, attachmentHash?.attachment_id);
@@ -524,9 +541,6 @@ const PruePromptInput = () => {
   const { chatToolInstancesMap } = useChatTools();
 
   useSync(textInput.value, setTextInputValue);
-  useEffect(() => {
-    console.log("hhh", textInputValue, hasAny);
-  }, [textInputValue]);
 
   // 只持久化 id，完整题目在渲染/发送时按 id 从库中查询
   const { data: practiceProblems = [] } = useLiveQuery(
@@ -549,23 +563,20 @@ const PruePromptInput = () => {
       addProblemIds(ns.problemIds);
     }
   }, [state]);
-  useEffect(() => {
-    console.log(hasAny);
-  }, [hasAny]);
 
   const onSubmit: PromptInputProps["onSubmit"] = async (message) => {
-    console.log(hasAny);
     if (!hasAny) return;
     const title = message.text;
     if (isNewChat) {
       createChat(title.slice(0, 40));
     }
 
-    const [practiceComments, attachmentText] = await Promise.all([
-      buildPracticeComments(problemIds),
-      buildAttachmentComments(fileIds),
-      buildAnnotationComments(annotationsByTool),
-    ]);
+    const [practiceComments, attachmentText, annotationComments] =
+      await Promise.all([
+        buildPracticeComments(problemIds),
+        buildAttachmentComments(fileIds),
+        buildAnnotationComments(annotationsByTool),
+      ]);
     const messageId = genId();
 
     const now = new Date();
@@ -578,7 +589,12 @@ const PruePromptInput = () => {
 
     const endMessage = {
       files: [],
-      text: [practiceComments, attachmentText, message.text].join("\n"),
+      text: [
+        practiceComments,
+        attachmentText,
+        annotationComments,
+        message.text,
+      ].join("\n"),
       metadata,
     };
 
@@ -606,8 +622,8 @@ const PruePromptInput = () => {
       });
     });
 
-    console.log(endMessage);
     sendMessage(endMessage);
+
     clearProblemIds();
     setTextInputValue("");
   };

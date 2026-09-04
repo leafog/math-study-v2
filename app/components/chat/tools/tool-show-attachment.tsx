@@ -2,6 +2,7 @@ import {
   attachmentColl,
   attachmentMetaDataColl,
   attachmentTasksColl,
+  problemColl,
 } from "~/db/tdb-collections";
 import type { ToolPanelProps } from "./types";
 import { ToolContainer } from "./tool-container";
@@ -39,10 +40,11 @@ import {
   CardAction,
   CardContent,
   CardHeader,
-  CardTitle,
 } from "~/components/ui/card";
 import CopyButton from "~/components/common-ui/copy-button";
 import { useTranslation } from "react-i18next";
+import { ProblemsAttachmentList } from "~/components/math/problems-attachment-list";
+import { Button } from "~/components/ui/button";
 
 const ShowAttachmentPanel = ({ chatId, id, refId }: ToolPanelProps) => {
   const { t } = useTranslation();
@@ -61,6 +63,7 @@ const ShowAttachmentPanel = ({ chatId, id, refId }: ToolPanelProps) => {
         .findOne(),
     [refId],
   );
+
   const { data: task } = useLiveQuery(
     (q) => {
       if (!att) return undefined;
@@ -78,7 +81,20 @@ const ShowAttachmentPanel = ({ chatId, id, refId }: ToolPanelProps) => {
     },
     [att],
   );
+
+  // 与该附件关联的题目（tab 2：相关联的题目）
+  const { data: relatedProblems = [] } = useLiveQuery(
+    (q) => {
+      if (!att) return undefined;
+      return q
+        .from({ problem: problemColl })
+        .where(({ problem }) => eq(problem.source_attachment_id, att.id));
+    },
+    [att],
+  );
+
   const [imgScale, setImgScale] = useState<string>("auto");
+  const [panel, setPanel] = useState<"recognition" | "problems">("recognition");
   const attShowRef = useRef<HTMLDivElement>(null);
 
   const { width = 0, height = 0 } = useResizeObserver({
@@ -153,28 +169,52 @@ const ShowAttachmentPanel = ({ chatId, id, refId }: ToolPanelProps) => {
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel defaultSize={"30%"} minSize={"30%"}>
-          {task?.status === "pending" ? (
-            <Empty>
-              <EmptyHeader>
-                <Spinner />
-              </EmptyHeader>
-            </Empty>
-          ) : (
-            <Card className="h-full rounded-none bg-muted border-none">
-              <CardHeader>
-                <CardTitle>{t("toolCall.attachmentResult")}</CardTitle>
+          <Card className="h-full rounded-none border-none ">
+            <CardHeader className="flex-row flex-wrap items-center gap-1">
+              <div className="flex">
+                <Button
+                  size="lg"
+                  variant={panel === "recognition" ? "secondary" : "ghost"}
+                  onClick={() => setPanel("recognition")}
+                >
+                  {t("toolCall.attachmentResult")}
+                </Button>
+                {relatedProblems.length > 0 && (
+                  <Button
+                    size="lg"
+                    variant={panel === "problems" ? "secondary" : "ghost"}
+                    onClick={() => setPanel("problems")}
+                  >
+                    {t("toolCall.relatedProblems")}
+                  </Button>
+                )}
+              </div>
+
+              {panel === "recognition" && (
                 <CardAction>
                   <CopyButton text={task?.result} />
                 </CardAction>
-              </CardHeader>
+              )}
+            </CardHeader>
 
-              <CardContent className="-mb-(--card-spacing) overflow-y-scroll scrollbar-thin scrollbar-gutter-both">
-                <MathResBlock className="-mx-(--card-spacing) ">
-                  {task?.result}
-                </MathResBlock>
-              </CardContent>
-            </Card>
-          )}
+            <CardContent className="-mb-(--card-spacing) overflow-y-scroll scrollbar-thin scrollbar-gutter-both">
+              {panel === "recognition" || relatedProblems.length === 0 ? (
+                task?.status === "pending" ? (
+                  <Empty>
+                    <EmptyHeader>
+                      <Spinner />
+                    </EmptyHeader>
+                  </Empty>
+                ) : (
+                  <MathResBlock className="-mx-(--card-spacing) ">
+                    {task?.result}
+                  </MathResBlock>
+                )
+              ) : (
+                <ProblemsAttachmentList problems={relatedProblems} />
+              )}
+            </CardContent>
+          </Card>
         </ResizablePanel>
       </ResizablePanelGroup>
     </ToolContainer>

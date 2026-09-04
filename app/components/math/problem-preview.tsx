@@ -55,7 +55,6 @@ import KgTopicInChatItem from "../graph/kg-topic-in-chat-item";
 import CopyButton from "../common-ui/copy-button";
 import StatusIcon from "./status-icon";
 import MathResInLine from "./math-res-inline";
-import { useRxEvent } from "~/event/events";
 
 export type ProblemPreviewHandle = {
   openExplanation: () => void;
@@ -179,13 +178,6 @@ const ProblemPreview = forwardRef<ProblemPreviewHandle, ProblemProps>(
       },
       highlight: doHighlight,
     }));
-
-    // 只在挂载时订阅一次 scroll-to-problem：pid 匹配则自高亮。
-    // BehaviorSubject 重放只在首次订阅时来一次（接住"先滚后挂"）；不再随进出视口反复订阅，
-    // 避免把缓存的旧事件反复重放导致重复高亮。可见性交给 runWhenVisible 兜底。
-    useRxEvent("scroll-to-problem", true, ({ pid }) => {
-      if (pid === id) doHighlight();
-    });
 
     return (
       <Card

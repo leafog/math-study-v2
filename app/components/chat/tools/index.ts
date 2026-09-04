@@ -1,13 +1,5 @@
 import { lazy } from "react";
-import ExclidrawPanel from "./tool-exclidraw";
-import {
-  Pen,
-  Pi,
-  ChartScatter,
-  Notebook,
-  Paperclip,
-  ComputerIcon,
-} from "lucide-react";
+import { Pen, Pi, Notebook, Paperclip } from "lucide-react";
 import type { Tools } from "./types";
 
 const tools = {
@@ -15,7 +7,7 @@ const tools = {
     kind: "excalidraw" as const,
     Icon: Pen,
     showInOpen: true,
-    Panel: ExclidrawPanel,
+    Panel: lazy(() => import("./tool-exclidraw")),
   },
   mathlive: {
     kind: "mathlive" as const,
@@ -23,12 +15,12 @@ const tools = {
     showInOpen: true,
     Panel: lazy(() => import("./tool-mathlive")),
   },
-  jsxgraph: {
-    kind: "jsxgraph" as const,
-    Icon: ChartScatter,
-    showInOpen: true,
-    Panel: lazy(() => import("./tool-jsxgraph")),
-  },
+  // jsxgraph: {
+  //   kind: "jsxgraph" as const,
+  //   Icon: ChartScatter,
+  //   showInOpen: true,
+  //   Panel: lazy(() => import("./tool-jsxgraph")),
+  // },
   blocknote: {
     kind: "blocknote" as const,
     Icon: Notebook,
@@ -41,12 +33,12 @@ const tools = {
     showInOpen: false,
     Panel: lazy(() => import("./tool-show-attachment")),
   },
-  epsli: {
-    kind: "epsli" as const,
-    Icon: ComputerIcon,
-    showInOpen: true,
-    Panel: lazy(() => import("./tool-epsli")),
-  },
+  // epsli: {
+  //   kind: "epsli" as const,
+  //   Icon: ComputerIcon,
+  //   showInOpen: true,
+  //   Panel: lazy(() => import("./tool-epsli")),
+  // },
 } satisfies Tools;
 
 /** 从各工具内容里的 kind 字段提取字面量联合 */

@@ -1,16 +1,31 @@
-import * as d3 from "d3";
-import type { SimulationNodeDatum, SimulationLinkDatum } from "d3-force";
-import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+} from "react";
+import {
+  Graph as G6Graph,
+  register,
+  ZoomCanvas,
+  type Graph,
+  type GraphData,
+  type NodeData,
+} from "@antv/g6";
 
 // ── Types ──
-interface GraphNode extends SimulationNodeDatum {
+
+interface GraphNode {
   id: string;
   name: string;
   subject: string;
 }
 
-interface GraphLink extends SimulationLinkDatum<GraphNode> {
-  type: "prerequisite" | "unlocks";
+interface GraphEdge {
+  source: string;
+  target: string;
+  type: string;
 }
 
 interface KnowledgeGraphProps {
@@ -27,43 +42,91 @@ export interface KnowledgeGraphHandle {
 
 // ── Helpers ──
 
+/** 节点半径随度数增长（对应原版 D3 实现；G6 中 size 是直径） */
 function nodeRadius(degree: number): number {
   return Math.max(3, Math.min(8, 3 + degree * 0.5));
 }
 
-function linkEndpointId(endpoint: string | number | { id: string }): string {
-  return typeof endpoint === "object" ? endpoint.id : String(endpoint);
+/** 节点自定义数据 */
+interface KgNodeData {
+  name: string;
+  subject: string;
+  degree: number;
+}
+
+/** 从 G6 NodeData 里安全读自定义数据（.data 在类型上是 loose Record） */
+function dataOf(d: NodeData): KgNodeData {
+  return (d.data ?? {}) as unknown as KgNodeData;
+}
+
+/** 解析 CSS 变量为具体颜色：G6 画布渲染不认 var()，必须落到实际值 */
+function cssVar(name: string, fallback: string): string {
+  if (typeof document === "undefined") return fallback;
+  return (
+    getComputedStyle(document.documentElement).getPropertyValue(name).trim() ||
+    fallback
+  );
 }
 
 function buildDegreeMap(
   nodeIds: Set<string>,
-  links: GraphLink[],
+  edges: GraphEdge[],
 ): Map<string, number> {
   const map = new Map<string, number>();
   for (const id of nodeIds) map.set(id, 0);
-  for (const l of links) {
-    const s = linkEndpointId(l.source);
-    const t = linkEndpointId(l.target);
-    map.set(s, (map.get(s) ?? 0) + 1);
-    map.set(t, (map.get(t) ?? 0) + 1);
+  for (const e of edges) {
+    map.set(e.source, (map.get(e.source) ?? 0) + 1);
+    map.set(e.target, (map.get(e.target) ?? 0) + 1);
   }
   return map;
 }
 
 function buildNeighborMap(
   nodeIds: Set<string>,
-  links: GraphLink[],
+  edges: GraphEdge[],
 ): Map<string, Set<string>> {
   const map = new Map<string, Set<string>>();
   for (const id of nodeIds) map.set(id, new Set());
-  for (const l of links) {
-    const s = linkEndpointId(l.source);
-    const t = linkEndpointId(l.target);
-    map.get(s)!.add(t);
-    map.get(t)!.add(s);
+  for (const e of edges) {
+    map.get(e.source)!.add(e.target);
+    map.get(e.target)!.add(e.source);
   }
   return map;
 }
+
+// ── 自定义缩放行为：限制缩放范围（对应原版 scaleExtent [0.1, 4]）──
+
+class RangeZoomCanvas extends ZoomCanvas {
+  override zoom = async (
+    value: number,
+    event: Parameters<ZoomCanvas["zoom"]>[1],
+    animation: Parameters<ZoomCanvas["zoom"]>[2],
+  ): Promise<void> => {
+    if (!this.validate(event)) return;
+    const { graph } = this.context;
+    const options = this.options as unknown as {
+      origin?: { x: number; y: number };
+      sensitivity?: number;
+      onFinish?: () => void;
+      minZoom?: number;
+      maxZoom?: number;
+    };
+
+    let origin: [number, number] | undefined = options.origin
+      ? [options.origin.x, options.origin.y]
+      : undefined;
+    const ev = event as { viewport?: { x: number; y: number } };
+    if (!origin && ev.viewport) origin = [ev.viewport.x, ev.viewport.y];
+
+    const { sensitivity = 1, onFinish, minZoom = 0.1, maxZoom = 4 } = options;
+    const ratio = 1 + (Math.max(-50, Math.min(50, value)) * sensitivity) / 100;
+    const next = Math.max(minZoom, Math.min(maxZoom, graph.getZoom() * ratio));
+    await graph.zoomTo(next, animation, origin);
+    onFinish?.();
+  };
+}
+
+register("behavior", "zoom-canvas-range", RangeZoomCanvas);
 
 // ── Component ──
 
@@ -75,350 +138,247 @@ export const KnowledgeGraph = forwardRef<
   ref,
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const graphRef = useRef<Graph | null>(null);
   const hoverHandlerRef = useRef(onNodeHover);
   hoverHandlerRef.current = onNodeHover;
 
-  // Persistent D3 infrastructure (created once, updated on data change)
-  const svgSelRef =
-    useRef<d3.Selection<SVGSVGElement, undefined, null, undefined>>(null);
-  const gRef =
-    useRef<d3.Selection<SVGGElement, undefined, null, undefined>>(null);
-  const simulationRef = useRef<d3.Simulation<GraphNode, GraphLink>>(null);
-  const zoomRef = useRef<d3.ZoomBehavior<SVGSVGElement, undefined>>(null);
+  // 悬浮聚焦依赖的邻接信息（数据更新时同步），初始化 effect 只跑一次所以必须走 ref
+  const hoverInfoRef = useRef<{
+    neighborMap: Map<string, Set<string>>;
+    nodeById: Map<string, GraphNode>;
+    nodeIds: string[];
+    edges: Array<{ id: string; source: string; target: string }>;
+  }>({
+    neighborMap: new Map(),
+    nodeById: new Map(),
+    nodeIds: [],
+    edges: [],
+  });
 
-  // Imperative-access selections (rebound each data update)
-  const circlesRef =
-    useRef<d3.Selection<SVGCircleElement, GraphNode, SVGGElement, unknown>>(
-      null,
+  // 只做一次初始 fitView，之后保留用户的平移/缩放（对应原版 d3 zoom 状态持久）
+  const fittedRef = useRef(false);
+
+  // 映射为 G6 GraphData：degree 放入 data，尺寸/字体由度数推导
+  const model = useMemo(() => {
+    const ids = new Set(nodes.map((n) => n.id));
+    const validEdges = edges.filter(
+      (e) => ids.has(e.source) && ids.has(e.target),
     );
-  const linkElsRef =
-    useRef<d3.Selection<SVGLineElement, GraphLink, SVGGElement, unknown>>(null);
+    const degreeMap = buildDegreeMap(ids, validEdges);
+    const neighborMap = buildNeighborMap(ids, validEdges);
+    const edgeIndex = validEdges.map((e) => ({
+      id: `${e.source}->${e.target}`,
+      source: e.source,
+      target: e.target,
+      type: e.type,
+    }));
 
-  // Fast lookup for focusNode
-  const nodeIndexRef = useRef<Map<string, GraphNode>>(new Map());
-  const neighborMapRef = useRef<Map<string, Set<string>>>(null);
-
-  // ── Init: create SVG + zoom + simulation once ──
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const w = container.clientWidth || 800;
-    const h = container.clientHeight || 600;
-
-    const svg = d3
-      .create("svg")
-      .attr("width", w)
-      .attr("height", h)
-      .attr("viewBox", [-w / 2, -h / 2, w, h])
-      .attr("style", "max-width: 100%; height: auto;");
-
-    const g = svg.append("g");
-
-    const zoomBehavior = d3
-      .zoom<SVGSVGElement, undefined>()
-      .scaleExtent([0.1, 4])
-      .on("zoom", (event: d3.D3ZoomEvent<SVGSVGElement, undefined>) => {
-        g.attr("transform", event.transform.toString());
-      });
-    svg.call(zoomBehavior);
-
-    // Empty containers, populated later by the data effect
-    g.append("g").attr("class", "links");
-    g.append("g").attr("class", "nodes");
-
-    const simulation = d3
-      .forceSimulation<GraphNode>([])
-      .force(
-        "link",
-        d3
-          .forceLink<GraphNode, GraphLink>([])
-          .id((d) => d.id)
-          .distance(60),
-      )
-      .force("charge", d3.forceManyBody().strength(-150))
-      .force("center", d3.forceCenter(0, 0))
-      .force("x", d3.forceX().strength(0.05))
-      .force("y", d3.forceY().strength(0.05))
-      .stop();
-
-    container.append(svg.node()!);
-
-    svgSelRef.current = svg;
-    gRef.current = g;
-    zoomRef.current = zoomBehavior;
-    simulationRef.current = simulation;
-
-    return () => {
-      simulation.stop();
-      svg.remove();
-      svgSelRef.current = null;
-      gRef.current = null;
-      zoomRef.current = null;
-      simulationRef.current = null;
-      circlesRef.current = null;
-      linkElsRef.current = null;
-      nodeIndexRef.current.clear();
+    const graphData: GraphData = {
+      nodes: nodes.map((n) => ({
+        id: n.id,
+        data: {
+          name: n.name,
+          subject: n.subject,
+          degree: degreeMap.get(n.id) ?? 0,
+        },
+      })),
+      edges: edgeIndex.map((e) => ({
+        id: e.id,
+        source: e.source,
+        target: e.target,
+        data: { type: e.type },
+      })),
     };
-  }, []);
 
-  // ── Data: enter/update/exit nodes & edges ──
-  useEffect(() => {
-    const simulation = simulationRef.current;
-    const g = gRef.current;
-    if (!simulation || !g) return;
-
-    // ── Build data maps ──
-    const nodeIds = new Set(nodes.map((n) => n.id));
-    const links: GraphLink[] = edges
-      .filter((d) => nodeIds.has(d.source) && nodeIds.has(d.target))
-      .map((d) => ({ ...d, type: d.type as "prerequisite" | "unlocks" }));
-    const nodesCopy: GraphNode[] = nodes.map((d) => ({ ...d }));
-
-    const degreeMap = buildDegreeMap(nodeIds, links);
-    const neighborMap = buildNeighborMap(nodeIds, links);
-    neighborMapRef.current = neighborMap;
-
-    // Update node index for O(1) imperative lookup
-    const nodeIndex = nodeIndexRef.current;
-    nodeIndex.clear();
-    for (const n of nodesCopy) nodeIndex.set(n.id, n);
-
-    // ── Clear existing tick handler before rebinding ──
-    simulation.on("tick", null).stop();
-
-    // ── Empty graph: clear containers ──
-    const linkContainer = g.select<SVGGElement>(".links")!;
-    const nodeContainer = g.select<SVGGElement>(".nodes")!;
-
-    if (!nodes.length) {
-      linkContainer.selectAll("line").remove();
-      nodeContainer.selectAll("g").remove();
-      circlesRef.current = null;
-      linkElsRef.current = null;
-      return;
-    }
-
-    // ── Join links (keyed by source-target pair) ──
-    const linkEls = linkContainer
-      .selectAll<SVGLineElement, GraphLink>("line")
-      .data(
-        links,
-        (d) => `${linkEndpointId(d.source)}-${linkEndpointId(d.target)}`,
-      )
-      .join("line")
-      .attr("stroke", "var(--border)")
-      .attr("stroke-opacity", 0.45)
-      .attr("stroke-width", 1);
-
-    // ── Join node groups (keyed by id, preserves children) ──
-    const nodeGroups = nodeContainer
-      .selectAll<SVGGElement, GraphNode>("g")
-      .data(nodesCopy, (d) => d.id)
-      .join("g");
-
-    // Setup circles + labels + tooltips for entering nodes only
-    nodeGroups.each(function (d) {
-      const sel = d3.select(this);
-      if (sel.select("circle").size()) return; // already initialized
-      sel
-        .append("circle")
-        .attr("r", nodeRadius(degreeMap.get(d.id) ?? 0))
-        .attr("fill", "var(--muted-foreground)")
-        .attr("stroke", "transparent")
-        .attr("stroke-width", 2)
-        .attr("style", "cursor: pointer");
-      sel
-        .append("text")
-        .text(d.name)
-        .attr("text-anchor", "middle")
-        .attr("dy", nodeRadius(degreeMap.get(d.id) ?? 0) + 10)
-        .attr(
-          "font-size",
-          Math.max(0, 6 + nodeRadius(degreeMap.get(d.id) ?? 0) * 0.3),
-        )
-        .attr("fill", "var(--foreground)")
-        .attr("opacity", 0.7)
-        .attr("pointer-events", "none");
-      sel.append("title").text(`${d.name} — ${d.subject}`);
-    });
-
-    // Update text & title on every data change (e.g. language switch)
-    nodeGroups.select("text").text((d) => d.name);
-    nodeGroups.select("title").text((d) => `${d.name} — ${d.subject}`);
-
-    // Flat circle selection (for tick, hover, imperative API)
-    const circles = nodeGroups.select<SVGCircleElement>("circle");
-
-    // ── Tick ──
-    simulation.on("tick", () => {
-      linkEls
-        .attr("x1", (d) => (d.source as GraphNode).x!)
-        .attr("y1", (d) => (d.source as GraphNode).y!)
-        .attr("x2", (d) => (d.target as GraphNode).x!)
-        .attr("y2", (d) => (d.target as GraphNode).y!);
-      nodeGroups.attr("transform", (d) => `translate(${d.x!},${d.y!})`);
-    });
-
-    // ── Hover: focus mode ──
-    nodeGroups
-      .on("mouseenter", function (this: SVGGElement) {
-        const hovered = d3.select<SVGGElement, GraphNode>(this).datum();
-        const neighbors = neighborMap.get(hovered.id) ?? new Set();
-        const neighborIds = new Set([hovered.id, ...neighbors]);
-
-        circles
-          .attr("opacity", (d) => (neighborIds.has(d.id) ? 1 : 0.12))
-          .attr("fill", (d) =>
-            d.id === hovered.id ? "var(--primary)" : "var(--muted-foreground)",
-          );
-
-        nodeGroups
-          .selectAll<SVGTextElement, GraphNode>("text")
-          .attr("opacity", (d) => (neighborIds.has(d.id) ? 0.7 : 0.1));
-
-        linkEls
-          .attr("stroke", (d) => {
-            const s = linkEndpointId(d.source);
-            const t = linkEndpointId(d.target);
-            return s === hovered.id || t === hovered.id
-              ? "var(--primary)"
-              : "var(--border)";
-          })
-          .attr("stroke-opacity", (d) => {
-            const s = linkEndpointId(d.source);
-            const t = linkEndpointId(d.target);
-            return s === hovered.id || t === hovered.id ? 0.6 : 0.08;
-          });
-
-        hoverHandlerRef.current?.(hovered);
-      })
-      .on("mouseleave", function () {
-        circles.attr("opacity", 1).attr("fill", "var(--muted-foreground)");
-        nodeGroups
-          .selectAll<SVGTextElement, GraphNode>("text")
-          .attr("opacity", 0.7);
-        linkEls.attr("stroke", "var(--border)").attr("stroke-opacity", 0.45);
-        hoverHandlerRef.current?.(null);
-      });
-
-    // ── Drag ──
-    nodeGroups.call(
-      d3
-        .drag<SVGGElement, GraphNode>()
-        .on("start", (event, d) => {
-          if (!event.active) simulation.alphaTarget(0.3).restart();
-          d.fx = d.x;
-          d.fy = d.y;
-        })
-        .on("drag", (event, d) => {
-          d.fx = event.x;
-          d.fy = event.y;
-        })
-        .on("end", (_event, d) => {
-          if (!simulation.alphaTarget()) simulation.alphaTarget(0);
-          d.fx = null;
-          d.fy = null;
-        }),
-    );
-
-    // ── Update simulation data & restart ──
-    simulation.nodes(nodesCopy);
-    (simulation.force("link") as d3.ForceLink<GraphNode, GraphLink>).links(
-      links,
-    );
-    simulation.alpha(1).restart();
-
-    // Store selections for imperative access
-    circlesRef.current = circles;
-    linkElsRef.current = linkEls;
+    return {
+      graphData,
+      hoverInfo: {
+        neighborMap,
+        nodeById: new Map(nodes.map((n) => [n.id, n] as const)),
+        nodeIds: nodes.map((n) => n.id),
+        edges: edgeIndex,
+      },
+    };
   }, [nodes, edges]);
 
-  // ── Resize (throttled via rAF) ──
+  // ── 初始化：创建图实例一次 ──
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    let raf = 0;
-    const observer = new ResizeObserver(() => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const svg = svgSelRef.current;
-        if (!svg || !container) return;
-        const w = container.clientWidth || 800;
-        const h = container.clientHeight || 600;
-        svg
-          .attr("width", w)
-          .attr("height", h)
-          .attr("viewBox", [-w / 2, -h / 2, w, h]);
-      });
+    // G6 画布不认 CSS var()，把主题 token 解析成具体颜色
+    const colors = {
+      node: cssVar("--muted-foreground", "#64748b"),
+      foreground: cssVar("--foreground", "#0f172a"),
+      border: cssVar("--border", "#94a3b8"),
+      accent: cssVar("--primary", "#2563eb"),
+    };
+
+    const graph = new G6Graph({
+      container,
+      animation: false,
+      layout: {
+        type: "d3-force",
+        // 布局动画开启：按 tick 实时渲染，拖拽节点时力导实时重算（原版 d3 同款观感）
+        animation: true,
+        link: { distance: 60 },
+        manyBody: { strength: -150 },
+        center: { x: 0, y: 0 },
+        x: { strength: 0.05 },
+        y: { strength: 0.05 },
+      },
+      behaviors: [
+        "drag-canvas",
+        { type: "zoom-canvas-range", minZoom: 0.1, maxZoom: 4 },
+        "drag-element-force",
+      ],
+      plugins: [
+        // {
+        //   // 原生 SVG <title> 的 G6 等价物：悬浮显示 "name — subject"
+        //   type: "tooltip",
+        //   trigger: "hover",
+        //   enable: (event: { targetType?: string }) =>
+        //     event.targetType === "node",
+        //   getContent: (_event: unknown, items: Array<{ data?: unknown }>) => {
+        //     const d = (items[0]?.data ?? {}) as Partial<KgNodeData>;
+        //     const { name = "", subject = "" } = d;
+        //     return subject ? `${name} — ${subject}` : name;
+        //   },
+        // },
+      ],
+      node: {
+        style: {
+          size: (d) => nodeRadius(dataOf(d).degree ?? 0) * 2,
+          fill: colors.node,
+          stroke: "transparent",
+          lineWidth: 2,
+          cursor: "pointer",
+          // 标签常显（对应原版）
+          labelText: (d) => dataOf(d).name ?? "",
+          labelPlacement: "bottom",
+          labelOffsetY: 6,
+          labelFontSize: (d) =>
+            Math.max(0, 6 + nodeRadius(dataOf(d).degree ?? 0) * 0.3),
+          labelFill: colors.foreground,
+          labelOpacity: 0.7,
+        },
+        state: {
+          // 悬浮的节点本身：填充主色（对应原版 mouseenter 逻辑）
+          hovered: {
+            fill: colors.accent,
+          },
+          // 非邻居节点变暗
+          dim: {
+            fillOpacity: 0.12,
+            strokeOpacity: 0.12,
+            labelOpacity: 0.1,
+          },
+          // focusNode 脉冲：放大到 2.2 倍 + 主色描边
+          pulse: {
+            fill: colors.accent,
+            stroke: colors.accent,
+            strokeOpacity: 0.4,
+            lineWidth: 2,
+            size: (d) => nodeRadius(dataOf(d).degree ?? 0) * 2 * 2.2,
+          },
+        },
+      },
+      edge: {
+        style: {
+          stroke: colors.border,
+          strokeOpacity: 0.45,
+          lineWidth: 1,
+        },
+        state: {
+          "link-active": {
+            stroke: colors.accent,
+            strokeOpacity: 0.6,
+          },
+          "edge-dim": {
+            strokeOpacity: 0.08,
+          },
+        },
+      },
     });
 
-    observer.observe(container);
+    // ── 悬浮聚焦（对应原版 mouseenter/mouseleave）──
+    graph.on("node:pointerover", (event) => {
+      const id = (event as unknown as { target?: { id?: string } }).target?.id;
+      if (!id) return;
+      const { neighborMap, nodeById, nodeIds, edges } = hoverInfoRef.current;
+      const neighbors = neighborMap.get(id) ?? new Set();
+
+      const nodeStates: Record<string, string[]> = {};
+      for (const nid of nodeIds) {
+        if (nid === id) nodeStates[nid] = ["hovered"];
+        else nodeStates[nid] = neighbors.has(nid) ? [] : ["dim"];
+      }
+      const edgeStates: Record<string, string[]> = {};
+      for (const e of edges) {
+        edgeStates[e.id] =
+          e.source === id || e.target === id ? ["link-active"] : ["edge-dim"];
+      }
+
+      try {
+        graph.setElementState({ ...nodeStates, ...edgeStates }, false);
+      } catch {
+        // 数据刚更新时旧 id 可能已失效，忽略
+      }
+
+      const node = nodeById.get(id);
+      if (node) hoverHandlerRef.current?.(node);
+    });
+
+    graph.on("node:pointerout", () => {
+      const { nodeIds, edges } = hoverInfoRef.current;
+      const clear: Record<string, string[]> = {};
+      for (const nid of nodeIds) clear[nid] = [];
+      for (const e of edges) clear[e.id] = [];
+      try {
+        graph.setElementState(clear, false);
+      } catch {
+        // ignore
+      }
+      hoverHandlerRef.current?.(null);
+    });
+
+    graphRef.current = graph;
+
     return () => {
-      cancelAnimationFrame(raf);
-      observer.disconnect();
+      graph.destroy();
+      graphRef.current = null;
     };
   }, []);
 
-  // ── Imperative API: focus a node by topic ID ──
+  // ── 数据更新：同步邻接信息，整体替换数据并重渲染（d3-force 重新收敛）──
+  useEffect(() => {
+    const graph = graphRef.current;
+    if (!graph) return;
+    hoverInfoRef.current = model.hoverInfo;
+    graph.setData(model.graphData);
+    void graph.render().then(() => {
+      if (fittedRef.current) return;
+      fittedRef.current = true;
+      if ((model.graphData.nodes?.length ?? 0) > 0) void graph.fitView();
+    });
+  }, [model]);
+
+  // ── Imperative API: focus a node by topic ID（原版：放大 1.2 → 居中 → 脉冲两次）──
   useImperativeHandle(
     ref,
     () => ({
       focusNode(topicId: string) {
-        const svg = svgSelRef.current;
-        const zoom = zoomRef.current;
-        const circles = circlesRef.current;
-        if (!svg || !zoom || !circles) return;
-
-        // O(1) lookup via index
-        const nodeData = nodeIndexRef.current.get(topicId);
-        if (!nodeData || nodeData.x == null || nodeData.y == null) return;
-
-        // viewBox is [-w/2, -h/2, w, h], so (0,0) = screen center
-        const scale = 1.2;
-        const transform = d3.zoomIdentity
-          .translate(-nodeData.x * scale, -nodeData.y * scale)
-          .scale(scale);
-
-        svg.transition().duration(750).call(zoom.transform, transform);
-
-        const targetCircle = circles.filter((d) => d.id === topicId);
-        if (targetCircle.empty()) return;
-
-        const origR = Number.parseFloat(targetCircle.attr("r"));
-        targetCircle.interrupt();
-
-        let count = 0;
-        const maxPulses = 2;
-
-        function doPulse() {
-          if (count >= maxPulses) {
-            targetCircle!
-              .transition()
-              .duration(300)
-              .attr("r", origR)
-              .attr("fill", "var(--muted-foreground)")
-              .attr("stroke", "transparent");
-            return;
+        const graph = graphRef.current;
+        if (!graph) return;
+        void (async () => {
+          try {
+            await graph.zoomTo(1.2, { duration: 0 });
+            await graph.focusElement(topicId, { duration: 750 });
+          } catch {
+            // 节点不存在或尚未渲染
           }
-          targetCircle!
-            .attr("fill", "var(--primary)")
-            .attr("stroke", "var(--primary)")
-            .attr("stroke-opacity", 0.4)
-            .transition()
-            .duration(400)
-            .attr("r", origR * 2.2)
-            .transition()
-            .duration(400)
-            .attr("r", origR)
-            .on("end", () => {
-              count++;
-              doPulse();
-            });
-        }
-
-        doPulse();
+        })();
+        void pulseNode(graph, topicId);
       },
     }),
     [],
@@ -426,3 +386,15 @@ export const KnowledgeGraph = forwardRef<
 
   return <div ref={containerRef} className="h-full w-full select-none" />;
 });
+
+/** 节点脉冲动画：放大到 2.2 倍两次（对应原版 d3 的 pulse） */
+async function pulseNode(graph: Graph, id: string) {
+  try {
+    for (let i = 0; i < 2; i++) {
+      await graph.setElementState({ [id]: ["pulse"] }, true);
+      await graph.setElementState({ [id]: [] }, true);
+    }
+  } catch {
+    // 节点可能已不存在
+  }
+}

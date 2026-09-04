@@ -1,10 +1,10 @@
 import {
-  ChartScatter,
-  ChefHat,
   Files,
   Plus,
+  Network,
   BadgeQuestionMark,
   Settings,
+  SquarePen,
 } from "lucide-react";
 import {
   Sidebar,
@@ -40,7 +40,7 @@ const AppSidebar = () => {
   const topRoutes: RouteItem[] = [
     {
       path: "/",
-      icon: <ChefHat />,
+      icon: <SquarePen />,
       title: t("chat.newChat"),
     },
     {
@@ -50,7 +50,7 @@ const AppSidebar = () => {
     },
     {
       path: "/graph",
-      icon: <ChartScatter />,
+      icon: <Network />,
       title: t("routes.graph"),
     },
     {

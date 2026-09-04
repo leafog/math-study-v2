@@ -7,7 +7,6 @@ export const CreateProblem = ({
   part,
 }: ToolRendererProps<"tool-createProblem">) => {
   const { t } = useTranslation();
-  console.log(part.output?.id);
   return (
     <ToolBlock title={t("toolCall.title.createProblem")} part={part}>
       {part.state === "output-available" && (

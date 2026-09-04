@@ -104,11 +104,33 @@ const useChatProblemsManager = (chatId: string) => {
     return toStateColor(answers);
   };
   const refs = useRef<Map<string, ProblemPreviewHandle>>(new Map());
+  // "先滚后挂"的暂存目标：emit 时目标还没挂载，先记下，等它挂载时补一次高亮并清空（消费一次）。
+  const pendingPidRef = useRef<string | null>(null);
+
+  // 订阅一次 scroll-to-problem，避免每个 problem-preview 各自重放订阅。
+  // 已挂载 → 直接调 ref.highlight；未挂载 → 记 pending，由 registerRef 在挂载时补高亮。
+  useEffect(() => {
+    return bus.on("scroll-to-problem", ({ pid }) => {
+      const handle = refs.current.get(pid);
+      if (handle) {
+        handle.highlight();
+      } else {
+        pendingPidRef.current = pid;
+      }
+    });
+  }, []);
 
   const registerRef = useCallback(
     (id: string) => (el: ProblemPreviewHandle | null) => {
-      if (el) refs.current.set(id, el);
-      else refs.current.delete(id);
+      if (el) {
+        refs.current.set(id, el);
+        if (pendingPidRef.current === id) {
+          el.highlight();
+          pendingPidRef.current = null;
+        }
+      } else {
+        refs.current.delete(id);
+      }
     },
     [],
   );

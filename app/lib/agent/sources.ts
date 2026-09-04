@@ -166,6 +166,20 @@ Pass the attachment's id as the attachment_id parameter; the created problems ar
 
 Skip text that is not a math problem (page numbers, titles, instructions, answer sheets without questions, etc.). If a problem is ambiguous or has minor OCR errors, infer the most reasonable version and still create it rather than skipping it. Do not merge separate problems into one; keep each as its own entry in the problems array.`,
   },
+  "chat.annotationPrompt": {
+    description:
+      "Vision-model recognition of user-drawn annotations: read each numbered region and return its content.",
+    template: `The image is a composite of several annotated regions. Each region has a number in the label bar directly above it.
+
+For every number, recognize the mathematical content in that region (the text/formula the student marked) and return it as an item with:
+- id: the number exactly as shown in the label bar (as a string)
+- content: the content inside that region as Markdown
+
+Rules:
+- Include an item for every numbered region.
+- Transcribe what is actually in the region (formulas, symbols, fractions, subscripts/superscripts). Do not add explanation or solve anything.
+- If a region is empty or contains only a mark with no readable content, set content to an empty string.`,
+  },
   "title.generate": {
     description: "Generate a concise chat title from the first user message and the AI's first reply.",
     template: `You are naming a study chat in a math learning app. You receive a JSON with the first exchange:
@@ -188,19 +202,5 @@ Conversation (JSON):
     template: `You are an OCR engine. Recognize the mathematical content in the image and convert it to Markdown.
 - Output only the recognized result, with no explanation.
 - Do NOT wrap the output in a Markdown code fence (no \`\`\`markdown ... \`\`\` or any other code block). The entire response IS Markdown, so emit it directly, starting and ending with content.`,
-  },
-  "ocr.toMarkdown": {
-    description: "Convert a raw PaddleOCR result into clean Markdown.",
-    template: `You are an OCR cleanup assistant for math problem screenshots. Below is a PaddleOCR result (JSON) for a math problem image. Each item has text, score, top, left.
-
-Rewrite it into clean, fluent Markdown that faithfully preserves the meaning. Requirements:
-1. Reorder into natural reading order; do not break up equations or formulas.
-2. Fix obvious recognition errors or garbled text when the surrounding context makes the correction clear.
-3. Drop fragments with very low confidence that cannot be recovered; do not output them.
-4. Only output content that actually appears in the image — do not add explanations or problems that are not there.
-5. Do NOT wrap the output in a Markdown code fence (no \`\`\`markdown ... \`\`\` or any other code block). The entire response IS Markdown, so emit it directly, starting and ending with content.
-
-OCR result (JSON):
-{ocr}`,
   },
 };

@@ -12,8 +12,10 @@ import {
   AccordionTrigger,
 } from "../ui/accordion";
 import { cn } from "~/lib/utils";
+import { useTranslation } from "react-i18next";
 
 const ChatMenuInfo = ({ className }: { className?: string }) => {
+  const { t } = useTranslation();
   return (
     <Card className={cn("w-full  p-0", className)}>
       <CardContent className="px-2">
@@ -21,11 +23,11 @@ const ChatMenuInfo = ({ className }: { className?: string }) => {
           <AccordionItem value="graph">
             <AccordionTrigger>
               <span className="text-muted-foreground   font-medium ">
-                知识点图谱
+                {t("chat.menu.knowledgeGraph")}
               </span>
             </AccordionTrigger>
             <AccordionContent className=" relative w-full h-48">
-              <div className=" absolute top-0 right-0 gap-2">
+              <div className=" absolute top-0 right-0 gap-2 z-50">
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button
@@ -68,7 +70,9 @@ const ChatMenuInfo = ({ className }: { className?: string }) => {
           </AccordionItem>
           <AccordionItem value="problems">
             <AccordionTrigger>
-              <span className="text-muted-foreground  font-medium">题目</span>
+              <span className="text-muted-foreground  font-medium">
+                {t("chat.menu.problems")}
+              </span>
             </AccordionTrigger>
             <AccordionContent className="w-full h-48 overflow-y-auto scrollbar-thin">
               <ChatProblemsList />

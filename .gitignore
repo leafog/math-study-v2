@@ -9,3 +9,10 @@
 # playwright generated output
 playwright-report/
 test-results/
+
+# netlify local deploy state
+.netlify/
+
+# local probe/debug scripts & screenshots
+test/probe-*.spec.ts
+test/probe-*.png

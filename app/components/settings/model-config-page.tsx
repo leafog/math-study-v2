@@ -248,14 +248,17 @@ const ModelConfigPage = () => {
             <EmptyTitle>{t("settings.noConfiguredModels")}</EmptyTitle>
           </EmptyHeader>
         </Empty>
-      ) : (
+      ) : null}
+      <ItemGroup>
+        <Item variant="outline" className="flex-col items-stretch gap-2">
+          <ItemContent>
+            <ItemTitle>{t("settings.availableProviders")}</ItemTitle>
+          </ItemContent>
+          <ModelProviderList onOpenConfig={handleOpenConfig} />
+        </Item>
+      </ItemGroup>
+      {validProviders.length > 0 ? (
         <ItemGroup>
-          <Item variant="outline" className="flex-col items-stretch gap-2">
-            <ItemContent>
-              <ItemTitle>{t("settings.availableProviders")}</ItemTitle>
-            </ItemContent>
-            <ModelProviderList onOpenConfig={handleOpenConfig} />
-          </Item>
           {validProviders.map(
             ({
               provider,
@@ -450,7 +453,7 @@ const ModelConfigPage = () => {
             </ItemActions>
           </Item>
         </ItemGroup>
-      )}
+      ) : null}
 
       <Dialog
         open={dialogProviderId !== null}

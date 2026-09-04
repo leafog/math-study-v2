@@ -47,11 +47,15 @@
     },
     "noModelConfigured": "还未配置模型",
     "goToModelSettings": "前往设置配置模型",
-    "selectModelToUse": "选择模型"
+    "selectModelToUse": "选择模型",
+    "menu": {
+      "knowledgeGraph": "知识点图谱",
+      "problems": "题目"
+    }
   },
   "routes": {
     "files": "文件",
-    "graph": "图形"
+    "graph": "知识图谱"
   },
   "graph": {
     "title": "知识图谱",
@@ -234,6 +238,8 @@
   },
   "toolCall": {
     "attachmentResult": "识别内容",
+    "relatedProblems": "相关联的题目",
+    "noRelatedProblems": "暂无相关联的题目",
     "creatingProblem": "正在出题...",
     "createProblemFailed": "出题失败",
     "createdProblems": "已创建 {{count}} 道题目",

@@ -30,14 +30,15 @@ import { ProblemPreviewSimple } from "../math/problem-preview-simple";
 import ChatWelcome from "./chat-welcome";
 import ChatPromptSuggestion from "./chat-prompt-suggestion";
 import { useChatPromptSuggestionStore } from "~/store/chat-prompt-suggestion-store";
-import { conversationColl } from "~/db/tdb-collections";
 import { useDebounceCallback } from "usehooks-ts";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ArrowDownIcon } from "lucide-react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { useChatProblemScroll } from "./use-chat-problem-scroll";
-import { PromptInput } from "./prompt-input";
+import { Marker, MarkerContent, MarkerIcon } from "../ui/marker";
+import { Spinner } from "../ui/spinner";
+import { useTranslation } from "react-i18next";
 
 interface ChatPanelProps {
   panelRef: React.RefObject<PanelImperativeHandle | null>;
@@ -79,6 +80,7 @@ const ChatInnerWrapper = ({
 };
 
 const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
+  const { t } = useTranslation();
   const { messages, status } = useActiveChatHelpers();
   const { isNewChat, renameChatTitle, conversation } = useActiveChat();
   const onChatResize = useActiveChatToolsPanelStore().use.onChatResize();
@@ -139,6 +141,14 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
       behavior: "instant",
     });
   }, [chatId]);
+
+  useEffect(() => {
+    if (status === "submitted") {
+      virtualizer.scrollToEnd({
+        behavior: "smooth",
+      });
+    }
+  }, [status, virtualizer]);
 
   useChatProblemScroll({ virtualizer, scrollRef, messages });
 
@@ -241,6 +251,16 @@ const ChatPanel = ({ panelRef, chatId }: ChatPanelProps) => {
                   );
                 })}
               </div>
+              {status === "submitted" && (
+                <Marker role="status" className="mt-2">
+                  <MarkerIcon>
+                    <Spinner />
+                  </MarkerIcon>
+                  <MarkerContent className="shimmer">
+                    {t("chat.thinking")}
+                  </MarkerContent>
+                </Marker>
+              )}
             </div>
 
             {menuShow && !toolsShow && (

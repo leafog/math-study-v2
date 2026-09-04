@@ -261,15 +261,6 @@ export async function composeImagesToBlob(
     ctx.strokeStyle = "#94a3b8";
     ctx.lineWidth = 2;
     ctx.strokeRect(dx + 1, dy + 1, imageW - 2, imageH - 2);
-    // 调试：确认每格加载与裁剪
-    console.log("[img-utils:cell]", {
-      i,
-      kind: cell.source.kind,
-      label: cell.label,
-      natural: [img.naturalWidth, img.naturalHeight],
-      crop: [sx, sy, sw, sh],
-      drawn,
-    });
   });
 
   return new Promise<Blob>((resolve, reject) => {

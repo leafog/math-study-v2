@@ -47,11 +47,15 @@
     },
     "noModelConfigured": "No model configured",
     "goToModelSettings": "Go to settings to configure",
-    "selectModelToUse": "Select a model"
+    "selectModelToUse": "Select a model",
+    "menu": {
+      "knowledgeGraph": "Knowledge Graph",
+      "problems": "Problems"
+    }
   },
   "routes": {
     "files": "Files",
-    "graph": "Graph"
+    "graph": "Knowledge graph"
   },
   "graph": {
     "title": "Everything You Learn",
@@ -234,6 +238,8 @@
   },
   "toolCall": {
     "attachmentResult": "Extracted Content",
+    "relatedProblems": "Related problems",
+    "noRelatedProblems": "No related problems",
     "creatingProblem": "Creating problem...",
     "createProblemFailed": "Failed to create problem",
     "createdProblems": "Created {{count}} problems",

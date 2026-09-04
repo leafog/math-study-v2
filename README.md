@@ -1,87 +1,388 @@
-# Welcome to React Router!
+# math-study-v2
 
-A modern, production-ready template for building full-stack React applications using React Router.
+## 这是一个失败的项目
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
+这个项目的最初出发点，来自一条得到精选：[图式学习理论]。
 
-## Features
+当时我对这个项目的核心设想非常简单：
 
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
+**让 AI 出题，用户自己解题，并在解题过程中主动发现自己掌握了哪些知识、哪些地方存在薄弱环节。**
 
-## Getting Started
+如果一道题不会做，问题可能并不在这道题本身，而在于某个前置知识没有掌握。那么，系统应该进一步帮助用户找到这个前置知识，并针对它进行练习。
 
-### Installation
+在此基础上，还可以对原题进行变式，让用户通过不同形式的题目反复理解同一个知识点。
 
-Install the dependencies:
+所以，我最开始设计的并不是一个简单的 AI 答题工具，而是希望形成这样一个闭环：
 
-```bash
-npm install
-```
+**出题 → 解题 → 发现问题 → 定位知识缺口 → 针对性练习 → 变式练习 → 再次检验。**
 
-### Development
+### 围绕这个核心流程产生的功能
 
-Start the development server with HMR:
+为了支持这个流程，后来逐渐衍生出了很多功能。
 
-```bash
-npm run dev
-```
+#### 1. 知识图谱
 
-Your application will be available at `http://localhost:5173`.
+知识图谱最初的目的，是帮助用户发现自己的薄弱环节。
 
-## Building for Production
+但目前的实现实际上只是把知识点之间的关系展示出来，并没有真正让用户参与到图谱的构建和使用中。
 
-Create a production build:
+现在回头看，这很可能不是一个简单的“功能还没做完”的问题，而是**整个功能的定位就存在问题**。
 
-```bash
-npm run build
-```
+如果用户的学习过程本身没有形成足够有价值的数据，那么单纯展示一个知识图谱，并不能真正帮助用户学习。
 
-## Deployment
+所以这个方向后来被我暂时搁置了。
 
-### Docker Deployment
+#### 2. 文件管理
 
-To build and run using Docker:
+用户在其他地方看到一道题，可能希望把它拿过来练习。
 
-```bash
-docker build -t my-app .
+因此我设计了文件管理，并尝试通过视觉大模型识别图片中的题目，再将 OCR 结果转换成文本放入对话中。
 
-# Run the container
-docker run -p 3000:3000 my-app
-```
+这样做的一个主要目的，是尽可能减少直接将图片交给大模型所产生的 Token 消耗。
 
-The containerized application can be deployed to any platform that supports Docker, including:
+#### 3. 题目管理
 
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
+用户做过哪些题、进行过哪些练习，都需要被记录下来。
 
-### DIY Deployment
+因此又产生了题目、练习记录等相关的数据管理。
 
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
+#### 4. 工具栏
 
-Make sure to deploy the output of `npm run build`
+因为产品本身定位于数学学习，所以在学习过程中可能还会需要很多其他工具。
 
-```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
-```
+例如：
 
-## Styling
+* 数学笔记
+* 数学公式编辑
+* 草稿
+* 数学对象探索
+* 使用 JSXGraph 对数学对象进行可视化
 
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
+这些工具本质上都是围绕数学学习过程产生的辅助能力。
+
+但它们同样属于核心学习流程之外的衍生功能，其中有一些甚至还没有真正完成。
+
+### 技术上的另一个核心目标：足够便宜
+
+除了学习方式之外，我在技术架构上还有一个非常明确的目标：
+
+**尽可能不依赖后端服务。**
+
+因为这是一个教育产品，我希望它的使用成本足够低。
+
+因此，大部分数据和计算都尽可能放在浏览器端完成：
+
+* 数据存储在本地
+* 尽量使用浏览器本身提供的能力
+* 不依赖自己的后端服务
+* 只有大模型调用需要连接外部服务器
+* 用户自己配置 API Key
+
+文件处理也是类似的思路。
+
+用户上传题目图片后，通过视觉模型完成识别，将图片转换成结构化的文字题目，再交给后续的 AI 流程处理。
+
+这样既可以降低 Token 消耗，也可以让整个产品更加轻量。
+
+从技术实现的角度来看，这套架构其实是成立的。
+
+**真正失败的，并不是技术架构，而是产品本身的价值假设。**
+
+### 为什么这个项目失败了？
+
+现在回头看，我认为失败主要来自三个层面。
+
+#### 1. 产品提供的价值，并没有强到足以让用户离开通用 AI 工具
+
+这个产品最初的前提是：
+
+> 用户有学习意愿，然后通过这个产品完成自己的学习。
+
+但问题是，如果用户本身已经有比较强的学习意愿，那么他完全可以直接使用 ChatGPT、Claude 或其他 AI 工具完成类似的事情。
+
+让 AI 出一道题、帮我解释答案、告诉我哪里不会、再出一道类似的题——这些事情本身并不难被通用 AI 完成。
+
+也就是说，我最开始构建的是一个**“更适合学习的 AI 工具”**。
+
+但“更适合学习”本身并没有形成足够强的竞争优势。
+
+如果用户已经可以使用一个通用 AI 工具完成 80% 甚至 90% 的需求，那么我再构建一个专门的界面，把这些能力重新组合起来，并不足以构成一个独立产品。
+
+所以第一个问题实际上是：
+
+**我解决的是一个真实存在的问题，但没有解决一个足够值得单独做成产品的问题。**
+
+#### 2. 学习过程远比“做题 → 纠错”复杂
+
+第二个问题，是我后来越来越明显意识到的：
+
+**学习并不是一个简单的做题流程。**
+
+最初的设计很容易把学习抽象成：
+
+> 出题 → 做题 → 判断对错 → 找知识点 → 继续练习
+
+但真实的学习过程并不是这样。
+
+用户可能突然想到一个完全无关的问题；
+
+可能因为一道题联想到另一个概念；
+
+可能停下来查一个定义；
+
+可能画一张图；
+
+可能写一段笔记；
+
+可能和 AI 讨论一个并没有直接对应题目的问题；
+
+甚至可能在某个地方停留很长时间，只是在思考。
+
+这些行为很难被“题目”这个对象统一起来。
+
+于是我逐渐发现：
+
+**题目只是学习过程中的一个对象，而不是学习过程本身。**
+
+如果一直围绕“题目”设计整个产品，那么最终得到的很可能只是一个更复杂的题库，而不是一个真正理解用户学习过程的系统。
+
+这也解释了为什么后面的知识图谱、题目管理、工具栏等功能越来越多，却越来越难形成一个真正自然的整体。
+
+因为我一直在尝试用更多功能去补充一个本身就不完整的学习模型。
+
+#### 3. 也许真正的问题是：学习本身就不是一个纯粹的信息消费过程
+
+这是我目前对这个项目最悲观、但也最重要的一个判断。
+
+人类的学习可能从来都不是一种单纯的信息输入行为。
+
+在很长的历史时期里，人类通过讲故事、讨论、模仿、实践以及人与人之间的互动来学习。
+
+即使到了文字成为主要知识载体的今天，真正有效的学习也往往不仅仅是“阅读一段文字”。
+
+我们需要：
+
+* 交流
+* 提问
+* 表达
+* 解释
+* 实践
+* 反馈
+* 反思
+* 与别人讨论自己的理解
+
+而我这个项目实际上把学习过程高度压缩成了：
+
+**一个人 + 一个浏览器 + 一堆题目 + 一个 AI。**
+
+这可能从根本上限制了产品的用户群体。
+
+因为它默认用户已经拥有最重要的东西：
+
+**学习意愿，以及主动进行学习的能力。**
+
+而对于真正的大多数用户来说，问题可能恰恰不是“我缺少一个更好的学习工具”，而是：
+
+**我为什么要学习？我应该学什么？我现在到底应该做什么？为什么我要坚持下去？**
+
+如果一个产品把这些最困难的问题全部留给用户自己解决，那么它实际上只服务于那些本来就非常主动的学习者。
+
+因此，这可能才是这个项目最根本的问题：
+
+> **我试图优化的是“学习工具”，但用户真正缺少的可能是“学习过程”。**
+
+### 下一步可能怎么做？
+
+如果继续做，我现在反而不太想继续给这个产品增加更多功能。
+
+我更想尝试改变整个产品的出发点。
+
+#### 1. 从“题目”转向“学习轨迹”
+
+之前的产品是：
+
+> 用户做题 → 产生学习数据
+
+现在我更想反过来：
+
+> **用户真实地学习 → 产品记录学习轨迹 → AI 理解这个学习过程 → AI 帮助用户规划下一步。**
+
+这里的“学习轨迹”不应该只是：
+
+> 今天做了 10 道题，正确率 80%。
+
+而应该记录用户真实的学习行为：
+
+* 看了什么
+* 问了什么
+* 想到了什么
+* 写了什么
+* 哪些地方停留很久
+* 哪些地方反复询问
+* 做过哪些练习
+* 为什么做这道题
+* 学习过程中产生了哪些新的问题
+* 用户自己认为哪里没理解
+
+这样，AI 才有可能真正理解：
+
+**“这个人最近到底在学什么，以及他是怎么学习的。”**
+
+然后再基于这个轨迹，帮助用户进行学习规划、发现问题、推荐内容和设计下一步练习。
+
+这和最开始“AI 出题 → 用户做题”的产品逻辑，其实已经完全不同了。
+
+#### 2. 从数学学习扩展到其他学科
+
+另外一个很自然的想法是：
+
+如果核心机制并不依赖数学本身，那么理论上只需要改变 Prompt、知识组织方式以及部分工具，就可以把它扩展到其他学科。
+
+数学可以做题。
+
+编程可以写代码。
+
+语言可以阅读和表达。
+
+历史可以讨论和复述。
+
+甚至可以学习一个完全陌生的领域。
+
+但这里我仍然存在一个很大的疑问：
+
+**这种“AI + 学习轨迹”的学习方式，到底是不是真的能够显著提高学习效果？**
+
+这是我现在不会轻易下结论的地方。
+
+因为从“技术上可以实现”到“用户真的因此学得更好”，中间还有非常大的距离。
+
+所以如果重新开始，我可能不会再从“我要做一个什么功能”开始。
+
+而会先问一个更基础的问题：
+
+> **什么样的学习过程，真的能够让一个人学得更好？**
+
+然后再决定 AI、题目、知识图谱、笔记、工具以及学习轨迹分别应该扮演什么角色。
+
+这可能才是这个项目失败之后，真正留下来的东西。
 
 ---
 
-Built with ❤️ using React Router.
+一个**本地优先（local-first）的多模型 AI 数学学习助手**。上传题目截图/文本，由你自带的 LLM（BYOK）提取题目并逐步解析，配合知识点知识图谱、题目库与数学公式渲染，做结构化学习。
+
+纯前端 SPA：**没有你自己的后端**，所有数据（含 API Key、题目、图谱）都存在浏览器的本地数据库里，密钥只属于填写它的那个用户。
+
+## 技术栈
+
+- **框架**：React Router v7（React 19）+ Vite，`react-router` SPA 模式
+- **语言**：TypeScript
+- **包管理 / 运行**：bun
+- **本地数据库**：PowerSync (`@powersync/web`, wa-sqlite / IndexedDB) + TanStack React DB Collections
+- **LLM**：Vercel AI SDK (`@ai-sdk/*`)，多 provider —— DeepSeek / OpenAI / Anthropic / Gemini / Ollama / Browser
+- **数学/渲染**：KaTeX、MathLive、streamdown/math、jsxgraph、@cortex-js/compute-engine
+- **画布/编辑器**：Excalidraw、Blocknote、react-resizable-panels
+- **图谱**：AntV G6 / cytoscape，知识点相似度基于 @ternlight/base（本地语义嵌入，WASM）
+- **国际化**：i18next + react-i18next（中文 / English）
+- **UI**：TailwindCSS + shadcn/ui（`shadcn` 与 `radix-ui` 原语）+ next-themes
+
+## 主要功能
+
+- **AI 对话**：多模型 Agent 聊天，流式渲染数学公式、代码与 Mermaid 图
+- **题目提取**：上传图片/文本附件 → 视觉模型识别为 Markdown → 拆成结构化的题目
+- **知识点 / 题目库**：结构化存储题目，建立知识点之间的关联
+- **知识图谱**：可视化知识点及其关联，并用本地语义嵌入做相似知识点推荐
+- **画板 & 标注**：Excalidraw 画板、附件标注、公式工具
+- **自带密钥（BYOK）**：在设置页填写各 provider 的 API Key，仅存于本浏览器
+
+## 快速开始
+
+前置：Node ≥ 20，并安装 **bun**（本项目不使用 npm）。
+
+```bash
+# 安装依赖
+bun install
+
+# 启动开发服务器（HMR）
+bun run dev
+
+# 生产构建
+bun run build
+
+# 本地启动生产构建（服务 ./build/server/index.js）
+PORT=3000 bun run start
+
+# 类型检查（react-router typegen + tsc）
+bun run typecheck
+```
+
+> **提示**：项目是 SPA 模式（`react-router.config.ts` 中 `ssr: false`），纯客户端，因此**运行/构建都不需要任何环境变量**。API Key 在浏览器里填，不经过 `.env`。
+
+## 静态预览与部署
+
+构建产物是 `build/client`（纯静态 SPA）。
+
+```bash
+# 用 SPA fallback 静态服务本地预览（深链路由不会 404）
+bunx serve -s build/client -l 3000
+```
+
+发布到 Netlify 时已内置两份配置文件（位于 `public/`，会随构建拷入 `build/client`）：
+
+- `public/_redirects`：`/*  /index.html  200` —— 客户端路由回退，深链刷新不 404
+- `public/_headers`：给 `/assets/*` 设 `immutable` 长缓存（文件名带内容 hash，可安全长缓存）
+
+```bash
+netlify deploy --dir=build/client --prod
+```
+
+### 关于密钥（安全模型）
+
+- 代码里**没有任何硬编码 API Key**，也没有 `.env` 提交。
+- 架构是 BYOK：每个用户在自己的浏览器里填 Key，配置连同题目数据一起存入**本地 PowerSync 数据库**（IndexedDB）。
+- **没有服务端 / 代理**（无 `.server` 文件），请求由浏览器直连各家 provider。
+- ⚠️ 请勿把真实 Key 写进代码或提交文件。
+
+## 注意事项
+
+- 本地数据库依赖 **Web Locks**，仅可在**安全上下文**（HTTPS 或 `http://localhost`）下工作。用局域网 http IP 或非 localhost 的 http 访问会报 `Navigator locks are not available in an insecure context`。
+- 体积较大：包含若干按需加载的 WASM（本地数据库 wa-sqlite、语义嵌入 `@ternlight/base` ~10MB）。其中语义嵌入仅在用到相似度时由 Worker 按需加载。
+
+## 目录结构
+
+```
+app/
+├── root.tsx            # 应用入口 / 布局
+├── routes.ts           # 基于文件系统的路由
+├── routes/             # 页面路由（home / chat / graph / library / problem / settings）
+├── components/
+│   ├── chat/           # 对话、附件、标注、工具面板
+│   ├── library/        # 题目库
+│   ├── graph/          # 知识图谱
+│   ├── math/           # 数学渲染 / 题目预览
+│   ├── settings/       # 设置 & 模型配置
+│   └── ui/             # shadcn 基础组件
+├── db/                 # PowerSync 本地数据库 + zod schema + collections
+├── lib/
+│   ├── agent/          # LLM provider、Agent、工具、提示词
+│   ├── file/           # 附件读取与文本提取
+│   ├── similar/        # 知识点相似度（@ternlight/base）
+│   └── i18n.ts         # i18next 初始化
+├── store/              # zustand 客户端状态
+├── hooks/              # React hooks（含 AI agent chat）
+├── data/               # 静态数据
+└── locales/            # zh / en
+```
+
+## 内测 / 未完成功能
+
+项目仍处于**积极开发 / 内测阶段**，未发布正式版。以下能力可能**缺失、不稳定或会有破坏性变更**，使用时请自行评估：
+
+- 部分 provider 的配置与模型可用性随各家接口变动，可能需手动跟进
+- 题目提取依赖视觉模型的识别质量，复杂/手写题识别不一定准确
+- 知识图谱、相似知识点推荐等仍在迭代，结构可能调整
+- 本地数据库 schema 演进时可能涉及数据迁移，暂不保证向后兼容
+- 国际化（zh / en）仍在完善，个别文案可能未覆盖
+
+## License
+
+[MIT](LICENSE) — 可自由使用、修改、分发与商用，仅需保留版权声明。项目虽处于内测阶段，仍按最大可用范围授权。

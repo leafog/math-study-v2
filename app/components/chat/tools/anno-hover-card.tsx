@@ -87,7 +87,10 @@ const AnnoHoverCard = ({
                         <Button
                           size="icon"
                           variant={"ghost"}
-                          onClick={() => onRemove(toolId, i)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onRemove(toolId, i);
+                          }}
                         >
                           <X />
                         </Button>

@@ -169,7 +169,7 @@ export const ActiveChatProvider = ({ children }: { children: ReactNode }) => {
   const chatStatus = chatHelpersRaw.status;
 
   useEffect(() => {
-    if (!initMessages?.length) return;
+    if (!initMessages) return;
     if (syncedChatRef.current === chatId) return;
     if (chatStatus === "streaming" || chatStatus === "submitted") return;
 

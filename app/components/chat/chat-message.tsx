@@ -206,7 +206,6 @@ const PureChatMessage = memo(
                 }
                 if (part.type === "file") {
                   const isImage = part.mediaType.startsWith("image/");
-                  console.log(part.mediaType);
                   return (
                     <div key={key} className="mb-2 last:mb-0">
                       {isImage ? (
